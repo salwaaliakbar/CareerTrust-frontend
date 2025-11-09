@@ -35,7 +35,7 @@ export default function Carousel({
               fill
               priority
               sizes="(min-width: 768px) 100vw"
-              className="object-cover brightness-25"
+              className="object-cover brightness-35"
               aria-hidden
             />
           </div>
@@ -49,7 +49,7 @@ export default function Carousel({
               fill
               priority
               sizes="(min-width: 768px) 100vw"
-              className="object-cover brightness-25"
+              className="object-cover brightness-35"
               aria-hidden
             />
           </div>
