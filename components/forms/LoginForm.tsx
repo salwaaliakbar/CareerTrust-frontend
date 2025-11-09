@@ -17,7 +17,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+    <div className="w-full max-w-md bg-white border border-gray-300 rounded-xl shadow-sm p-6">
       <div className="text-center mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">Welcome Back</h1>
         <p className="text-sm text-gray-600">Sign in to access your CareerTrust account</p>
