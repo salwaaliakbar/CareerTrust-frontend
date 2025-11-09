@@ -66,8 +66,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
             <p className="text-gray-600">Choose your path to build trust in Pakistan&apos;s job market</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <button onClick={() => handleRoleSelect("jobseeker")} className="bg-white border border-gray-100 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-8">
+            <button onClick={() => handleRoleSelect("jobseeker")} className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl">
               <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6"><User className="w-7 h-7 text-[#0C2B4E]" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-3">I&apos;m a Job Seeker</h2>
               <p className="text-gray-600 mb-6">Find verified job opportunities tailored to your skills and build your trusted professional profile.</p>
@@ -78,7 +78,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
               </ul>
             </button>
 
-            <button onClick={() => handleRoleSelect("employer")} className="bg-white border border-gray-100 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl">
+            <button onClick={() => handleRoleSelect("employer")} className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl">
               <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6"><Building2 className="w-7 h-7 text-[#0C2B4E]" /></div>
               <h2 className="text-xl font-bold text-gray-900 mb-3">I&apos;m an Employer</h2>
               <p className="text-gray-600 mb-6">Post jobs, discover vetted candidates, and build your company&apos;s trusted reputation in the market.</p>

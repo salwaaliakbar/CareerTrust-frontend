@@ -54,7 +54,7 @@ export default function Carousel({
             />
           </div>
           {/* dark overlay to dim background images (below hero content) */}
-          <div className="absolute inset-0 bg-black opacity-40 z-10 pointer-events-none" />
+          <div className="absolute inset-0 bg-blue-900 opacity-40 z-10 pointer-events-none" />
         </div>
       </div>
     </>
