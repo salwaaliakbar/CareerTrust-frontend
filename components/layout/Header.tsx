@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from 'next/image'
 import { LOGIN, SIGNUP } from "../../app/page"
 import DropdownMenu from '../ui/dropdown-menu'
+import HomeDropdown from '../ui/HomeDropdown'
 
 function Header() {
   return (
@@ -20,17 +21,21 @@ function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/jobs" className="text-gray-600 hover:text-primary font-medium transition-colors">
-            Find Jobs
+          <HomeDropdown />
+          <Link href="/About" className="text-gray-600 hover:text-primary font-medium transition-colors">
+            About
           </Link>
-          <Link href="/companies" className="text-gray-600 hover:text-primary font-medium transition-colors">
-            Companies
+          <Link href="/services" className="text-gray-600 hover:text-primary font-medium transition-colors">
+            Services
           </Link>
-          <Link href="#features" className="text-gray-600 hover:text-primary font-medium transition-colors">
+          <Link href="/features" className="text-gray-600 hover:text-primary font-medium transition-colors">
             Features
           </Link>
-          <Link href="#about" className="text-gray-600 hover:text-primary font-medium transition-colors">
-            About
+          <Link href="/blogs" className="text-gray-600 hover:text-primary font-medium transition-colors">
+            Blogs
+          </Link>
+          <Link href="/contact" className="text-gray-600 hover:text-primary font-medium transition-colors">
+            Contact
           </Link>
         </div>
 

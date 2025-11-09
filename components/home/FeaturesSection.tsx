@@ -55,26 +55,37 @@ const features = [
 
 function FeaturesSection() {
   return (
-    <section id="features" className="py-20 px-4 bg-white">
+    <section id="features" className="py-20 px-4 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="section-title mb-4">Why Choose CareerTrust?</h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We{' '}re redefining trust in Pakistan{' '} employment sector with
-            innovative features and AI-powered solutions.
+          <h2 className="text-primary text-3xl font-extrabold mb-4">Why Choose CareerTrust?</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            {"We\u2019re redefining trust across Pakistan's employment sector with innovative features and AI-powered solutions."}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-6 px-12">
           {features.map((feature, index) => {
             const Icon = feature.icon;
+            // Use standard Tailwind color utilities so colors appear immediately
+            // (avoids depending on custom tokens / tailwind rebuild)
+            const isAccent = feature.colorClass.includes("accent");
+            const bgClass = isAccent ? "bg-amber-100" : "bg-sky-100";
+            const textClass = isAccent ? "text-amber-600" : "text-sky-700";
+            const ringClass = isAccent ? "ring-amber-200" : "ring-sky-200";
+            const leftBorder = "border-amber-100";
+
             return (
               <div
                 key={index}
-                className="card-base p-8 hover:shadow-lg transition-shadow"
+                className={`card-base p-8 bg-white rounded-2xl border border-gray-500 border-l-5 ${leftBorder} hover:shadow-lg transition transform hover:-translate-y-1`}
               >
-                <div className={`w-14 h-14 ${feature.colorClass} rounded-lg flex items-center justify-center mb-6`}>
-                  <Icon className="w-7 h-7" />
+                <div className="relative mb-6">
+                  {/* faint colored shape behind the icon */}
+                  <div className={`absolute -inset-1 rounded-xl ${bgClass} opacity-100`} />
+                  <div className={`relative w-14 h-14 bg-white rounded-lg flex items-center justify-center ${textClass} ring-1 ring-inset ${ringClass}`}>
+                    <Icon className="w-7 h-7" />
+                  </div>
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">
                   {feature.title}
