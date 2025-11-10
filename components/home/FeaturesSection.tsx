@@ -66,7 +66,7 @@ function FeaturesSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 p-6 px-12">
           {features.map((feature, index) => {
-            const Icon = feature.icon;
+            const Icon = feature.icon;  
             // Use standard Tailwind color utilities so colors appear immediately
             // (avoids depending on custom tokens / tailwind rebuild)
             const isAccent = feature.colorClass.includes("accent");
