@@ -1,9 +1,12 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { supabase } from "@/lib/supabaseClient";
+import swal from "sweetalert2"; 
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Required"),
@@ -11,10 +14,46 @@ const LoginSchema = Yup.object().shape({
 });
 
 export default function LoginForm() {
-  const handleSubmit = (values: { email: string; password: string }) => {
-    // Replace with real auth logic
-    console.log("Login attempt:", values);
-  };
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(
+    values: { email: string; password: string },
+    { setSubmitting }: { setSubmitting: (v: boolean) => void }
+  ) {
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) {
+        swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: error.message,
+        });
+        setError(error.message);
+      } else {
+        swal.fire({
+          icon: "success",
+          title: "Login Successful",
+          text: "You have successfully logged in.",
+        });
+        // success - you may want to redirect or update UI here
+        setError(null);
+      }
+    } catch (err) {
+      swal.fire({
+        icon: "error",
+        title: "Error",
+        text: (err as Error).message || "An error occurred",
+      });
+      setError((err as Error).message || "An error occurred");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-md bg-white border border-gray-300 rounded-xl shadow-sm p-6">
@@ -26,9 +65,9 @@ export default function LoginForm() {
       <Formik
         initialValues={{ email: "", password: "" }}
         validationSchema={LoginSchema}
-        onSubmit={(values) => handleSubmit(values)}
+        onSubmit={handleSubmit}
       >
-        {({ errors, touched }) => (
+        {({ errors, touched, isSubmitting }) => (
           <Form className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
@@ -67,12 +106,25 @@ export default function LoginForm() {
               <ErrorMessage name="password" component="div" className="text-sm text-red-500 mt-1" />
             </div>
 
-            <button type="submit" aria-label="Sign in" className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0C2B4E] text-white rounded-md hover:bg-[#1A3D64] focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] transition">
+            {error && <div className="mt-4 text-sm text-red-600 text-center">{error}</div>}
+
+            <button
+              type="submit"
+              aria-label="Sign in"
+              disabled={isSubmitting}
+              className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md transition focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] ${
+                isSubmitting
+                  ? "bg-[#0C2B4E]/70 text-white cursor-wait"
+                  : "bg-[#0C2B4E] text-white hover:bg-[#1A3D64]"
+              }`}
+            >
               Sign In <ArrowRight className="w-5 h-5" />
             </button>
           </Form>
         )}
       </Formik>
+
+      
 
       <div className="flex items-center my-6">
         <div className="flex-1 h-px bg-gray-200" />
