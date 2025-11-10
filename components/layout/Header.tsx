@@ -22,7 +22,7 @@ function Header() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           <HomeDropdown />
-          <Link href="/About" className="text-gray-600 hover:text-primary font-medium transition-colors">
+          <Link href="/about" className="text-gray-600 hover:text-primary font-medium transition-colors">
             About
           </Link>
           <Link href="/services" className="text-gray-600 hover:text-primary font-medium transition-colors">
