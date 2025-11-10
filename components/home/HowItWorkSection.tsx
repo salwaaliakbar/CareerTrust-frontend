@@ -26,10 +26,16 @@ const steps = [
 
 function HowItWorksSection() {
   return (
-    <section className="py-20 px-4 bg-gray-50">
+    <section className="pb-20 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/12 to-white relative overflow-hidden">
+      {/* decorative blurred orb  */}
+      <div className="absolute -left-24 -top-12 w-[520px] h-[520px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/18 via-[#1A3D64]/14 to-[#1D546C]/10 pointer-events-none -z-10" />
+      {/* blue overlay stripe to add horizontal blue tint similar to Employer/FeaturedCandidates */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <div className="absolute left-0 top-0 w-1/2 h-full bg-linear-to-r from-[#0C2B4E]/10 via-[#1A3D64]/8 to-transparent" />
+      </div>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-25">
-          <h2 className="text-primary text-3xl font-extrabold mb-4">How It Works</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E]">How It Works</h2>
           <p className="text-xl text-gray-600">
             Simple steps to build your trusted professional profile
           </p>

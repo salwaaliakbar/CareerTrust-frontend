@@ -100,12 +100,18 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
   }
 
   return (
-    <section className="py-16 px-4">
+    <section className="py-16 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/8 to-white relative overflow-hidden">
+        {/* subtle brand orb */}
+        <div className="absolute -right-20 -top-16 w-[480px] h-[480px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/12 via-[#1A3D64]/10 to-transparent pointer-events-none -z-10" />
+        {/* left blue overlay stripe for stronger tint */}
+        <div className="absolute inset-0 pointer-events-none -z-10">
+          <div className="absolute left-0 top-0 w-1/3 h-full bg-linear-to-r from-[#0C2B4E]/8 via-[#1A3D64]/6 to-transparent" />
+        </div>
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-primary text-3xl font-extrabold mb-4">Making your job search easier</h2>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E]">Making your job search easier</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            {"Personalized job recommendations tailored to your skills and preferences."}
+            {"Personalized job recommendations tailored to our skills and preferences."}
           </p>
         </div>
         </div>
@@ -164,7 +170,7 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
                   type="button"
                   key={s.id}
                   onClick={() => goTo(i)}
-                  className={`text-left p-4 rounded-lg mb-2 w-full flex items-center gap-4 transition ${
+                  className={`text-left p-4 rounded-lg mb-2 w-full flex items-center gap-4 transition shadow-sm ${
                     i === index ? "bg-white shadow-lg" : "bg-white/60"
                   }`}
                   aria-current={i === index ? "true" : undefined}
