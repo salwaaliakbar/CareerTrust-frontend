@@ -13,7 +13,7 @@ function CTASection() {
         </p>
         <Link
           href="/signup"
-          className="inline-block bg-yellow-600 text-white hover:bg-amber-600 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+          className="inline-block bg-amber-500 text-white hover:bg-amber-600 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
         >
           Get Started Now
         </Link>

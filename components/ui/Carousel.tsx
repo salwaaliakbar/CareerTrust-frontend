@@ -35,7 +35,7 @@ export default function Carousel({
               fill
               priority
               sizes="(min-width: 768px) 100vw"
-              className="object-cover brightness-25"
+              className="object-cover brightness-35"
               aria-hidden
             />
           </div>
@@ -49,12 +49,12 @@ export default function Carousel({
               fill
               priority
               sizes="(min-width: 768px) 100vw"
-              className="object-cover brightness-25"
+              className="object-cover brightness-35"
               aria-hidden
             />
           </div>
           {/* dark overlay to dim background images (below hero content) */}
-          <div className="absolute inset-0 bg-black opacity-40 z-10 pointer-events-none" />
+          <div className="absolute inset-0 bg-blue-900 opacity-40 z-10 pointer-events-none" />
         </div>
       </div>
     </>
