@@ -1,7 +1,10 @@
-"use client";
-import React from "react";
-import Link from "next/link";
-import { MessageCircle, CheckCircle } from "lucide-react";
+import {
+  MessageCircle,
+  CheckCircle,
+  MapPin,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
 
 type Candidate = {
   id: string;
@@ -14,56 +17,160 @@ type Candidate = {
 };
 
 const demo: Candidate[] = [
-  { id: "c1", name: "Aisha Khan", title: "Frontend Engineer", location: "Lagos, NG", skills: ["React", "TypeScript"], verified: true },
-  { id: "c2", name: "Daniel Mensah", title: "Backend Engineer", location: "Accra, GH", skills: ["Node", "Postgres"], verified: true },
-  { id: "c3", name: "Grace O.", title: "Product Designer", location: "Nairobi, KE", skills: ["Figma", "UX"] },
+  {
+    id: "c1",
+    name: "Aisha Khan",
+    title: "Frontend Engineer",
+    location: "Lagos, NG",
+    skills: ["React", "TypeScript"],
+    verified: true,
+  },
+  {
+    id: "c2",
+    name: "Daniel Mensah",
+    title: "Backend Engineer",
+    location: "Accra, GH",
+    skills: ["Node", "Postgres"],
+    verified: true,
+  },
+  {
+    id: "c3",
+    name: "Grace O.",
+    title: "Product Designer",
+    location: "Nairobi, KE",
+    skills: ["Figma", "UX"],
+  },
 ];
 
-export default function FeaturedCandidates({ candidates = demo }: { candidates?: Candidate[] }) {
+export default function FeaturedCandidates({
+  candidates = demo,
+}: {
+  candidates?: Candidate[];
+}) {
   return (
-    <section aria-labelledby="featured-candidates" className="py-15">
-      <div className="max-w-7xl mx-auto px-4">
-        <h3 id="featured-candidates" className="text-primary text-3xl font-extrabold mb-4 text-center">Featured candidates</h3>
-        <p className="text-center text-gray-600 mb-15 max-w-2xl mx-auto">
-          Discover top talent ready to join your team across various industries and locations. Need more candidates?{' '}
-          <Link href="/employer/post" className="underline font-medium">Post a job</Link> to reach a larger pool.
-        </p>
+    <section
+      aria-labelledby="featured-candidates"
+      className="relative overflow-hidden"
+    >
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 bg-grid-slate-200/50 pb-24"/>
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0C2B4E]/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#0C2B4E]/10 rounded-full blur-3xl" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6">
+            <Sparkles className="w-4 h-4 text-[#0C2B4E]" />
+            <span className="text-sm font-medium text-[#0C2B4E]">
+              Top Talent
+            </span>
+          </div>
+
+          <h3
+            id="featured-candidates"
+            className="text-4xl sm:text-5xl font-bold mb-4 bg-[#0C2B4E] bg-clip-text text-transparent"
+          >
+            Featured Candidates
+          </h3>
+
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Connect with exceptional talent ready to elevate your team.{" "}
+            <a
+              href="/employer/post"
+              className="inline-flex items-center gap-1 text-[#0C2B4E] font-semibold hover:text-[#1A3D64] transition-colors group"
+            >
+              Post a job
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+          </p>
+        </div>
+
+        {/* Candidates Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {candidates.map((c) => (
             <article
               key={c.id}
-              className=" bg-white rounded-2xl p-5 flex flex-col gap-4 ring-1 ring-slate-100 hover:shadow-lg hover:-translate-y-1 transform-gpu transition duration-200 border border-gray-200 shadow-sm"
+              className="group relative"
               role="article"
               aria-labelledby={`candidate-${c.id}`}
             >
-              <div className="flex items-start gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-sky-50 flex items-center justify-center text-[#0C2B4E] font-bold text-lg ring-1 ring-slate-100">{c.name.split(" ")[0].charAt(0)}</div>
-                  {c.verified ? (
-                    <span className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow">
-                      <CheckCircle className="w-4 h-4 text-[#0C2B4E]" />
-                    </span>
-                  ) : null}
-                </div>
+              {/* Glow effect on hover */}
+              <div
+                className={`absolute -inset-0.5 bg-[#0C2B4E] rounded-2xl opacity-0 group-hover:opacity-20 blur transition-opacity duration-500`}
+              />
 
-                <div className="flex-1">
-                  <h4 id={`candidate-${c.id}`} className="font-semibold text-slate-900">{c.name}</h4>
-                  <div className="text-sm text-slate-500">{c.title} • {c.location}</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(c.skills || []).map((s) => (
-                      <span key={s} className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded-full">{s}</span>
-                    ))}
+              {/* Card */}
+              <div className="relative h-full bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/60 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-300/50 hover:border-blue-200/60 transition-all duration-300">
+                {/* Profile Header */}
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-[#0C2B4E] flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      {c.name.split(" ")[0].charAt(0)}
+                    </div>
+                    {c.verified && (
+                      <span className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md ring-2 ring-white">
+                        <CheckCircle className="w-4 h-4 text-[#0C2B4E] fill-blue-100" />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h4
+                      id={`candidate-${c.id}`}
+                      className="font-bold text-lg text-slate-900 mb-1 truncate"
+                    >
+                      {c.name}
+                    </h4>
+                    <p className="text-sm font-medium text-slate-700 mb-2">
+                      {c.title}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{c.location}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-auto flex gap-3">
-                <button type="button" className="flex-1 px-4 py-2 bg-sky-700 text-white rounded-lg font-medium hover:bg-sky-800">View profile</button>
-                <button type="button" className="px-3 py-2 border rounded-lg flex items-center gap-2 text-slate-700 hover:bg-slate-50"><MessageCircle className="w-4 h-4"/> Message</button>
+                {/* Skills */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {(c.skills || []).map((s) => (
+                    <span
+                      key={s}
+                      className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    className="flex-1 px-4 py-2.5 bg-[#0C2B4E] text-white rounded-xl font-semibold hover:bg-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl hover:shadow-[#0C2B4E]/30 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                  >
+                    View Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                    aria-label={`Message ${c.name}`}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </article>
           ))}
+        </div>
+
+        {/* View All CTA */}
+        <div className="text-center mt-12">
+          <button className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-[#0C2B4E] rounded-full font-semibold text-slate-700 hover:text-[#1A3D64] shadow-lg hover:shadow-xl transition-all duration-200 group">
+            View All Candidates
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     </section>

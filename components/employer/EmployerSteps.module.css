@@ -1,0 +1,5 @@
+.connectionLine {
+  /* keep the same layout intent as the inline style: inset horizontally with 6rem side gutters */
+  left: 6rem;
+  right: 6rem;
+}
