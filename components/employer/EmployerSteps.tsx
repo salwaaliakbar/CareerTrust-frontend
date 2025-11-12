@@ -12,28 +12,28 @@ export default function EmployerSteps() {
       desc: "Create a role and screen settings",
       icon: Briefcase,
       // primary -> secondary
-      color: "from-[#0C2B4E] to-[#1A3D64]"
+      color: "bg-sky-800"
     },
     {
       title: "Review candidates",
       desc: "One-click screening & verified profiles",
       icon: Users,
       // secondary -> tertiary
-      color: "from-[#1A3D64] to-[#1D546C]"
+      color: "bg-sky-700"
     },
     {
       title: "Hire",
       desc: "Shortlist and make an offer",
       icon: Handshake,
       // tertiary -> primary
-      color: "from-[#1D546C] to-[#0C2B4E]"
+      color: "bg-sky-600"
     },
     {
       title: "Reputation history",
       desc: "View your trust score timeline and verification events",
       icon: Award,
       // primary -> tertiary (subtle)
-      color: "from-[#0C2B4E] to-[#1D546C]"
+      color: "bg-sky-500"
     },
   ];
 
@@ -141,8 +141,8 @@ export default function EmployerSteps() {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-16">
-          <button className="inline-flex items-center gap-3 px-8 py-4 bg-[#0C2B4E] hover:bg-[#1A3D64] text-white rounded-2xl font-semibold shadow-xl  transform hover:scale-105 active:scale-95 transition-all duration-200">
+        <div className="text-center mt-25">
+          <button className="inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30">
             <Briefcase className="w-5 h-5" />
             Get Started Now
           </button>

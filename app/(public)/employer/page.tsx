@@ -1,7 +1,6 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/employer/Herosection";
-import EmployerWhy from "@/components/employer/EmployerWhy";
 import FeaturedCandidates from "@/components/employer/FeaturedCandidates";
 import EmployerSteps from "@/components/employer/EmployerSteps";
 import CTASection from "@/components/employer/CTASection";

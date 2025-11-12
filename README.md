@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## AI microservice (face recognition)
+
+The server-side face-check route forwards the uploaded image to an AI microservice. Set the `AI_SERVICE_URL` environment variable to the microservice endpoint (server-side URL), for example:
+
+```
+AI_SERVICE_URL="http://localhost:8000/face-recognition"
+```
+
+Make sure this value is available to the Next.js server runtime (e.g., in `.env.local` for local dev or environment variables in your hosting platform).

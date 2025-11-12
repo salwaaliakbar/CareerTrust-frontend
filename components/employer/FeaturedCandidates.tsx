@@ -5,6 +5,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
+import Image from "next/image";
 
 type Candidate = {
   id: string;
@@ -23,6 +24,7 @@ const demo: Candidate[] = [
     title: "Frontend Engineer",
     location: "Lagos, NG",
     skills: ["React", "TypeScript"],
+    avatar: "/assets/images/profile1.jpg",
     verified: true,
   },
   {
@@ -31,6 +33,7 @@ const demo: Candidate[] = [
     title: "Backend Engineer",
     location: "Accra, GH",
     skills: ["Node", "Postgres"],
+    avatar: "/assets/images/profile2.jpg",
     verified: true,
   },
   {
@@ -39,6 +42,7 @@ const demo: Candidate[] = [
     title: "Product Designer",
     location: "Nairobi, KE",
     skills: ["Figma", "UX"],
+    avatar: "/assets/images/profile3.jpg",
   },
 ];
 
@@ -105,9 +109,21 @@ export default function FeaturedCandidates({
                 {/* Profile Header */}
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-[#0C2B4E] flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      {c.name.split(" ")[0].charAt(0)}
-                    </div>
+                    {c.avatar ? (
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg">
+                        <Image
+                          src={c.avatar}
+                          alt={c.name}
+                          width={64}
+                          height={64}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-[#0C2B4E] flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {c.name.split(" ")[0].charAt(0)}
+                      </div>
+                    )}
                     {c.verified && (
                       <span className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md ring-2 ring-white">
                         <CheckCircle className="w-4 h-4 text-[#0C2B4E] fill-blue-100" />
@@ -148,7 +164,8 @@ export default function FeaturedCandidates({
                 <div className="flex gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
-                    className="flex-1 px-4 py-2.5 bg-[#0C2B4E] text-white rounded-xl font-semibold hover:bg-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl hover:shadow-[#0C2B4E]/30 transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                    className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30"
+                    aria-label={`View profile of ${c.name}`}
                   >
                     View Profile
                   </button>
