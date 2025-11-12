@@ -1,0 +1,202 @@
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Environment Variables Template
+# Copy this file to .env.local and fill in your actual values
+
+# ============================================
+# DATABASE CONFIGURATION
+# ============================================
+
+# PostgreSQL Connection String
+DATABASE_URL=postgresql://username:password@localhost:5432/careertrust
+
+# Individual Database Credentials
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=careertrust
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_SSL=false
+
+# ============================================
+# SUPABASE CONFIGURATION (if using)
+# ============================================
+
+# Supabase Project URL
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+
+# Supabase Anonymous Key (Public)
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Supabase Service Role Key (Server-side only)
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# ============================================
+# APPLICATION CONFIGURATION
+# ============================================
+
+# Application URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# API Base URL
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+
+# Node Environment (development, production, test)
+NODE_ENV=development
+
+# ============================================
+# AUTHENTICATION & SECURITY
+# ============================================
+
+# JWT Secret for token signing (use a strong random string)
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+
+# JWT Token Expiration
+JWT_EXPIRES_IN=7d
+
+# Refresh Token Secret
+REFRESH_TOKEN_SECRET=your_refresh_token_secret_change_this
+
+# Refresh Token Expiration
+REFRESH_TOKEN_EXPIRES_IN=30d
+
+# Session Secret
+SESSION_SECRET=your_session_secret_change_this
+
+# Password Salt Rounds
+BCRYPT_SALT_ROUNDS=10
+
+# ============================================
+# EMAIL SERVICE CONFIGURATION
+# ============================================
+
+# SMTP Configuration (Gmail, SendGrid, etc.)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASSWORD=your_app_specific_password
+
+# SendGrid (Alternative)
+# SENDGRID_API_KEY=your_sendgrid_api_key
+
+# Email From Address
+EMAIL_FROM=noreply@careertrust.com
+EMAIL_FROM_NAME=CareerTrust
+
+# ============================================
+# FILE STORAGE CONFIGURATION
+# ============================================
+
+# AWS S3 
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=your-bucket-name
+
+# Cloudinary (Alternative)
+# CLOUDINARY_CLOUD_NAME=your_cloud_name
+# CLOUDINARY_API_KEY=your_api_key
+# CLOUDINARY_API_SECRET=your_api_secret
+
+# ============================================
+# PAYMENT GATEWAY CONFIGURATION
+# ============================================
+
+# Stripe
+STRIPE_PUBLISHABLE_KEY=pk_test_your_publishable_key
+STRIPE_SECRET_KEY=sk_test_your_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# PayPal (Alternative)
+# PAYPAL_CLIENT_ID=your_paypal_client_id
+# PAYPAL_CLIENT_SECRET=your_paypal_client_secret
+# PAYPAL_MODE=sandbox
+
+# ============================================
+# THIRD-PARTY INTEGRATIONS
+# ============================================
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# LinkedIn OAuth
+LINKEDIN_CLIENT_ID=your_linkedin_client_id
+LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret
+
+# Google Maps API
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+
+# Analytics
+NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
+
+# ============================================
+# MONITORING & LOGGING
+# ============================================
+
+# Sentry (Error Tracking)
+NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+
+# LogRocket (Session Replay)
+# NEXT_PUBLIC_LOGROCKET_APP_ID=your_logrocket_app_id
+
+# ============================================
+# RATE LIMITING & SECURITY
+# ============================================
+
+# Rate Limit Configuration
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_MS=900000
+
+# CORS Allowed Origins (comma-separated)
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+
+# ============================================
+# FEATURE FLAGS
+# ============================================
+
+# Enable/Disable Features
+FEATURE_ENABLE_CHAT=true
+FEATURE_ENABLE_VIDEO_INTERVIEWS=false
+FEATURE_ENABLE_PREMIUM_JOBS=true
+
+# ============================================
+# DEVELOPMENT & TESTING
+# ============================================
+
+# Enable Debug Mode
+DEBUG=false
+
+# Bypass Authentication (Development only)
+BYPASS_AUTH=false
+
+# Mock Data
+USE_MOCK_DATA=false
+
+# ============================================
+# PRODUCTION SPECIFIC
+# ============================================
+
+# Production Domain
+# PRODUCTION_DOMAIN=https://careertrust.com
+
+# CDN URL
+# CDN_URL=https://cdn.careertrust.com
+
+# Redis Configuration (for caching in production)
+# REDIS_URL=redis://localhost:6379
+# REDIS_PASSWORD=your_redis_password
+
+# ============================================
+# NOTES
+# ============================================
+
+# 1. NEVER commit .env.local to version control
+# 2. Use strong, unique values for all secrets
+# 3. Rotate secrets regularly in production
+# 4. Use different values for development and production
+# 5. Store production secrets in secure vault (AWS Secrets Manager, etc.)
+
