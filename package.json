@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.80.0",
     "face-api.js": "^0.22.2",
     "formidable": "^3.5.4",
@@ -17,8 +18,10 @@
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-hook-form": "^7.66.0",
     "sweetalert2": "^11.26.3",
-    "yup": "^1.7.1"
+    "yup": "^1.7.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
