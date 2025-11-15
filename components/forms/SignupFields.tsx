@@ -2,13 +2,15 @@
 
 import React from "react";
 import { Mail, Lock, User, Phone, Building2, ArrowRight } from "lucide-react";
+import { SubmitHandler } from "react-hook-form";
+import { FormValues } from "./SignupForm";
 
 type Props = {
   state: any;
   register: any;
   rhfErrors: any;
-  rhfHandleSubmit: any;
-  onSubmit: (values: any) => Promise<void>;
+  handleSubmit: any;
+  onSubmit: SubmitHandler<FormValues>;
   dispatch: React.Dispatch<any>;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   capturedImage: File | null;
@@ -17,7 +19,7 @@ type Props = {
   capturePhoto: () => void;
   verifyFaceAndSubmit: () => Promise<void>;
   closeFacePopup: () => void;
-  submitSignup: (values: any) => Promise<void>;
+  submitSignup: (values: FormValues) => Promise<void>;
   resetForm: () => void;
   setCapturedImage: (f: File | null) => void;
 };
@@ -26,7 +28,7 @@ export default function SignupFields({
   state,
   register,
   rhfErrors,
-  rhfHandleSubmit,
+  handleSubmit,
   onSubmit,
   dispatch,
   videoRef,
@@ -57,7 +59,7 @@ export default function SignupFields({
                 <p className="text-gray-600">{state.role === "jobseeker" ? "Set up your job seeker profile" : "Register your company"}</p>
               </div>
 
-              <form onSubmit={rhfHandleSubmit(onSubmit)} className="space-y-6 mb-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mb-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-2">Full Name *</label>

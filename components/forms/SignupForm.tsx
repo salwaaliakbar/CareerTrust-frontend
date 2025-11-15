@@ -3,7 +3,7 @@
 import { useReducer, useEffect, useRef, useState } from "react";
 import RoleSelect from "./RoleSelect";
 import SignupFields from "./SignupFields";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 
 import Swal from "sweetalert2";
 import * as faceapi from "face-api.js";
@@ -11,7 +11,7 @@ import FaceCaptureModal from "../ui/FaceCaptureModal";
 
 type Role = "jobseeker" | "employer";
 
-type FormValues = {
+export type FormValues = {
   name: string;
   companyName: string;
   companyURL: string;
@@ -147,7 +147,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   const {
     register,
-    handleSubmit: rhfHandleSubmit,
+    handleSubmit,
     reset,
     formState: { errors: rhfErrors },
   } = useForm<FormValues>({
@@ -164,7 +164,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     },
   });
 
-  async function onSubmit(values: FormValues) {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (state.role === "jobseeker") {
       setPendingFormData(values);
       dispatch({ type: "setShowFacePopup", payload: true });
@@ -360,7 +360,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         state={state}
         register={register}
         rhfErrors={rhfErrors}
-        rhfHandleSubmit={rhfHandleSubmit}
+        handleSubmit={handleSubmit}
         onSubmit={onSubmit}
         dispatch={dispatch}
         videoRef={videoRef}
