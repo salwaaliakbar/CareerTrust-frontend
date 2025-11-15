@@ -4,10 +4,11 @@ import { useReducer, useEffect, useRef, useState } from "react";
 import RoleSelect from "./RoleSelect";
 import SignupFields from "./SignupFields";
 import { useForm, SubmitHandler } from "react-hook-form";
-
 import Swal from "sweetalert2";
 import * as faceapi from "face-api.js";
 import FaceCaptureModal from "../ui/FaceCaptureModal";
+import { useSignUp } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 type Role = "jobseeker" | "employer";
 
@@ -23,6 +24,21 @@ export type FormValues = {
   cnic: string;
 };
 
+export type SignupAction =
+  | { type: "setRole"; payload: Role }
+  | { type: "setStep"; payload: number }
+  | { type: "setPreview"; payload: string | null }
+  | { type: "setStream"; payload: MediaStream | null }
+  | { type: "setIsStreaming"; payload: boolean }
+  | { type: "setFaceCount"; payload: number }
+  | { type: "setModelsLoaded"; payload: boolean }
+  | { type: "setIsProcessing"; payload: boolean }
+  | { type: "setFaceVerified"; payload: boolean }
+  | { type: "setShowFacePopup"; payload: boolean }
+  | { type: "setVerifying"; payload: boolean };
+
+export type SignupDispatch = React.Dispatch<SignupAction>;
+
 export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   type State = {
     role: Role;
@@ -35,19 +51,10 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     isProcessing: boolean;
     faceVerified: boolean;
     showFacePopup: boolean;
+    verifying: boolean;
   };
 
-  type Action =
-    | { type: "setRole"; payload: Role }
-    | { type: "setStep"; payload: number }
-    | { type: "setPreview"; payload: string | null }
-    | { type: "setStream"; payload: MediaStream | null }
-    | { type: "setIsStreaming"; payload: boolean }
-    | { type: "setFaceCount"; payload: number }
-    | { type: "setModelsLoaded"; payload: boolean }
-    | { type: "setIsProcessing"; payload: boolean }
-    | { type: "setFaceVerified"; payload: boolean }
-    | { type: "setShowFacePopup"; payload: boolean };
+  /* using exported SignupAction type from module scope */
 
   const initialState: State = {
     role: initialRole || "jobseeker",
@@ -60,9 +67,10 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     isProcessing: false,
     faceVerified: false,
     showFacePopup: false,
+    verifying: false,
   };
 
-  function reducer(state: State, action: Action): State {
+  function reducer(state: State, action: SignupAction): State {
     switch (action.type) {
       case "setRole":
         return { ...state, role: action.payload };
@@ -84,6 +92,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         return { ...state, faceVerified: action.payload };
       case "setShowFacePopup":
         return { ...state, showFacePopup: action.payload };
+      case "setVerifying":
+        return { ...state, verifying: action.payload };
       default:
         return state;
     }
@@ -95,13 +105,16 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   );
   const [capturedImage, setCapturedImage] = useState<File | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  // const [verifying, setVerifying] = useState(false);
+  const { isLoaded, signUp, setActive } = useSignUp();
+  const router = useRouter();
 
   const handleRoleSelect = (selectedRole: Role) => {
     dispatch({ type: "setRole", payload: selectedRole });
     dispatch({ type: "setStep", payload: 2 });
   };
 
-  useEffect(() => {
+   useEffect(() => {
     return () => {
       if (state.preview) {
         URL.revokeObjectURL(state.preview);
@@ -112,10 +125,10 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     };
   }, [state.preview, state.stream]);
 
-  useEffect(() => {
+   useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = "/models";
-      await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)]);
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       dispatch({ type: "setModelsLoaded", payload: true });
     };
     loadModels();
@@ -149,6 +162,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors: rhfErrors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -175,25 +189,128 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   async function submitSignup(values: FormValues) {
     dispatch({ type: "setIsProcessing", payload: true });
-    try {
       // all your backend signup endpoint logic here
-
+    if (!isLoaded) {
       Swal.fire({
-        icon: "success",
-        title: "Account Created!",
-        text: "Your account has been successfully created. Redirecting to login...",
-      }).then(() => {
-        // redirect to login or other action
+        icon: "error",
+        title: "Error",
+        text: "Authentication system is not ready. Please refresh the page.",
       });
+      return;
+    }
+     dispatch({ type: "setIsProcessing", payload: true });
+    try {
+      // Create user in Clerk
+      await signUp.create({
+        emailAddress: values.email,
+        password: values.password,
+        firstName: values.name.split(" ")[0],
+        lastName: values.name.split(" ").slice(1).join(" ") || "",
+        unsafeMetadata: {
+          role: state.role,
+          ...(state.role === "jobseeker" && {
+            phone: values.phone,
+            cnic: values.cnic,
+          }),
+          ...(state.role === "employer" && {
+            companyName: values.companyName,
+            companyURL: values.companyURL,
+          }),
+        },
+      });
+
+      // Prepare email verification
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
+
+      // Show verification modal
+      dispatch({ type: "setVerifying", payload: true });
+
+      const { value: code } = await Swal.fire({
+        title: "Verify Your Email",
+        html: `
+          <p class="mb-4">We've sent a verification code to <strong>${values.email}</strong></p>
+          <p class="text-sm text-gray-600 mb-4">Please enter the 6-digit code below:</p>
+        `,
+        input: "text",
+        inputAttributes: {
+          maxlength: "6",
+          placeholder: "000000",
+          autocomplete: "off",
+        },
+        showCancelButton: true,
+        confirmButtonText: "Verify",
+        confirmButtonColor: "#0C2B4E",
+        cancelButtonText: "Cancel",
+        inputValidator: (value) => {
+          if (!value || value.length !== 6) {
+            return "Please enter a valid 6-digit code";
+          }
+          return null;
+        },
+        allowOutsideClick: false,
+      });
+
+      if (!code) {
+        dispatch({ type: "setVerifying", payload: false });
+        dispatch({ type: "setIsProcessing", payload: false });
+        return;
+      }
+
+      // Verify the email code
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (completeSignUp.status === "complete") {
+        await setActive({ session: completeSignUp.createdSessionId });
+
+        Swal.fire({
+          icon: "success",
+          title: "Account Created!",
+          text: "Your account has been successfully created.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        // Redirect based on role
+        setTimeout(() => {
+          if (state.role === "jobseeker") {
+            // router.push("/dashboard/jobseeker");
+            router.push("/");
+          } else {
+            // router.push("/dashboard/employer");
+            router.push("/");
+          }
+        }, 2000);
+      } else {
+        throw new Error("Verification incomplete");
+      }
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("Signup error:", err);
+
+      let errorMessage = "An unexpected error occurred.";
+
+      if (typeof err === "object" && err !== null) {
+        const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
+        if (Array.isArray(e.errors) && e.errors.length > 0) {
+          errorMessage = e.errors[0].longMessage || e.errors[0].message || errorMessage;
+        } else if (typeof e.message === "string") {
+          errorMessage = e.message;
+        }
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+
       Swal.fire({
         icon: "error",
         title: "Signup Failed",
-        text: errMsg || "An unexpected error occurred during signup.",
+        text: errorMessage,
       });
-      resetForm();
+      
     } finally {
+      dispatch({ type: "setVerifying", payload: false });
       dispatch({ type: "setIsProcessing", payload: false });
     }
   }
@@ -357,22 +474,13 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   return (
     <>
       <SignupFields
-        state={state}
+        state={{ role: state.role, isProcessing: state.isProcessing, verifying: state.verifying }}
         register={register}
         rhfErrors={rhfErrors}
         handleSubmit={handleSubmit}
         onSubmit={onSubmit}
+        getValues={getValues}
         dispatch={dispatch}
-        videoRef={videoRef}
-        capturedImage={capturedImage}
-        openCamera={openCamera}
-        stopCamera={stopCamera}
-        capturePhoto={capturePhoto}
-        verifyFaceAndSubmit={verifyFaceAndSubmit}
-        closeFacePopup={closeFacePopup}
-        submitSignup={submitSignup}
-        resetForm={resetForm}
-        setCapturedImage={setCapturedImage}
       />
 
       <FaceCaptureModal
