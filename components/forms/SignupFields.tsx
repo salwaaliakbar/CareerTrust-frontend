@@ -10,7 +10,6 @@ import {
   UseFormGetValues,
 } from "react-hook-form";
 import type { FormValues, SignupAction } from "./SignupForm";
-import Image from "next/image";
 
 type SignupFieldsState = { role: "jobseeker" | "employer"; isProcessing: boolean; verifying: boolean };
 
@@ -39,7 +38,7 @@ export default function SignupFields({
         <main className="flex items-stretch w-full min-h-screen mt-10 mb-20">
           <div className="hidden md:block md:w-1/2 md:h-screen md:sticky md:top-0 relative overflow-hidden">
             <div className="absolute inset-0">
-              <img src="/assets/images/authImage - Copy.png" alt="Auth background" className="object-cover object-center w-full h-full" />
+              <img src="/assets/images/authImage - Copy.png" alt="Auth background" className="object-cover object-center w-full h-full slide-in-left animation-delay-1000" />
             </div>
           </div>
 
