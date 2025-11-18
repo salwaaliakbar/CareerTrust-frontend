@@ -178,26 +178,57 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       const { value: code } = await Swal.fire({
         title: "Verify Your Email",
         html: `
-          <p class="mb-4">We've sent a verification code to <strong>${values.email}</strong></p>
-          <p class="text-sm text-gray-600 mb-4">Please enter the 6-digit code below:</p>
-        `,
-        input: "text",
-        inputAttributes: {
-          maxlength: "6",
-          placeholder: "000000",
-          autocomplete: "off",
-        },
+    <p class="mb-4">A 6 digit code was sent to <strong>${
+      values.email
+    }</strong></p>
+    <div id="otp-container" class="flex justify-center gap-3 mt-3">
+      ${Array(6)
+        .fill(0)
+        .map(
+          (_, i) => `
+          <input 
+            type="text" 
+            id="otp-${i}" 
+            maxlength="1" 
+            class="otp-input w-10 h-12 text-center text-xl font-semibold border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+          />
+        `
+        )
+        .join("")}
+    </div>
+  `,
         showCancelButton: true,
         confirmButtonText: "Verify",
         confirmButtonColor: "#0C2B4E",
         cancelButtonText: "Cancel",
-        inputValidator: (value) => {
-          if (!value || value.length !== 6) {
-            return "Please enter a valid 6-digit code";
-          }
-          return null;
-        },
         allowOutsideClick: false,
+        preConfirm: () => {
+          let finalCode = "";
+          for (let i = 0; i < 6; i++) {
+            const val = document.getElementById(`otp-${i}`).value;
+            if (!val) return Swal.showValidationMessage("Enter all 6 digits");
+            finalCode += val;
+          }
+          return finalCode;
+        },
+        didOpen: () => {
+          const inputs = document.querySelectorAll(".otp-input");
+          inputs[0].focus();
+
+          inputs.forEach((input, index) => {
+            input.addEventListener("input", () => {
+              if (input.value.length === 1 && index < 5) {
+                inputs[index + 1].focus();
+              }
+            });
+
+            input.addEventListener("keydown", (e) => {
+              if (e.key === "Backspace" && index > 0 && !input.value) {
+                inputs[index - 1].focus();
+              }
+            });
+          });
+        },
       });
 
       if (!code) {
@@ -226,11 +257,11 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         // Redirect based on role
         setTimeout(() => {
           if (role === "jobseeker") {
-            // router.push("/dashboard/jobseeker");
-            router.push("/");
+            router.push("/dashboard/jobseeker");
+            // router.push("/");
           } else {
-            // router.push("/dashboard/employer");
-            router.push("/");
+            router.push("/dashboard/employer");
+            // router.push("/");
           }
         }, 2000);
       } else {

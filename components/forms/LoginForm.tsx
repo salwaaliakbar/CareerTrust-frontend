@@ -23,7 +23,7 @@ type FormValues = {
 export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const { isLoaded, signIn, setActive } = useSignIn();
   const router = useRouter();
 
@@ -57,6 +57,8 @@ export default function LoginForm() {
         await setActive({ session: result.createdSessionId });
 
         // Get user metadata to determine role
+        console.log(result);
+        
         const userRole = result.userData?.unsafeMetadata?.role;
 
         Swal.fire({
@@ -67,14 +69,16 @@ export default function LoginForm() {
           showConfirmButton: false,
         });
 
+        console.log("I am the role", userRole);
+
         // Redirect based on role
         setTimeout(() => {
           if (userRole === "jobseeker") {
-            // router.push("/dashboard/jobseeker");
-            router.push("/");
+            router.push("/jobseeker");
+            // router.push("/");
           } else if (userRole === "employer") {
-            // router.push("/dashboard/employer");
-            router.push("/");
+            router.push("/employer");
+            // router.push("/");
           } else {
             router.push("/");
             // router.push("/dashboard");
@@ -155,9 +159,7 @@ export default function LoginForm() {
                     d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                   />
                 </svg>
-                <span className="text-sm text-gray-700">
-                  Signing you in...
-                </span>
+                <span className="text-sm text-gray-700">Signing you in...</span>
               </div>
             )}
 
@@ -198,6 +200,7 @@ export default function LoginForm() {
                   Password
                 </label>
                 <Link
+                  // href="/forgot-password"
                   href="/forgot-password"
                   className="text-sm text-[#0C2B4E] hover:underline"
                 >
