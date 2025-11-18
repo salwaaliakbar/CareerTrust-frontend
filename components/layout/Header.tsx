@@ -6,6 +6,8 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
 import HomeDropdown from "../ui/HomeDropdown";
+import Swal from "sweetalert2";
+// import { LogOut } from "lucide-react";
 
 const LOGIN = "/login";
 const SIGNUP = "/signup";
@@ -14,6 +16,24 @@ function Header() {
   const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+
+  const handleSignOutWithConfirm = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to log out?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626", // red
+      cancelButtonColor: "#6b7280", // gray
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      handleSignOut(); // Call your logout function
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -44,53 +64,53 @@ function Header() {
           {isSignedIn ? (
             // Logged in users see only About and Features
             <>
-                <HomeDropdown />
-                <Link
-                    href="/about"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    About
-                </Link>
-                <Link
-                    href="/features"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    Features
-                </Link>
-                <Link
-                    href="/services"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    Services
-                </Link>
-                <Link
-                    href="/blogs"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    Blogs
-                </Link>
-                <Link
-                    href="/contact"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    Contact
-                </Link>
+              <HomeDropdown />
+              <Link
+                href="/about"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                href="/features"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                Features
+              </Link>
+              <Link
+                href="/services"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                Services
+              </Link>
+              <Link
+                href="/blogs"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                Blogs
+              </Link>
+              <Link
+                href="/contact"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                Contact
+              </Link>
             </>
           ) : (
             // Logged out users see all pages except About and Features
             <>
-                <Link
-                    href="/about"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    About
-                </Link>
-                <Link
-                    href="/features"
-                    className="text-gray-600 hover:text-primary font-medium transition-colors"
-                >
-                    Features
-                </Link>
+              <Link
+                href="/about"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                href="/features"
+                className="text-gray-600 hover:text-primary font-medium transition-colors"
+              >
+                Features
+              </Link>
             </>
           )}
         </div>
@@ -125,7 +145,7 @@ function Header() {
               </span>
 
               <button
-                onClick={handleSignOut}
+                onClick={handleSignOutWithConfirm}
                 className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 transition"
               >
                 <LogOut className="w-4 h-4" />

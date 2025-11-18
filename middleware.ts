@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/login(.*)",
   "/signup(.*)",
+  "/about(.*)",
+  "/features(.*)",
   // Allow the server-side face-check API to be called from the client without auth interception
   "/api/auth/face-check(.*)",
   // allow client-side model loads and other public static assets

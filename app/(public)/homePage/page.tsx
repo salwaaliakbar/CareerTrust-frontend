@@ -13,13 +13,18 @@ export default async function HomePage() {
   console.log(userId);
 
   // Redirect to login if not authenticated
-  // if (!userId) {
-  //   redirect("/login");
-  // }
+  if (!userId) {
+    redirect("/login");
+  }
 
-  // const user = await currentUser();
-  // console.log(user)
-  // const userRole = user?.unsafeMetadata?.role as string;
+  const user = await currentUser();
+  console.log(user);
+  const userRole = user?.unsafeMetadata?.role as string;
+  if (userRole === "jobseeker") {
+    redirect("/jobseeker");
+  } else if (userRole === "employer") {
+    redirect("/employer");
+  }
   return (
     <div className="min-h-screen bg-white">
       <HeroSection />
