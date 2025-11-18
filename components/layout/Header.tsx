@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { LogOut, User } from "lucide-react";
-import DropdownMenu from "../ui/dropdown-menu";
 import HomeDropdown from "../ui/HomeDropdown";
 import Swal from "sweetalert2";
 // import { LogOut } from "lucide-react";

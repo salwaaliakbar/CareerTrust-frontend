@@ -4,47 +4,73 @@ This folder contains a minimal AI microservice helper for face recognition, imag
 
 ---
 
-## Quickstart (Windows PowerShell)
+## Quickstart (your simple flow)
 
-Follow these steps to quickly set up and run the AI microservice locally on a Windows machine.
+If you prefer the direct approach you described (go into `backend-ai`, install dependencies, update C++ tooling if needed, install `insightface`, then run the server), this will work. The only strong recommendation is to avoid installing heavy packages globally — use a virtual environment where possible. Example (PowerShell):
 
-### 1. Navigate to this folder
-
+```powershell
 cd backend-ai
+# (optional but recommended) create + activate a venv first:
+# python -m venv .venv
+# .\.venv\Scripts\Activate.ps1
 
+# Install dependencies (global or in an activated venv):
+pip install -r requirements.txt
 
-### 2. Run the setup script to create and activate a Python virtual environment, and install required packages from `requirements.txt`:
+# If insightface fails to build, install Visual C++ Build Tools and retry (see Troubleshooting below)
 
-.\setup-venv.ps1
+# Run the microservice (global python or the venv python):
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
+This is the fastest path and matches your described workflow. It will work, but using an isolated `.venv` avoids polluting the system Python and makes reproducing the environment easier.
 
-- If you do not have a `requirements.txt` or want to specify packages manually, run:
-  
-.\setup-venv.ps1 -Packages fastapi,uvicorn[standard],pillow,numpy,python-multipart,insightface
+## Recommended: isolated virtual environment (preferred)
 
+Using a local virtual environment keeps dependencies scoped to the service and is the recommended approach:
 
-### 3. Activate the virtual environment manually if not already activated:
+```powershell
+cd backend-ai
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 
-..venv\Scripts\Activate.ps1
+# Start the server with the venv's python so it uses the installed packages:
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-
-### 4. Run the microservice using Uvicorn:
-
-..venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
-
-
-- Replace `app.main:app` with your actual FastAPI app import path if different.
+Notes:
+- The `.venv` folder is intentionally local to this project. Do not commit `.venv` to source control. Add it to `.gitignore` if not already excluded.
+- The `--host 0.0.0.0` option binds the server to all interfaces; for local-only testing you can omit that or use `127.0.0.1`.
 
 ---
 
-## Notes and Troubleshooting
+## requirements
 
-- The setup script will create a `.venv` folder in this directory and install dependencies.
-- It also writes a `requirements.txt` file when installing packages through the `-Packages` parameter.
-- If you encounter package build failures on Windows (especially with scientific libraries), ensure you have the Visual C++ Build Tools installed:
-  [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
-- For GPU support with PyTorch or other libraries, please refer to the official installation selector:
-  [PyTorch Get Started](https://pytorch.org/get-started/locally/)
+This repository includes a `requirements.txt` in this folder. Install it with `pip install -r requirements.txt` (recommended inside a venv).
+
+---
+
+## Troubleshooting (InsightFace / Windows builds)
+
+- If `insightface` (or other packages) fail to build on Windows, install the Visual C++ Build Tools (select "Desktop development with C++"):
+  https://visualstudio.microsoft.com/visual-cpp-build-tools/
+
+- After installing the build tools, re-open your PowerShell (so PATH/env updates apply) and reinstall:
+
+```powershell
+# In the activated venv (recommended) or global python
+pip install insightface
+```
+
+- If problems persist, capture the pip build output (use `pip install insightface -v`) and share the log.
+
+---
+
+## Alternatives / Notes
+
+- Global install: `pip install -r requirements.txt` without a venv will install packages globally. This is quick but not recommended for repeatable development.
+- If you prefer to use Conda, create a conda environment and install dependencies accordingly; adjust the `uvicorn` run command to use the conda python.
 
 ---
 
