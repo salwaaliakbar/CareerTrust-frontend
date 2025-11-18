@@ -88,16 +88,20 @@ export default function LoginForm() {
         // Handle other statuses (shouldn't normally happen for simple password sign-in)
         throw new Error("Sign-in incomplete. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login error:", err);
 
       let errorMessage = "An unexpected error occurred.";
 
-      // Handle Clerk-specific errors
-      if (err.errors && err.errors.length > 0) {
-        errorMessage = err.errors[0].longMessage || err.errors[0].message;
-      } else if (err.message) {
-        errorMessage = err.message;
+      if (typeof err === "object" && err !== null) {
+        const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
+        if (Array.isArray(e.errors) && e.errors.length > 0) {
+          errorMessage = e.errors[0].longMessage || e.errors[0].message || errorMessage;
+        } else if (typeof e.message === "string") {
+          errorMessage = e.message;
+        }
+      } else if (typeof err === "string") {
+        errorMessage = err;
       }
 
       // Show error to user
