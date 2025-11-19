@@ -1,33 +1,38 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { useEffect, useState } from "react"
-import React from "react"
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import React from "react";
 
 type CarouselProps = {
-  leftSrc?: string
-  rightSrc?: string
-  intervalMs?: number
-}
+  leftSrc?: string;
+  rightSrc?: string;
+  intervalMs?: number;
+};
 
 export default function Carousel({
   leftSrc = "/assets/images/general1 - Copy.png",
   rightSrc = "/assets/images/general2.png",
   intervalMs = 6000,
 }: CarouselProps) {
-  const [active, setActive] = useState(0)
+  const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setActive((s) => (s === 0 ? 1 : 0)), intervalMs)
-    return () => clearInterval(id)
-  }, [intervalMs])
+    const id = setInterval(
+      () => setActive((s) => (s === 0 ? 1 : 0)),
+      intervalMs
+    );
+    return () => clearInterval(id);
+  }, [intervalMs]);
 
   return (
     <>
       <div className="hidden md:block absolute inset-0 overflow-hidden z-0">
         <div className="relative h-full w-full">
           <div
-            className={`absolute inset-0 transition-opacity ease-in-out duration-1000 ${active === 0 ? 'opacity-100 z-0' : 'opacity-0 z-0'}`}
+            className={`absolute inset-0 transition-opacity ease-in-out duration-1000 ${
+              active === 0 ? "opacity-100 z-0" : "opacity-0 z-0"
+            }`}
           >
             <div className="absolute inset-0 transition-smooth">
               <Image
@@ -43,7 +48,9 @@ export default function Carousel({
           </div>
 
           <div
-            className={`absolute inset-0 transition-opacity ease-in-out duration-1000 ${active === 0 ? 'opacity-0 z-0' : 'opacity-100 z-0'}`}
+            className={`absolute inset-0 transition-opacity ease-in-out duration-1000 ${
+              active === 0 ? "opacity-0 z-0" : "opacity-100 z-0"
+            }`}
           >
             <div className="absolute inset-0 transition-smooth">
               <Image
@@ -60,16 +67,22 @@ export default function Carousel({
           {/* Pagination dots (visible and clickable) */}
           <div className="absolute left-0 right-0 bottom-6 z-20 flex justify-center items-center gap-3 pointer-events-auto">
             <button
+              type="button"
               onClick={() => setActive(0)}
               aria-label="Show image 1"
-              aria-pressed={active === 0 ? 'true' : 'false'}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${active === 0 ? 'bg-white scale-110 shadow-lg' : 'bg-white/40'}`}
+              aria-pressed={active === 0 ? "true" : undefined}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                active === 0 ? "bg-white scale-110 shadow-lg" : "bg-white/40"
+              }`}
             />
             <button
+              type="button"
               onClick={() => setActive(1)}
               aria-label="Show image 2"
-              aria-pressed={active === 1 ? 'true' : 'false'}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${active === 1 ? 'bg-white scale-110 shadow-lg' : 'bg-white/40'}`}
+              aria-pressed={active === 1 ? "true" : undefined}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                active === 1 ? "bg-white scale-110 shadow-lg" : "bg-white/40"
+              }`}
             />
           </div>
           {/* dark overlay to dim background images (below hero content) */}
@@ -93,5 +106,5 @@ export default function Carousel({
         </div>
       </div>
     </>
-  )
+  );
 }
