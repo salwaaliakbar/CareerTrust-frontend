@@ -227,8 +227,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
       // Show verification modal
       dispatch({ type: "setVerifying", payload: true });
-      // if(state.role === "jobseeker") {
-      //     dispatch({ type: "setShowFacePopup", payload: true });
+      // if (state.role === "jobseeker") {
+      //   dispatch({ type: "setShowFacePopup", payload: true });
       // }
 
       const { value: code } = await Swal.fire({
