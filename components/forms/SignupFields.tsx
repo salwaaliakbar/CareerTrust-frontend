@@ -10,8 +10,9 @@ import {
   UseFormGetValues,
 } from "react-hook-form";
 import type { FormValues, SignupAction } from "./SignupForm";
+import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 
-type SignupFieldsState = { role: "jobseeker" | "employer"; isProcessing: boolean; verifying: boolean };
+type SignupFieldsState = { role: typeof JOBSEEKER | typeof EMPLOYER; isProcessing: boolean; verifying: boolean };
 
 type Props = {
   state: SignupFieldsState;
@@ -121,7 +122,7 @@ export default function SignupFields({
                     )}
                   </div>
 
-                  {state.role === "jobseeker" && (
+                  {state.role === JOBSEEKER && (
                     <>
                       <div>
                         <label
@@ -191,7 +192,7 @@ export default function SignupFields({
                     </>
                   )}
 
-                  {state.role === "employer" && (
+                  {state.role === EMPLOYER && (
                     <>
                       <div>
                         <label
