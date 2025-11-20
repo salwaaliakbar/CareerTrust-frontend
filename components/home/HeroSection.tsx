@@ -37,22 +37,6 @@ function HeroSection() {
                 Hire Top Talent
               </Link>
             </div>
-
-            {/* Trust Indicators
-            <div className="mt-12 space-y-3">
-              <div className="flex items-center gap-3 text-white">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>100% Verified Employment Records</span>
-              </div>
-              <div className="flex items-center gap-3 text-white">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>Transparent Company Reputation Scores</span>
-              </div>
-              <div className="flex items-center gap-3 text-white">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>AI-Powered Smart Job Matching</span>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>

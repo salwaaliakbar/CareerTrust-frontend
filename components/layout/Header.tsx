@@ -133,13 +133,17 @@ function Header() {
                     : "/dashboard/employer"
                 }
                 className="flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:text-[#0C2B4E] transition"
-              >
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {user?.firstName || "Dashboard"}
-                </span>
-              </Link>
+              ></Link>
 
+              <div className="flex items-center gap-1 hover:bg-gray-200 rounded-full px-1 py-1">
+                <User className="w-4 h-4" />
+                <button
+                  onClick={() => router.push("/jobseeker/profile")}
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  {user?.firstName || "Dashboard"}
+                </button>
+              </div>
               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                 {userRole === "jobseeker" ? "Job Seeker" : "Employer"}
               </span>

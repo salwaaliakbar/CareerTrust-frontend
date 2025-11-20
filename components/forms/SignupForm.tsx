@@ -114,7 +114,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     dispatch({ type: "setStep", payload: 2 });
   };
 
-   useEffect(() => {
+  useEffect(() => {
     return () => {
       if (state.preview) {
         URL.revokeObjectURL(state.preview);
@@ -125,7 +125,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     };
   }, [state.preview, state.stream]);
 
-   useEffect(() => {
+  useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = "/models";
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
@@ -181,15 +181,16 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (state.role === "jobseeker") {
       setPendingFormData(values);
+      // await submitSignup(values);
       dispatch({ type: "setShowFacePopup", payload: true });
     } else {
       await submitSignup(values);
     }
-  }
+  };
 
   async function submitSignup(values: FormValues) {
     dispatch({ type: "setIsProcessing", payload: true });
-      // all your backend signup endpoint logic here
+    // all your backend signup endpoint logic here
     if (!isLoaded) {
       Swal.fire({
         icon: "error",
@@ -198,7 +199,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
       return;
     }
-     dispatch({ type: "setIsProcessing", payload: true });
+    dispatch({ type: "setIsProcessing", payload: true });
     try {
       // Create user in Clerk
       await signUp.create({
@@ -226,6 +227,9 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
       // Show verification modal
       dispatch({ type: "setVerifying", payload: true });
+      // if (state.role === "jobseeker") {
+      //   dispatch({ type: "setShowFacePopup", payload: true });
+      // }
 
       const { value: code } = await Swal.fire({
         title: "Verify Your Email",
@@ -307,7 +311,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
         // Redirect based on role
         setTimeout(() => {
-          if (role === "jobseeker") {
+          if (state.role === "jobseeker") {
             router.push("/jobseeker");
             // router.push("/");
           } else {
@@ -324,9 +328,13 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       let errorMessage = "An unexpected error occurred.";
 
       if (typeof err === "object" && err !== null) {
-        const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
+        const e = err as {
+          errors?: Array<{ longMessage?: string; message?: string }>;
+          message?: string;
+        };
         if (Array.isArray(e.errors) && e.errors.length > 0) {
-          errorMessage = e.errors[0].longMessage || e.errors[0].message || errorMessage;
+          errorMessage =
+            e.errors[0].longMessage || e.errors[0].message || errorMessage;
         } else if (typeof e.message === "string") {
           errorMessage = e.message;
         }
@@ -339,7 +347,6 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         title: "Signup Failed",
         text: errorMessage,
       });
-      
     } finally {
       dispatch({ type: "setVerifying", payload: false });
       dispatch({ type: "setIsProcessing", payload: false });
@@ -505,7 +512,11 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   return (
     <>
       <SignupFields
-        state={{ role: state.role, isProcessing: state.isProcessing, verifying: state.verifying }}
+        state={{
+          role: state.role,
+          isProcessing: state.isProcessing,
+          verifying: state.verifying,
+        }}
         register={register}
         rhfErrors={rhfErrors}
         handleSubmit={handleSubmit}
