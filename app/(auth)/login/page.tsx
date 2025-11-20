@@ -6,17 +6,18 @@ import Header from "@/components/layout/Header";
 export default function Login() {
   return (
     <div className="min-h-screen bg-[#F4F4F4] flex flex-col">
-      {/* <Header /> */}
+      <Header />
 
       {/* Main split area: image (half) + form (half). On small screens the image is hidden and form fills */}
       <main className="flex-1 flex items-stretch mt-5 mb-20">
         {/* Image column - visible from md and up */}
-        <div className="hidden md:block md:w-1/2 relative">
+        <div className="hidden md:block md:w-1/2 relative overflow-hidden">
           <Image
             src="/assets/images/authImage - Copy.png"
             alt="Authentication background"
             fill
-            className="object-cover"
+            className="object-cover slide-in-left animation-delay-1
+            000"
             priority
           />
         </div>
@@ -27,7 +28,7 @@ export default function Login() {
         </div>
       </main>
 
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 }

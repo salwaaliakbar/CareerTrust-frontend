@@ -156,7 +156,7 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
                   key={i}
                   onClick={() => goTo(i)}
                   aria-label={`Go to step ${i + 1}`}
-                //   aria-pressed={i === index ? "true" : undefined}
+                  aria-pressed={i === index ? "true" : "false"}
                   className={`w-3 h-3 rounded-full ${i === index ? "bg-[#0C2B4E]" : "bg-gray-300"}`}
                 />
               ))}

@@ -6,7 +6,7 @@ type Role = "jobseeker" | "employer";
 
 export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) => void }) {
   return (
-    <div className="w-full max-w-2xl bg-[#F4F4F4] rounded-xl p-6">
+    <div className="w-full max-w-2xl bg-[#F4F4F4] rounded-xl p-6 bg-linear-to-br from-white via-[#0C2B4E]/6 to-white">
       <div>
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Join CareerTrust</h1>
