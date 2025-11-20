@@ -180,12 +180,35 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (state.role === "jobseeker") {
-      setPendingFormData(values);
-      // await submitSignup(values);
-      dispatch({ type: "setShowFacePopup", payload: true });
-    } else {
-      await submitSignup(values);
+      // Run server-side validation (Clerk/email availability, password rules, etc.)
+      dispatch({ type: "setIsProcessing", payload: true });
+      try {
+        const resp = await fetch("/api/auth/validate-signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: values.email, password: values.password, phone: values.phone, role: state.role }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || data.ok === false) {
+          const msg = data?.errors?.email || data?.errors?.password || data?.errors?.phone || data?.errors?.general || "Validation failed.";
+          await Swal.fire({ icon: "error", title: "Validation Failed", text: msg });
+          return;
+        }
+
+        // Validation passed — save data and open face verification modal
+        setPendingFormData(values);
+        dispatch({ type: "setShowFacePopup", payload: true });
+      } catch (err) {
+        console.error("Validation error", err);
+        await Swal.fire({ icon: "error", title: "Validation Error", text: "Could not validate signup. Please try again." });
+      } finally {
+        dispatch({ type: "setIsProcessing", payload: false });
+      }
+      return;
     }
+
+    // Employers proceed directly to signup
+    await submitSignup(values);
   };
 
   async function submitSignup(values: FormValues) {
@@ -225,11 +248,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         strategy: "email_code",
       });
 
-      // Show verification modal
+      // Show verification modal (OTP) after Clerk signup is prepared
       dispatch({ type: "setVerifying", payload: true });
-      // if (state.role === "jobseeker") {
-      //   dispatch({ type: "setShowFacePopup", payload: true });
-      // }
 
       const { value: code } = await Swal.fire({
         title: "Verify Your Email",
