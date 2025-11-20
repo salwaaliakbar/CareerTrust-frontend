@@ -1,92 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Search, TrendingUp } from "lucide-react";
 import CompanyCard from "@/components/companies/CompanyCard";
+import { fetchCompanies } from "@/services/api/companies.service";
+
+type Company = {
+  id: number;
+  name: string;
+  industry: string;
+  location: string;
+  rating: number;
+  reviews: number;
+  employees: number;
+  openJobs: number;
+  description: string;
+  logo: string;
+  featured: boolean;
+};
 
 export default function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const companies = [
-    {
-      id: 1,
-      name: "TechCorp Pakistan",
-      industry: "Technology",
-      location: "Karachi",
-      rating: 4.8,
-      reviews: 245,
-      employees: 2000,
-      openJobs: 12,
-      description:
-        "Leading tech company focusing on software development and AI solutions",
-      logo: "TC",
-    },
-    {
-      id: 2,
-      name: "Digital Solutions",
-      industry: "Software Services",
-      location: "Lahore",
-      rating: 4.6,
-      reviews: 128,
-      employees: 500,
-      openJobs: 8,
-      description:
-        "Innovative digital solutions and web development services",
-      logo: "DS",
-    },
-    {
-      id: 3,
-      name: "Innovation Labs",
-      industry: "R&D",
-      location: "Islamabad",
-      rating: 4.7,
-      reviews: 89,
-      employees: 350,
-      openJobs: 5,
-      description: "Research and development in cutting-edge technologies",
-      logo: "IL",
-    },
-    {
-      id: 4,
-      name: "CloudTech Solutions",
-      industry: "Cloud Services",
-      location: "Karachi",
-      rating: 4.5,
-      reviews: 156,
-      employees: 1200,
-      openJobs: 15,
-      description:
-        "Cloud infrastructure and managed services provider",
-      logo: "CTS",
-    },
-    {
-      id: 5,
-      name: "StartupHub",
-      industry: "Startup Ecosystem",
-      location: "Lahore",
-      rating: 4.9,
-      reviews: 67,
-      employees: 150,
-      openJobs: 6,
-      description:
-        "Accelerator and incubator supporting Pakistani startups",
-      logo: "SH",
-    },
-    {
-      id: 6,
-      name: "Design Studios",
-      industry: "Design & Creative",
-      location: "Karachi",
-      rating: 4.6,
-      reviews: 94,
-      employees: 200,
-      openJobs: 4,
-      description:
-        "Creative design agency specializing in UX/UI and branding",
-      logo: "DS",
-    },
-  ];
+  useEffect(() => {
+    async function loadCompanies() {
+      const data = await fetchCompanies();
+      setCompanies(data);
+      setLoading(false);
+    }
+    loadCompanies();
+  }, []);
 
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
