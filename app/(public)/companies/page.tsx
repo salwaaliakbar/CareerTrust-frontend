@@ -4,7 +4,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Search, TrendingUp } from "lucide-react";
 import CompanyCard from "@/components/companies/CompanyCard";
-import { fetchCompanies } from "@/services/api/companies.service";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getAllCompanies } from "@/src/store/slices/companiesSlice";
 
 type Company = {
   id: number;
@@ -22,17 +23,14 @@ type Company = {
 
 export default function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { items: companies, loading } = useAppSelector(
+    (state) => state.companies
+  );
 
   useEffect(() => {
-    async function loadCompanies() {
-      const data = await fetchCompanies();
-      setCompanies(data);
-      setLoading(false);
-    }
-    loadCompanies();
-  }, []);
+    dispatch(getAllCompanies());
+  }, [dispatch]);
 
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,6 +66,15 @@ export default function CompaniesPage() {
 
       {/* Companies Grid */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-8 py-12">
+        {loading ? (
+          <div className="flex justify-center items-center min-h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-700 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading companies...</p>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="mb-6 ml-6">
           <p className="text-gray-600">
             Showing <strong>{filteredCompanies.length}</strong>{' '}
@@ -87,6 +94,8 @@ export default function CompaniesPage() {
             <p className="text-gray-600 text-lg">No companies found matching your search</p>
             <p className="text-gray-500 text-sm mt-2">Try adjusting your search terms</p>
           </div>
+        )}
+          </>
         )}
       </main>
 

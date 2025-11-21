@@ -1,31 +1,44 @@
+"use client";
+
+import { useEffect } from "react";
+import { use } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Star, Users, Briefcase, MapPin, ArrowLeft } from "lucide-react";
-import { fetchCompanyById } from "@/services/api/companies.service";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getCompanyById } from "@/src/store/slices/companiesSlice";
 
-type Company = {
-  id: number;
-  name: string;
-  industry: string;
-  location: string;
-  rating: number;
-  reviews: number;
-  employees: number;
-  openJobs: number;
-  description: string;
-  logo: string;
-  featured: boolean;
-};
-
-export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const dispatch = useAppDispatch();
+  const { selectedCompany: company, loading, lastFetchTimeById } = useAppSelector(state => state.companies);
   
-  let company = null;
-  try {
-    company = await fetchCompanyById(parseInt(id));
-  } catch (error) {
-    console.error('Error fetching company:', error);
+  const companyId = Number(id);
+  const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  const now = Date.now();
+  const lastFetchTime = lastFetchTimeById?.[companyId];
+  const isCached = lastFetchTime && now - lastFetchTime < CACHE_DURATION && company?.id === companyId;
+
+  useEffect(() => {
+    if (!isCached) {
+      dispatch(getCompanyById(id));
+    }
+  }, [id, isCached, dispatch]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="mt-4 text-gray-600">Loading company...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   if (!company) {

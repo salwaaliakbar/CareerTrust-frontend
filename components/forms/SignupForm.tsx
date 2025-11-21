@@ -261,26 +261,27 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         preConfirm: () => {
           let finalCode = "";
           for (let i = 0; i < 6; i++) {
-            const val = document.getElementById(`otp-${i}`).value;
+            const element = document.getElementById(`otp-${i}`) as HTMLInputElement | null;
+            const val = element?.value;
             if (!val) return Swal.showValidationMessage("Enter all 6 digits");
             finalCode += val;
           }
           return finalCode;
         },
         didOpen: () => {
-          const inputs = document.querySelectorAll(".otp-input");
-          inputs[0].focus();
+          const inputs = document.querySelectorAll(".otp-input") as NodeListOf<HTMLInputElement>;
+          inputs[0]?.focus();
 
           inputs.forEach((input, index) => {
             input.addEventListener("input", () => {
               if (input.value.length === 1 && index < 5) {
-                inputs[index + 1].focus();
+                (inputs[index + 1] as HTMLInputElement)?.focus();
               }
             });
 
             input.addEventListener("keydown", (e) => {
               if (e.key === "Backspace" && index > 0 && !input.value) {
-                inputs[index - 1].focus();
+                (inputs[index - 1] as HTMLInputElement)?.focus();
               }
             });
           });

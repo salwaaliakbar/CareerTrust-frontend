@@ -3,25 +3,21 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getAllJobs, type Job } from "@/src/store/slices/jobsSlice";
 
-type Job = {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  rating: number;
-  reviews: number;
-  match: number;
-  postedDaysAgo: number;
-  description: string;
-};
-
-export default function JobsClient({ jobs }: { jobs: Job[] }) {
+export default function JobsClient() {
+  const dispatch = useAppDispatch();
+  const { items: jobs, loading } = useAppSelector((state) => state.jobs);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Initialize Redux
+  useEffect(() => {
+    dispatch(getAllJobs());
+  }, [dispatch]);
 
   // initialize filters from URL (so JobSearchBar navigation applies filters)
   useEffect(() => {
@@ -114,76 +110,85 @@ export default function JobsClient({ jobs }: { jobs: Job[] }) {
       </section>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-12">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <aside className="md:w-64 shrink-0">
-            <div className="card-base p-6 sticky top-24">
-              <div className="flex items-center gap-2 mb-6">
-                <Filter className="w-5 h-5 text-sky-700" />
-                <h3 className="text-lg font-bold text-gray-900">Filters</h3>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Salary</h4>
-                  <div className="space-y-2">
-                    {["PKR 80,000 - 120,000", "PKR 120,000 - 180,000", "PKR 180,000+"].map((range) => (
-                      <label key={range} className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
-                        <span className="text-gray-600 text-sm">{range}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Company Rating</h4>
-                  <div className="space-y-2">
-                    {[{ rating: 4.5, label: "4.5+ stars" }, { rating: 4, label: "4+ stars" }, { rating: 3.5, label: "3.5+ stars" }].map((item) => (
-                      <label key={item.rating} className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
-                        <span className="text-gray-600 text-sm">{item.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Posted Date</h4>
-                  <div className="space-y-2">
-                    {["Last 7 days", "Last 30 days", "Last 90 days"].map((date) => (
-                      <label key={date} className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
-                        <span className="text-gray-600 text-sm">{date}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* Jobs List */}
-          <div className="flex-1">
-            <div className="mb-6">
-              <p className="text-gray-600">
-                Showing <strong>{filteredJobs.length}</strong> job{filteredJobs.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
-              ) : (
-                <div className="card-base p-12 text-center">
-                  <BriefcasePlaceholder />
-                  <p className="text-gray-600 text-lg">No jobs found matching your criteria</p>
-                  <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>
-                </div>
-              )}
+        {loading ? (
+          <div className="flex justify-center items-center min-h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-700 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading jobs...</p>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Filters Sidebar */}
+            <aside className="md:w-64 shrink-0">
+              <div className="card-base p-6 sticky top-24">
+                <div className="flex items-center gap-2 mb-6">
+                  <Filter className="w-5 h-5 text-sky-700" />
+                  <h3 className="text-lg font-bold text-gray-900">Filters</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Salary</h4>
+                    <div className="space-y-2">
+                      {["PKR 80,000 - 120,000", "PKR 120,000 - 180,000", "PKR 180,000+"].map((range) => (
+                        <label key={range} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <span className="text-gray-600 text-sm">{range}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Company Rating</h4>
+                    <div className="space-y-2">
+                      {[{ rating: 4.5, label: "4.5+ stars" }, { rating: 4, label: "4+ stars" }, { rating: 3.5, label: "3.5+ stars" }].map((item) => (
+                        <label key={item.rating} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <span className="text-gray-600 text-sm">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">Posted Date</h4>
+                    <div className="space-y-2">
+                      {["Last 7 days", "Last 30 days", "Last 90 days"].map((date) => (
+                        <label key={date} className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <span className="text-gray-600 text-sm">{date}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* Jobs List */}
+            <div className="flex-1">
+              <div className="mb-6">
+                <p className="text-gray-600">
+                  Showing <strong>{filteredJobs.length}</strong> job{filteredJobs.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {filteredJobs.length > 0 ? (
+                  filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                ) : (
+                  <div className="card-base p-12 text-center">
+                    <BriefcasePlaceholder />
+                    <p className="text-gray-600 text-lg">No jobs found matching your criteria</p>
+                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

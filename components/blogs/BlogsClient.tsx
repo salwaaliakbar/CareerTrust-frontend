@@ -3,6 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import BlogCard from "@/components/blogs/BlogCard";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getAllBlogs } from "@/src/store/slices/blogsSlice";
 
 type Blog = {
   id: number;
@@ -15,11 +17,18 @@ type Blog = {
   image: string;
 };
 
-export default function BlogsClient({ blogs }: { blogs: Blog[] }) {
+export default function BlogsClient() {
+  const dispatch = useAppDispatch();
+  const { items: blogs, loading } = useAppSelector((state) => state.blogs);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Initialize Redux and filters from URL
+  useEffect(() => {
+    dispatch(getAllBlogs());
+  }, [dispatch]);
 
   // initialize filters from URL
   useEffect(() => {
@@ -114,66 +123,75 @@ export default function BlogsClient({ blogs }: { blogs: Blog[] }) {
       </section>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <aside className="lg:w-64 shrink-0">
-            <div className="card-base p-6 sticky top-24">
-              <div className="flex items-center gap-2 mb-6">
-                <Filter className="w-5 h-5 text-sky-700" />
-                <h3 className="text-lg font-bold text-gray-900">Categories</h3>
-              </div>
+        {loading ? (
+          <div className="flex justify-center items-center min-h-96">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-700 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading articles...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Filters Sidebar */}
+            <aside className="lg:w-64 shrink-0">
+              <div className="card-base p-6 sticky top-24">
+                <div className="flex items-center gap-2 mb-6">
+                  <Filter className="w-5 h-5 text-sky-700" />
+                  <h3 className="text-lg font-bold text-gray-900">Categories</h3>
+                </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="category"
-                    value=""
-                    checked={selectedCategory === ""}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-4 h-4 rounded border-gray-300 text-sky-700"
-                  />
-                  <span className="text-gray-600 text-sm">All Categories</span>
-                </label>
-
-                {categories.map((cat) => (
-                  <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="category"
-                      value={cat}
-                      checked={selectedCategory === cat}
+                      value=""
+                      checked={selectedCategory === ""}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-4 h-4 rounded border-gray-300 text-sky-700"
                     />
-                    <span className="text-gray-600 text-sm">{cat}</span>
+                    <span className="text-gray-600 text-sm">All Categories</span>
                   </label>
-                ))}
+
+                  {categories.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="category"
+                        value={cat}
+                        checked={selectedCategory === cat}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                      />
+                      <span className="text-gray-600 text-sm">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            {/* Blogs Grid */}
+            <div className="flex-1">
+              <div className="mb-8">
+                <p className="text-gray-600">
+                  Showing <strong>{filteredBlogs.length}</strong> article{filteredBlogs.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBlogs.length > 0 ? (
+                  filteredBlogs.map((blog) => <BlogCard key={blog.id} {...blog} />)
+                ) : (
+                  <div className="col-span-full card-base p-12 text-center">
+                    <BookPlaceholder />
+                    <p className="text-gray-600 text-lg">No articles found</p>
+                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>
+                  </div>
+                )}
               </div>
             </div>
-          </aside>
-
-          {/* Blogs Grid */}
-          <div className="flex-1">
-            <div className="mb-8">
-              <p className="text-gray-600">
-                Showing <strong>{filteredBlogs.length}</strong> article{filteredBlogs.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBlogs.length > 0 ? (
-                filteredBlogs.map((blog) => <BlogCard key={blog.id} {...blog} />)
-              ) : (
-                <div className="col-span-full card-base p-12 text-center">
-                  <BookPlaceholder />
-                  <p className="text-gray-600 text-lg">No articles found</p>
-                  <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>
-                </div>
-              )}
-            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

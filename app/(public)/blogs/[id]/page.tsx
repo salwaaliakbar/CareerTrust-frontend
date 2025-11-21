@@ -1,22 +1,58 @@
+"use client";
+
+import { useEffect } from "react";
+import { use } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { Calendar, User, ArrowLeft, Clock } from "lucide-react";
-import { fetchBlogById } from "@/services/api/blogs.service";
-import { notFound } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getBlogById } from "@/src/store/slices/blogsSlice";
 
-export default async function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const dispatch = useAppDispatch();
+  const { selectedBlog: blog, loading, lastFetchTimeById } = useAppSelector(state => state.blogs);
   
-  let blog;
-  try {
-    blog = await fetchBlogById(id);
-  } catch (error) {
-    notFound();
+  const blogId = Number(id);
+  const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  const now = Date.now();
+  const lastFetchTime = lastFetchTimeById?.[blogId];
+  const isCached = lastFetchTime && now - lastFetchTime < CACHE_DURATION && blog?.id === blogId;
+
+  useEffect(() => {
+    if (!isCached) {
+      dispatch(getBlogById(id));
+    }
+  }, [id, isCached, dispatch]);
+
+  if (loading) {
+    return (
+      <div>
+        <Header />
+        <main className="bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-sky-700"></div>
+            <p className="mt-4 text-gray-600">Loading article...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   if (!blog) {
-    notFound();
+    return (
+      <div>
+        <Header />
+        <main className="bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center py-12">
+            <p className="text-gray-600">Article not found</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (

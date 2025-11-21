@@ -3,16 +3,17 @@ import Link from "next/link";
 import { Briefcase, MapPin, DollarSign, Star } from "lucide-react";
 
 type Job = {
-  id: number;
+  id: number | string;
   title: string;
   company: string;
   location: string;
-  salary: string;
-  rating: number;
-  reviews: number;
-  match: number;
-  postedDaysAgo: number;
-  description: string;
+  salary?: string;
+  rating?: number;
+  reviews?: number;
+  match?: number;
+  postedDaysAgo?: number | string;
+  description?: string;
+  [key: string]: any;
 };
 
 export default function JobCard({ job }: { job: Job }) {
