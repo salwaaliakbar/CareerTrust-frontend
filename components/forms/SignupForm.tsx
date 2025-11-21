@@ -9,8 +9,11 @@ import * as faceapi from "face-api.js";
 import FaceCaptureModal from "../ui/FaceCaptureModal";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
+import { ACTIONS } from "@/constants/signupActions";
+import logger from "@/lib/logger";
 
-type Role = "jobseeker" | "employer";
+type Role = typeof JOBSEEKER | typeof EMPLOYER;
 
 export type FormValues = {
   name: string;
@@ -25,17 +28,17 @@ export type FormValues = {
 };
 
 export type SignupAction =
-  | { type: "setRole"; payload: Role }
-  | { type: "setStep"; payload: number }
-  | { type: "setPreview"; payload: string | null }
-  | { type: "setStream"; payload: MediaStream | null }
-  | { type: "setIsStreaming"; payload: boolean }
-  | { type: "setFaceCount"; payload: number }
-  | { type: "setModelsLoaded"; payload: boolean }
-  | { type: "setIsProcessing"; payload: boolean }
-  | { type: "setFaceVerified"; payload: boolean }
-  | { type: "setShowFacePopup"; payload: boolean }
-  | { type: "setVerifying"; payload: boolean };
+  | { type: typeof ACTIONS.setRole; payload: Role }
+  | { type: typeof ACTIONS.setStep; payload: number }
+  | { type: typeof ACTIONS.setPreview; payload: string | null }
+  | { type: typeof ACTIONS.setStream; payload: MediaStream | null }
+  | { type: typeof ACTIONS.setIsStreaming; payload: boolean }
+  | { type: typeof ACTIONS.setFaceCount; payload: number }
+  | { type: typeof ACTIONS.setModelsLoaded; payload: boolean }
+  | { type: typeof ACTIONS.setIsProcessing; payload: boolean }
+  | { type: typeof ACTIONS.setFaceVerified; payload: boolean }
+  | { type: typeof ACTIONS.setShowFacePopup; payload: boolean }
+  | { type: typeof ACTIONS.setVerifying; payload: boolean };
 
 export type SignupDispatch = React.Dispatch<SignupAction>;
 
@@ -57,7 +60,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   /* using exported SignupAction type from module scope */
 
   const initialState: State = {
-    role: initialRole || "jobseeker",
+    role: initialRole || JOBSEEKER,
     step: 1,
     preview: null,
     stream: null,
@@ -72,27 +75,27 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   function reducer(state: State, action: SignupAction): State {
     switch (action.type) {
-      case "setRole":
+      case ACTIONS.setRole:
         return { ...state, role: action.payload };
-      case "setStep":
+      case ACTIONS.setStep:
         return { ...state, step: action.payload };
-      case "setPreview":
+      case ACTIONS.setPreview:
         return { ...state, preview: action.payload };
-      case "setStream":
+      case ACTIONS.setStream:
         return { ...state, stream: action.payload };
-      case "setIsStreaming":
+      case ACTIONS.setIsStreaming:
         return { ...state, isStreaming: action.payload };
-      case "setFaceCount":
+      case ACTIONS.setFaceCount:
         return { ...state, faceCount: action.payload };
-      case "setModelsLoaded":
+      case ACTIONS.setModelsLoaded:
         return { ...state, modelsLoaded: action.payload };
-      case "setIsProcessing":
+      case ACTIONS.setIsProcessing:
         return { ...state, isProcessing: action.payload };
-      case "setFaceVerified":
+      case ACTIONS.setFaceVerified:
         return { ...state, faceVerified: action.payload };
-      case "setShowFacePopup":
+      case ACTIONS.setShowFacePopup:
         return { ...state, showFacePopup: action.payload };
-      case "setVerifying":
+      case ACTIONS.setVerifying:
         return { ...state, verifying: action.payload };
       default:
         return state;
@@ -110,8 +113,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   const router = useRouter();
 
   const handleRoleSelect = (selectedRole: Role) => {
-    dispatch({ type: "setRole", payload: selectedRole });
-    dispatch({ type: "setStep", payload: 2 });
+    dispatch({ type: ACTIONS.setRole, payload: selectedRole });
+    dispatch({ type: ACTIONS.setStep, payload: 2 });
   };
 
   useEffect(() => {
@@ -129,7 +132,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     const loadModels = async () => {
       const MODEL_URL = "/models";
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      dispatch({ type: "setModelsLoaded", payload: true });
+      dispatch({ type: ACTIONS.setModelsLoaded , payload: true });
     };
     loadModels();
   }, []);
@@ -145,16 +148,16 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
         );
         if (isMounted)
-          dispatch({ type: "setFaceCount", payload: detections.length });
+          dispatch({ type: ACTIONS.setFaceCount, payload: detections.length });
       } catch (e) {
-        console.error("face detection error", e);
+       logger.error("Face detection error:", e);
       }
     }, 500);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
-      dispatch({ type: "setFaceCount", payload: 0 });
+      dispatch({ type: ACTIONS.setFaceCount, payload: 0 });
     };
   }, [state.modelsLoaded, state.isStreaming]);
 
@@ -179,17 +182,17 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    if (state.role === "jobseeker") {
+    if (state.role === JOBSEEKER) {
       setPendingFormData(values);
       // await submitSignup(values);
-      dispatch({ type: "setShowFacePopup", payload: true });
+      dispatch({ type: ACTIONS.setShowFacePopup, payload: true });
     } else {
       await submitSignup(values);
     }
   };
 
   async function submitSignup(values: FormValues) {
-    dispatch({ type: "setIsProcessing", payload: true });
+    dispatch({ type: ACTIONS.setIsProcessing, payload: true });
     // all your backend signup endpoint logic here
     if (!isLoaded) {
       Swal.fire({
@@ -199,7 +202,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
       return;
     }
-    dispatch({ type: "setIsProcessing", payload: true });
+    dispatch({ type: ACTIONS.setIsProcessing, payload: true });
     try {
       // Create user in Clerk
       await signUp.create({
@@ -209,11 +212,11 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         lastName: values.name.split(" ").slice(1).join(" ") || "",
         unsafeMetadata: {
           role: state.role,
-          ...(state.role === "jobseeker" && {
+          ...(state.role === JOBSEEKER && {
             phone: values.phone,
             cnic: values.cnic,
           }),
-          ...(state.role === "employer" && {
+          ...(state.role === EMPLOYER && {
             companyName: values.companyName,
             companyURL: values.companyURL,
           }),
@@ -226,9 +229,9 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
 
       // Show verification modal
-      dispatch({ type: "setVerifying", payload: true });
+      dispatch({ type: ACTIONS.setVerifying, payload: true });
       // if (state.role === "jobseeker") {
-      //   dispatch({ type: "setShowFacePopup", payload: true });
+      //   dispatch({ type: ACTIONS.setShowFacePopup, payload: true });
       // }
 
       const { value: code } = await Swal.fire({
@@ -289,8 +292,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
 
       if (!code) {
-        dispatch({ type: "setVerifying", payload: false });
-        dispatch({ type: "setIsProcessing", payload: false });
+        dispatch({ type: ACTIONS.setVerifying, payload: false });
+        dispatch({ type: ACTIONS.setIsProcessing, payload: false });
         return;
       }
 
@@ -312,7 +315,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
         // Redirect based on role
         setTimeout(() => {
-          if (state.role === "jobseeker") {
+          if (state.role === JOBSEEKER) {
             router.push("/jobseeker");
             // router.push("/");
           } else {
@@ -324,7 +327,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         throw new Error("Verification incomplete");
       }
     } catch (err: unknown) {
-      console.error("Signup error:", err);
+      logger.error("Signup error:", err);
 
       let errorMessage = "An unexpected error occurred.";
 
@@ -349,8 +352,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         text: errorMessage,
       });
     } finally {
-      dispatch({ type: "setVerifying", payload: false });
-      dispatch({ type: "setIsProcessing", payload: false });
+      dispatch({ type: ACTIONS.setVerifying, payload: false });
+      dispatch({ type: ACTIONS.setIsProcessing, payload: false });
     }
   }
 
@@ -374,7 +377,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       return;
     }
 
-    dispatch({ type: "setIsProcessing", payload: true });
+    dispatch({ type: ACTIONS.setIsProcessing, payload: true });
 
     try {
       const formData = new FormData();
@@ -408,7 +411,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         );
       }
 
-      dispatch({ type: "setFaceVerified", payload: true });
+      dispatch({ type: ACTIONS.setFaceVerified, payload: true });
       Swal.fire({
         icon: "success",
         title: "Face Verified",
@@ -432,24 +435,24 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         closeFacePopup();
       });
     } finally {
-      dispatch({ type: "setIsProcessing", payload: false });
+      dispatch({ type: ACTIONS.setIsProcessing, payload: false });
     }
   }
 
   function closeFacePopup() {
     if (state.stream) state.stream.getTracks().forEach((t) => t.stop());
-    dispatch({ type: "setStream", payload: null });
-    dispatch({ type: "setIsStreaming", payload: false });
-    dispatch({ type: "setPreview", payload: null });
-    dispatch({ type: "setShowFacePopup", payload: false });
-    dispatch({ type: "setFaceCount", payload: 0 });
+    dispatch({ type: ACTIONS.setStream, payload: null });
+    dispatch({ type: ACTIONS.setIsStreaming, payload: false });
+    dispatch({ type: ACTIONS.setPreview, payload: null });
+    dispatch({ type: ACTIONS.setShowFacePopup, payload: false });
+    dispatch({ type: ACTIONS.setFaceCount, payload: 0 });
     setCapturedImage(null);
   }
 
   function resetForm() {
     reset();
     setPendingFormData(null);
-    dispatch({ type: "setFaceVerified", payload: false });
+    dispatch({ type: ACTIONS.setFaceVerified, payload: false });
   }
 
   function capturePhoto() {
@@ -466,14 +469,14 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       const file = new File([blob], "capture.jpg", { type: blob.type });
       if (state.preview) URL.revokeObjectURL(state.preview);
       const url = URL.createObjectURL(file);
-      dispatch({ type: "setPreview", payload: url });
+      dispatch({ type: ACTIONS.setPreview, payload: url });
       setCapturedImage(file);
     }, "image/jpeg");
   }
 
   async function handleRetake() {
     // Clear preview and captured image, then restart camera immediately
-    dispatch({ type: "setPreview", payload: null });
+    dispatch({ type: ACTIONS.setPreview, payload: null });
     setCapturedImage(null);
     await openCamera();
   }
@@ -484,14 +487,15 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         video: { facingMode: "user" },
         audio: false,
       });
-      dispatch({ type: "setStream", payload: s });
+      dispatch({ type: ACTIONS.setStream, payload: s });
       if (videoRef.current) {
         videoRef.current.srcObject = s;
         await videoRef.current.play();
       }
-      dispatch({ type: "setIsStreaming", payload: true });
+      dispatch({ type: ACTIONS.setIsStreaming, payload: true });
     } catch (err) {
-      console.error("Camera error", err);
+      logger.error("Camera error", err);
+      dispatch({ type: ACTIONS.setIsStreaming, payload: false });
       Swal.fire({
         icon: "error",
         title: "Camera Error",
@@ -502,8 +506,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   function stopCamera() {
     if (state.stream) state.stream.getTracks().forEach((t) => t.stop());
-    dispatch({ type: "setStream", payload: null });
-    dispatch({ type: "setIsStreaming", payload: false });
+    dispatch({ type: ACTIONS.setStream, payload: null });
+    dispatch({ type: ACTIONS.setIsStreaming, payload: false });
   }
 
   // Step 1: Role selection
