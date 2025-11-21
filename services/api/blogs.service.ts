@@ -1,62 +1,17 @@
 import { API_ENDPOINTS } from '@/constants/api';
 import { Blog, BlogDetail, BlogsResponse, BlogDetailResponse } from '@/types/blog.types';
 
-// Get the base URL for server-side requests
-const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    // Client-side
-    return '';
-  }
-  // Server-side
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-};
-
 /**
  * Fetch all blogs
  * @param category - Optional category filter
  */
 export async function fetchBlogs(category?: string): Promise<Blog[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const endpoint = category 
+    const url = category 
       ? `${API_ENDPOINTS.BLOGS}?category=${encodeURIComponent(category)}`
       : API_ENDPOINTS.BLOGS;
-    
-    const url = `${baseUrl}${endpoint}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store', // Disable caching for development
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch blogs: ${response.statusText}`);
-    }
-
-    const data: BlogsResponse = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to fetch blogs');
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error('Error fetching blogs:', error);
-    throw error;
-  }
-}
-
-/**
- * Fetch blog by ID
- * @param id - Blog ID
- */
-export async function fetchBlogById(id: string | number): Promise<BlogDetail> {
-  try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}${API_ENDPOINTS.BLOG_BY_ID(id)}`;
+    console.log('[Blog Service] Fetching from URL:', url);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -66,20 +21,67 @@ export async function fetchBlogById(id: string | number): Promise<BlogDetail> {
       cache: 'no-store',
     });
 
+    console.log('[Blog Service] Response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`Failed to fetch blog: ${response.statusText}`);
+      console.error(`[Blog Service] Failed to fetch. Status: ${response.status} ${response.statusText}`);
+      // Return empty array if backend is down, don't throw error
+      return [];
+    }
+
+    const data: BlogsResponse = await response.json();
+    
+    if (!data.success) {
+      console.warn('[Blog Service] API returned success: false', data.error);
+      return [];
+    }
+
+    console.log('[Blog Service] Successfully fetched blogs:', data.data.length);
+    return data.data;
+  } catch (error) {
+    console.error('[Blog Service] Error fetching blogs:', error);
+    // Return empty array on error instead of throwing
+    return [];
+  }
+}
+
+/**
+ * Fetch blog by ID
+ * @param id - Blog ID
+ */
+export async function fetchBlogById(id: string | number): Promise<BlogDetail | null> {
+  try {
+    const url = API_ENDPOINTS.BLOG_BY_ID(id);
+
+    console.log('[Blog Service] Fetching blog by ID:', id, 'URL:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    console.log('[Blog Service] Response status:', response.status);
+
+    if (!response.ok) {
+      console.error(`[Blog Service] Blog not found. Status: ${response.status}`);
+      return null;
     }
 
     const data: BlogDetailResponse = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || 'Failed to fetch blog');
+      console.warn('[Blog Service] API returned success: false', data.error);
+      return null;
     }
 
+    console.log('[Blog Service] Successfully fetched blog:', data.data.id);
     return data.data;
   } catch (error) {
-    console.error('Error fetching blog:', error);
-    throw error;
+    console.error('[Blog Service] Error fetching blog by ID:', error);
+    return null;
   }
 }
 
@@ -89,8 +91,7 @@ export async function fetchBlogById(id: string | number): Promise<BlogDetail> {
  */
 export async function createBlog(blogData: Partial<Blog>): Promise<Blog> {
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}${API_ENDPOINTS.BLOGS}`;
+    const url = API_ENDPOINTS.BLOGS;
 
     const response = await fetch(url, {
       method: 'POST',

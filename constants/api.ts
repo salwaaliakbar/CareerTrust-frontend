@@ -1,29 +1,33 @@
 // API base URL configuration
+// For Blogs and Jobs, use the backend API URL (Node.js backend on port 4000)
+// For other endpoints, use the Next.js API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
+const BACKEND_API_URL = `${BACKEND_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {
-  // Auth
+  // Auth (Next.js API)
   LOGIN: `${API_BASE_URL}/auth/login`,
   SIGNUP: `${API_BASE_URL}/auth/signup`,
   LOGOUT: `${API_BASE_URL}/auth/logout`,
   
-  // Blogs
-  BLOGS: `${API_BASE_URL}/blogs`,
-  BLOG_BY_ID: (id: string | number) => `${API_BASE_URL}/blogs/${id}`,
+  // Blogs (Node.js Backend API)
+  BLOGS: `${BACKEND_API_URL}/blogs`,
+  BLOG_BY_ID: (id: string | number) => `${BACKEND_API_URL}/blogs/${id}`,
   
-  // Jobs
-  JOBS: `${API_BASE_URL}/jobs`,
-  JOB_BY_ID: (id: string | number) => `${API_BASE_URL}/jobs/${id}`,
+  // Jobs (Node.js Backend API)
+  JOBS: `${BACKEND_API_URL}/jobs`,
+  JOB_BY_ID: (id: string | number) => `${BACKEND_API_URL}/jobs/${id}`,
   
-  // Companies
-  COMPANIES: `${API_BASE_URL}/companies`,
-  COMPANY_BY_ID: (id: string | number) => `${API_BASE_URL}/companies/${id}`,
+  // Companies (Node.js Backend API)
+  COMPANIES: `${BACKEND_API_URL}/companies`,
+  COMPANY_BY_ID: (id: string | number) => `${BACKEND_API_URL}/companies/${id}`,
   
-  // Applications
+  // Applications (Next.js API)
   APPLICATIONS: `${API_BASE_URL}/applications`,
   APPLICATION_BY_ID: (id: string | number) => `${API_BASE_URL}/applications/${id}`,
   
-  // Users
+  // Users (Next.js API)
   USERS: `${API_BASE_URL}/users`,
   USER_BY_ID: (id: string | number) => `${API_BASE_URL}/users/${id}`,
 };

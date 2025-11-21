@@ -2,9 +2,10 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Star, Users, Briefcase, MapPin, ArrowLeft } from "lucide-react";
+import { fetchCompanyById } from "@/services/api/companies.service";
 
 type Company = {
-  id: number | string;
+  id: number;
   name: string;
   industry: string;
   location: string;
@@ -14,20 +15,37 @@ type Company = {
   openJobs: number;
   description: string;
   logo: string;
+  featured: boolean;
 };
 
-const COMPANIES: Company[] = [
-  { id: 1, name: "TechCorp Pakistan", industry: "Technology", location: "Karachi", rating: 4.8, reviews: 245, employees: 2000, openJobs: 12, description: "Leading tech company focusing on software development and AI solutions", logo: "TC" },
-  { id: 2, name: "Digital Solutions", industry: "Software Services", location: "Lahore", rating: 4.6, reviews: 128, employees: 500, openJobs: 8, description: "Innovative digital solutions and web development services", logo: "DS" },
-  { id: 3, name: "Innovation Labs", industry: "R&D", location: "Islamabad", rating: 4.7, reviews: 89, employees: 350, openJobs: 5, description: "Research and development in cutting-edge technologies", logo: "IL" },
-  { id: 4, name: "CloudTech Solutions", industry: "Cloud Services", location: "Karachi", rating: 4.5, reviews: 156, employees: 1200, openJobs: 15, description: "Cloud infrastructure and managed services provider", logo: "CTS" },
-  { id: 5, name: "StartupHub", industry: "Startup Ecosystem", location: "Lahore", rating: 4.9, reviews: 67, employees: 150, openJobs: 6, description: "Accelerator and incubator supporting Pakistani startups", logo: "SH" },
-  { id: 6, name: "Design Studios", industry: "Design & Creative", location: "Karachi", rating: 4.6, reviews: 94, employees: 200, openJobs: 4, description: "Creative design agency specializing in UX/UI and branding", logo: "DS" },
-];
+export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  
+  let company = null;
+  try {
+    company = await fetchCompanyById(parseInt(id));
+  } catch (error) {
+    console.error('Error fetching company:', error);
+  }
 
-export default function CompanyPage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const company = COMPANIES.find((c) => String(c.id) === String(id)) || COMPANIES[0];
+  if (!company) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header />
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+          <Link href="/companies" className="inline-flex items-center gap-2 text-primary hover:text-blue-900 font-semibold mb-6">
+            <ArrowLeft className="w-5 h-5" />
+            Back to Companies
+          </Link>
+          <div className="card-base p-8 text-center">
+            <p className="text-gray-600 text-lg">Company not found</p>
+            <p className="text-gray-500 text-sm mt-2">The company you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
