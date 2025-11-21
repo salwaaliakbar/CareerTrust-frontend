@@ -13,9 +13,9 @@ export default async function HomePage() {
   console.log(userId);
 
   // Redirect to login if not authenticated
-  if (!userId) {
-    redirect("/login");
-  }
+  // if (!userId) {
+  //   redirect("/login");
+  // }
 
   const user = await currentUser();
   console.log(user);

@@ -64,55 +64,58 @@ function Header() {
           {isSignedIn ? (
             // Logged in users see only About and Features
             <>
-              <HomeDropdown />
-              <Link
-                href="/about"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                href="/features"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                Features
-              </Link>
-              <Link
-                href="/services"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                Services
-              </Link>
-              <Link
-                href="/blogs"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                Blogs
-              </Link>
-              <Link
-                href="/contact"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                Contact
-              </Link>
+              {userRole === "jobseeker" ? (
+                <Link
+                  href="/jobseeker/dashboard"
+                  className="text-gray-600 hover:text-primary font-medium transition-colors"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/employer/dashboard"
+                  className="text-gray-600 hover:text-primary font-medium transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
             </>
           ) : (
             // Logged out users see all pages except About and Features
             <>
-              <Link
-                href="/about"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                href="/features"
-                className="text-gray-600 hover:text-primary font-medium transition-colors"
-              >
-                Features
-              </Link>
+              <HomeDropdown />
             </>
           )}
+          <Link
+            href="/about"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            href="/features"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Features
+          </Link>
+          <Link
+            href="/services"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Services
+          </Link>
+          <Link
+            href="/blogs"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Blogs
+          </Link>
+          <Link
+            href="/contact"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Contact
+          </Link>
         </div>
 
         {/* CTA Buttons / User Menu */}
