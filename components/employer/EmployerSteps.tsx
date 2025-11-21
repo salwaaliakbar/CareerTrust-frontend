@@ -2,40 +2,22 @@
 import React, { useState } from "react";
 import { CheckCircle, Briefcase, Users, Handshake, Award } from "lucide-react";
 import styles from "./EmployerSteps.module.css";
+import EMPLOYER_STEPS, { StepData } from "../../data/employer/steps";
 
 export default function EmployerSteps() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
-  const steps = [
-    {
-      title: "Post a job",
-      desc: "Create a role and screen settings",
-      icon: Briefcase,
-      // primary -> secondary
-      color: "bg-sky-800"
-    },
-    {
-      title: "Review candidates",
-      desc: "One-click screening & verified profiles",
-      icon: Users,
-      // secondary -> tertiary
-      color: "bg-sky-700"
-    },
-    {
-      title: "Hire",
-      desc: "Shortlist and make an offer",
-      icon: Handshake,
-      // tertiary -> primary
-      color: "bg-sky-600"
-    },
-    {
-      title: "Reputation history",
-      desc: "View your trust score timeline and verification events",
-      icon: Award,
-      // primary -> tertiary (subtle)
-      color: "bg-sky-500"
-    },
-  ];
+  // Map icon name strings from JSON to actual lucide-react icon components
+  const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+    Briefcase,
+    Users,
+    Handshake,
+    Award,
+  };
+
+  const steps: StepData[] = EMPLOYER_STEPS.map(
+    (s) => ({ ...s, iconComponent: ICONS[s.iconName as keyof typeof ICONS] || Briefcase })
+  );
 
   return (
   <section aria-labelledby="employer-steps" className="relative pt-14 overflow-hidden bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/3 to-white">
@@ -70,7 +52,7 @@ export default function EmployerSteps() {
           
           <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 list-none relative">
             {steps.map((s, i) => {
-              const Icon = s.icon;
+              const Icon = ICONS[s.iconName as keyof typeof ICONS] || Briefcase;
               const isActive = activeStep === i;
               
               return (

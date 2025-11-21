@@ -9,6 +9,8 @@ import type { FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { useSignIn } from "@clerk/nextjs";
 import Swal from "sweetalert2";
+import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
+import logger from "@/lib/logger";
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email").required("Email is Required"),
@@ -69,14 +71,14 @@ export default function LoginForm() {
           showConfirmButton: false,
         });
 
-        console.log("I am the role", userRole);
+      logger.info(`User logged in: ${values.email} as ${userRole}`);
 
         // Redirect based on role
         setTimeout(() => {
-          if (userRole === "jobseeker") {
+          if (userRole === JOBSEEKER) {
             router.push("/jobseeker");
             // router.push("/");
-          } else if (userRole === "employer") {
+          } else if (userRole === EMPLOYER) {
             router.push("/employer");
             // router.push("/");
           } else {
@@ -89,7 +91,7 @@ export default function LoginForm() {
         throw new Error("Sign-in incomplete. Please try again.");
       }
     } catch (err: unknown) {
-      console.error("Login error:", err);
+      logger.error("Login error:", err);
 
       let errorMessage = "An unexpected error occurred.";
 
