@@ -60,7 +60,7 @@ export default function LoginForm() {
 
         // Get user metadata to determine role
         console.log(result);
-        
+
         const userRole = result.userData?.unsafeMetadata?.role;
 
         Swal.fire({
@@ -71,7 +71,7 @@ export default function LoginForm() {
           showConfirmButton: false,
         });
 
-       logger.info(`User logged in with role: ${userRole}`);
+      logger.info(`User logged in: ${values.email} as ${userRole}`);
 
         // Redirect based on role
         setTimeout(() => {
@@ -96,9 +96,13 @@ export default function LoginForm() {
       let errorMessage = "An unexpected error occurred.";
 
       if (typeof err === "object" && err !== null) {
-        const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
+        const e = err as {
+          errors?: Array<{ longMessage?: string; message?: string }>;
+          message?: string;
+        };
         if (Array.isArray(e.errors) && e.errors.length > 0) {
-          errorMessage = e.errors[0].longMessage || e.errors[0].message || errorMessage;
+          errorMessage =
+            e.errors[0].longMessage || e.errors[0].message || errorMessage;
         } else if (typeof e.message === "string") {
           errorMessage = e.message;
         }
@@ -206,8 +210,8 @@ export default function LoginForm() {
                   Password
                 </label>
                 <Link
-                  // href="/forgot-password"
-                  href="/forgot-password"
+                  href="/forget-password"
+                  // href="/resetPassword"
                   className="text-sm text-[#0C2B4E] hover:underline"
                 >
                   Forgot Password?

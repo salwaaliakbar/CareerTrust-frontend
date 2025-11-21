@@ -39,7 +39,11 @@ export default function SignupFields({
         <main className="flex items-stretch w-full min-h-screen mt-10 mb-20">
           <div className="hidden md:block md:w-1/2 md:h-screen md:sticky md:top-0 relative overflow-hidden">
             <div className="absolute inset-0">
-              <img src="/assets/images/authImage - Copy.png" alt="Auth background" className="object-cover object-center w-full h-full slide-in-left animation-delay-1000" />
+              <img
+                src="/assets/images/authImage - Copy.png"
+                alt="Auth background"
+                className="object-cover object-center w-full h-full slide-in-left animation-delay-1000"
+              />
             </div>
           </div>
 
@@ -285,7 +289,7 @@ export default function SignupFields({
                           },
                           pattern: {
                             value:
-                              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+                              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/,
                             message:
                               "Password must contain uppercase, lowercase, number and special character",
                           },
@@ -319,7 +323,9 @@ export default function SignupFields({
                         type="password"
                         {...register("confirmPassword", {
                           required: "Please confirm your password",
-                          validate: (v: string) => v === getValues("password") || "Passwords do not match",
+                          validate: (v: string) =>
+                            v === getValues("password") ||
+                            "Passwords do not match",
                         })}
                         placeholder="••••••••"
                         className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${

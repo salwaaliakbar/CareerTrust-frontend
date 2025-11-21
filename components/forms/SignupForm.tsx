@@ -9,9 +9,9 @@ import * as faceapi from "face-api.js";
 import FaceCaptureModal from "../ui/FaceCaptureModal";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { logger } from "@/lib/logger";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import { ACTIONS } from "@/constants/signupActions";
+import logger from "@/lib/logger";
 
 type Role = typeof JOBSEEKER | typeof EMPLOYER;
 
@@ -150,7 +150,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         if (isMounted)
           dispatch({ type: ACTIONS.setFaceCount, payload: detections.length });
       } catch (e) {
-        console.error("face detection error", e);
+       logger.error("Face detection error:", e);
       }
     }, 500);
 
