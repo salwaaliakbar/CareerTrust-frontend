@@ -67,15 +67,15 @@ function FeaturesSection() {
       <div className="max-w-7xl mx-auto relative">
         <div className="text-center mb-20">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 border border-[#0C2B4E]/20 mb-6 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 border border-[#0C2B4E]/20 mb-6 backdrop-blur-sm fade-in">
             <div className="w-2 h-2 rounded-full bg-[#0C2B4E] animate-pulse" />
             <span className="text-sm font-semibold text-[#0C2B4E]">Trusted by Thousands</span>
           </div>
 
-          <h2 className="text-4xl sm:text-5xl font-bold mb-5 text-[#0C2B4E]">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-5 text-[#0C2B4E] fade-in animation-delay-100">
             Why Choose CareerTrust?
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed fade-in animation-delay-200">
             We{`'`}re redefining trust across Pakistan{`'`}s employment sector with innovative features and AI-powered solutions.
           </p>
         </div>
@@ -94,9 +94,10 @@ function FeaturesSection() {
             return (
               <div
                 key={index}
-                className={`group relative bg-white rounded-2xl p-7 border-l-4 ${borderColor} border border-gray-200/60 transition-all duration-300 ${
+                className={`group relative bg-white rounded-2xl p-7 border-l-4 ${borderColor} border border-gray-200/60 transition-all duration-300 fade-in ${
                   'shadow-md hover:shadow-lg hover:-translate-y-1'
                 }`}
+                style={{animationDelay: `${300 + index * 100}ms`}}
                 >
                 {/* Top gradient accent bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${

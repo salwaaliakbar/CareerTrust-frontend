@@ -42,24 +42,33 @@ export default function CompaniesPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-[#0C2B4E] text-white py-12 px-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-3">Explore Companies</h1>
-          <p className="text-gray-100 text-lg mb-4">
-            Discover trusted employers and read verified reviews
-          </p>
+      <section className="bg-linear-to-br from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] text-white py-12 px-8 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-0"></div>
+          <div className="absolute bottom-0 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="fade-in-down animation-delay-0">
+            <h1 className="text-4xl font-bold mb-3">Explore Companies</h1>
+            <p className="text-gray-100 text-lg mb-4">
+              Discover trusted employers and read verified reviews
+            </p>
+          </div>
 
           {/* Search Bar */}
-          <div className="relative max-w-2xl mt-4">
-            <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+          <div className="relative max-w-2xl mt-4 fade-in animation-delay-300 group">
+            <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-white" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by company name or industry..."
-              className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full pl-10 pr-4 py-3 bg-white/95 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 hover:bg-white placeholder-gray-500"
               aria-label="Search companies"
             />
+            <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/5 group-hover:via-white/10 group-hover:to-white/5 rounded-lg transition-all duration-500 pointer-events-none"></div>
           </div>
         </div>
       </section>
@@ -75,26 +84,28 @@ export default function CompaniesPage() {
           </div>
         ) : (
           <>
-        <div className="mb-6 ml-6">
-          <p className="text-gray-600">
-            Showing <strong>{filteredCompanies.length}</strong>{' '}
-            {filteredCompanies.length !== 1 ? "companies" : "company"}
-          </p>
-        </div>
+            <div className="mb-6 ml-6 fade-in animation-delay-200">
+              <p className="text-gray-600">
+                Showing <strong className="text-primary font-bold">{filteredCompanies.length}</strong>{' '}
+                {filteredCompanies.length !== 1 ? "companies" : "company"}
+              </p>
+            </div>
 
-        {filteredCompanies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCompanies.map((company) => (
-              <CompanyCard key={company.id} company={company} />
-            ))}
-          </div>
-        ) : (
-          <div className="card-base p-12 text-center">
-            <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">No companies found matching your search</p>
-            <p className="text-gray-500 text-sm mt-2">Try adjusting your search terms</p>
-          </div>
-        )}
+            {filteredCompanies.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCompanies.map((company, idx) => (
+                  <div key={company.id} className="fade-in animation-delay-100" style={{animationDelay: `${100 + idx * 100}ms`}}>
+                    <CompanyCard company={company} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card-base p-12 text-center fade-in animation-delay-300 rounded-2xl border border-gray-200 shadow-lg">
+                <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-600 text-lg">No companies found matching your search</p>
+                <p className="text-gray-500 text-sm mt-2">Try adjusting your search terms</p>
+              </div>
+            )}
           </>
         )}
       </main>

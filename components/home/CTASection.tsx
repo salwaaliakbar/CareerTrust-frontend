@@ -5,15 +5,15 @@ function CTASection() {
   return (
     <section className="py-20 px-4 bg-[#0C2B4E]">
       <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-white mb-6">
+        <h2 className="text-4xl font-bold text-white mb-6 fade-in">
           Ready to Transform Your Career?
         </h2>
-        <p className="text-xl text-blue-100 mb-8">
+        <p className="text-xl text-blue-100 mb-8 fade-in animation-delay-100">
           Join thousands of professionals building verified careers with trust
         </p>
         <Link
           href="/signup"
-          className="inline-block bg-amber-500 text-white hover:bg-amber-600 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+          className="inline-block bg-amber-500 text-white hover:bg-amber-600 px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 active:scale-95 fade-in animation-delay-200"
         >
           Get Started Now
         </Link>

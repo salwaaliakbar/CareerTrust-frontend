@@ -77,15 +77,15 @@ export default function AboutPage() {
         <HeroSection />
 
         {/* About Sections */}
-        <section className="flex flex-col md:flex-row items-center gap-8 p-8">
-          <figure className="w-full md:w-1/2">
+        <section className="flex flex-col md:flex-row items-center gap-8 p-8 fade-in">
+          <figure className="w-full md:w-1/2 fade-in animation-delay-100">
             <img
               src="/assets/images/office_2.jpg"
               alt="Office environment"
-              className="rounded-lg shadow-lg"
+              className="rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-105"
             />
           </figure>
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-1/2 fade-in animation-delay-200">
             <h2 className="text-2xl font-bold mb-2">Success is our GOAL!</h2>
             <p>
               At CareerTrust, success means more than landing a job—it’s about
@@ -98,8 +98,8 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-8 p-8">
-          <div className="w-full md:w-1/2">
+        <section className="flex flex-col md:flex-row items-center gap-8 p-8 fade-in animation-delay-300">
+          <div className="w-full md:w-1/2 fade-in animation-delay-400">
             <h2 className="text-2xl font-bold mb-2">Passion Drives Us</h2>
             <p>
               We are driven by a passion to redefine how careers are built and
@@ -115,20 +115,20 @@ export default function AboutPage() {
             <img
               src="/assets/images/office_3.jpg"
               alt="Team working"
-              className="rounded-lg shadow-lg"
+              className="rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-105 fade-in animation-delay-500"
             />
           </figure>
         </section>
 
-        <section className="flex flex-col md:flex-row items-center gap-8 p-8">
-          <figure className="w-full md:w-1/2">
+        <section className="flex flex-col md:flex-row items-center gap-8 p-8 fade-in animation-delay-600">
+          <figure className="w-full md:w-1/2 fade-in animation-delay-700">
             <img
               src="/assets/images/office_2.jpg"
               alt="Team using technology"
-              className="rounded-lg shadow-lg"
+              className="rounded-lg shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-105"
             />
           </figure>
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-1/2 fade-in animation-delay-800">
             <h2 className="text-2xl font-bold mb-2">
               Building Trust Through Technology
             </h2>
@@ -162,16 +162,17 @@ export default function AboutPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
               {/* Tabs */}
-              <div className="space-y-1">
+              <div className="space-y-1 fade-in animation-delay-200">
                 {values.map((value, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveTab(index)}
-                    className={`w-full text-left px-6 py-4 border-l-4 transition-all duration-300 hover:shadow-lg transition transform hover:-translate-y-1 ${
+                    className={`w-full text-left px-6 py-4 border-l-4 transition-all duration-300 hover:shadow-lg transition transform hover:-translate-y-1 fade-in ${
                       activeTab === index
                         ? "border-white text-white bg-opacity-10"
                         : "border-transparent text-blue-300 hover:bg-opacity-5"
                     }`}
+                    style={{animationDelay: `${300 + index * 100}ms`}}
                   >
                     <span
                       className={`font-semibold ${
@@ -185,7 +186,7 @@ export default function AboutPage() {
               </div>
 
               {/* Tab Content */}
-              <div className="text-white bg-opacity-5 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-10 min-h-[300px] transition-opacity duration-500">
+              <div className="text-white bg-opacity-5 backdrop-blur-sm rounded-xl p-8 border border-white border-opacity-10 min-h-[300px] transition-opacity duration-500 fade-in animation-delay-400">
                 <p className="text-lg">{values[activeTab].content}</p>
               </div>
             </div>
@@ -195,11 +196,11 @@ export default function AboutPage() {
         {/* Founders Carousel */}
         <section className="min-h-screen bg-gray-100 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-16 fade-in">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 Our Founders
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 text-lg fade-in animation-delay-100">
                 The visionaries behind CareerTrust are driven by a shared
                 goal—to build a platform that transforms hiring through verified
                 data, ethical technology, and human-centered innovation. Their

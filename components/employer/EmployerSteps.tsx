@@ -45,8 +45,8 @@ export default function EmployerSteps() {
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6">
+        <div className="text-center mb-20 fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6 fade-in animation-delay-100">
             <div className="w-2 h-2 rounded-full bg-[#0C2B4E] animate-pulse" />
             <span className="text-sm font-medium text-[#0C2B4E]">Simple Process</span>
           </div>
