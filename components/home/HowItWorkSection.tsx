@@ -15,15 +15,15 @@ function HowItWorksSection() {
       </div>
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-25">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E]">How It Works</h2>
-          <p className="text-xl text-gray-600">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E] fade-in">How It Works</h2>
+          <p className="text-xl text-gray-600 fade-in animation-delay-100">
             Simple steps to build your trusted professional profile
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div className="flex justify-center md:justify-start mx-20">
-            <div className="rounded-3xl overflow-hidden shadow-lg w-full max-w-md">
+            <div className="rounded-3xl overflow-hidden shadow-lg w-full max-w-md fade-in animation-delay-200">
               <Image
                 src="/assets/images/PhoneImg - Copy.png"
                 alt="How It Works Illustration"
@@ -47,7 +47,7 @@ function HowItWorksSection() {
             const pal = palettes[idx % palettes.length];
 
                 return (
-                  <div key={step.number} className={`p-6 bg-white rounded-2xl border border-gray-100 border-l-4 ${pal.border} hover:shadow-lg transition transform hover:-translate-y-1`}>
+                  <div key={step.number} className={`p-6 bg-white rounded-2xl border border-gray-100 border-l-4 ${pal.border} hover:shadow-lg transition transform hover:-translate-y-1 fade-in`} style={{animationDelay: `${300 + idx * 100}ms`}}>
                     <div className="flex items-start gap-4">
                       <div className="relative shrink-0">
                         <div className={`absolute -inset-1 rounded-xl ${pal.bg} opacity-90`} />

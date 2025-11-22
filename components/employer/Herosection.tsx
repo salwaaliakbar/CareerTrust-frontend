@@ -10,17 +10,17 @@ export default function HeroSection() {
 
       <div className="relative max-w-7xl mx-auto z-20 flex items-center justify-center min-h-[48vh]">
         <div className="text-white text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-8 leading-tight mt-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-8 leading-tight mt-6 fade-in-down">
               Hire faster, hire smarter
             </h1>
-            <p className="text-lg text-sky-100 max-w-2xl mb-6">
+            <p className="text-lg text-sky-100 max-w-2xl mb-6 fade-in animation-delay-100">
               Reach verified candidates, streamline hiring with one-click screening, and build a trusted employer brand on CareerTrust.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-15">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-15 fade-in animation-delay-200">
               <Link
                 href="/employer/post"
-                className="inline-flex items-center justify-center px-14 py-3 bg-white text-[#0C2B4E] rounded-full font-semibold shadow-lg hover:shadow-xl transition"
+                className="inline-flex items-center justify-center px-14 py-3 bg-white text-[#0C2B4E] rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
                 aria-label="Post a job"
                 title="Post a job"
               >
@@ -29,7 +29,7 @@ export default function HeroSection() {
 
               <Link
                 href="/employer/candidates"
-                className="inline-flex items-center justify-center px-6 py-3 bg-transparent border border-white/30 text-white rounded-full font-semibold hover:bg-white/10 transition"
+                className="inline-flex items-center justify-center px-6 py-3 bg-transparent border border-white/30 text-white rounded-full font-semibold hover:bg-white/10 transition-all duration-300 hover:scale-105 active:scale-95"
                 aria-label="Browse candidates"
                 title="Browse candidates"
               >
@@ -37,9 +37,9 @@ export default function HeroSection() {
               </Link>
             </div>
 
-            <div className="mt-10 grid grid-cols-3 gap-15 max-w-2xl mx-auto">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
+            <div className="mt-10 grid grid-cols-3 gap-15 max-w-2xl mx-auto fade-in animation-delay-300">
+              <div className="flex items-center gap-2 transition-all duration-300 hover:translate-x-1">
+                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/20">
                   <Users className="w-5 h-5 text-white" />
                 </div>
                 <div>

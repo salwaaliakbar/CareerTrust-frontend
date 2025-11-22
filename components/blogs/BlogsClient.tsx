@@ -61,29 +61,34 @@ export default function BlogsClient() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Hero Section */}
-      <section className="bg-[#0C2B4E] text-white py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold mb-3">Career Insights & Tips</h1>
-          <p className="text-blue-100 text-lg mb-10 max-w-2xl">
+      <section className="bg-linear-to-br from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] text-white py-16 px-4 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-0"></div>
+          <div className="absolute bottom-0 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <h1 className="text-4xl md:text-5xl font-bold mb-3 fade-in">Career Insights & Tips</h1>
+          <p className="text-blue-100 text-lg mb-10 max-w-2xl fade-in animation-delay-100">
             Stay updated with the latest career advice, industry trends, and professional development tips
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl fade-in animation-delay-200">
+            <div className="md:col-span-2 relative group">
+              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-sky-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search articles..."
-                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 group-hover:shadow-lg"
               />
             </div>
             <select
               aria-label="Category"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 hover:shadow-lg"
             >
               <option value="">All categories</option>
               {categories.map((cat) => (
@@ -102,7 +107,7 @@ export default function BlogsClient() {
                   if (selectedCategory) params.set("category", selectedCategory);
                   router.push(`/blogs${params.toString() ? `?${params.toString()}` : ""}`);
                 }}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm hover:bg-amber-600"
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm hover:bg-amber-600 transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Search
               </button>
@@ -113,7 +118,7 @@ export default function BlogsClient() {
                   setSelectedCategory("");
                   router.push(`/blogs`);
                 }}
-                className="px-3 py-2 bg-white text-gray-700 rounded-lg border hover:bg-gray-50"
+                className="px-3 py-2 bg-white text-gray-700 rounded-lg border hover:bg-gray-50 transition-all duration-300 hover:shadow-md active:scale-95"
               >
                 Clear
               </button>
@@ -133,7 +138,7 @@ export default function BlogsClient() {
         ) : (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Filters Sidebar */}
-            <aside className="lg:w-64 shrink-0">
+            <aside className="lg:w-64 shrink-0 fade-in animation-delay-300">
               <div className="card-base p-6 sticky top-24">
                 <div className="flex items-center gap-2 mb-6">
                   <Filter className="w-5 h-5 text-sky-700" />
@@ -180,9 +185,13 @@ export default function BlogsClient() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredBlogs.length > 0 ? (
-                  filteredBlogs.map((blog) => <BlogCard key={blog.id} {...blog} />)
+                  filteredBlogs.map((blog, idx) => (
+                    <div key={blog.id} className="fade-in" style={{animationDelay: `${400 + idx * 100}ms`}}>
+                      <BlogCard {...blog} />
+                    </div>
+                  ))
                 ) : (
-                  <div className="col-span-full card-base p-12 text-center">
+                  <div className="col-span-full card-base p-12 text-center fade-in animation-delay-400">
                     <BookPlaceholder />
                     <p className="text-gray-600 text-lg">No articles found</p>
                     <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>

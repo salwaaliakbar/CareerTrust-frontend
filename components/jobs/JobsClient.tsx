@@ -50,27 +50,32 @@ export default function JobsClient() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Hero Section */}
-      <section className="bg-[#0C2B4E] text-white py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-3">Find Your Next Opportunity</h1>
-          <p className="text-blue-100 text-lg mb-8">Discover verified jobs matched to your skills and experience</p>
+      <section className="bg-linear-to-br from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] text-white py-12 px-4 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-0"></div>
+          <div className="absolute bottom-0 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <h1 className="text-4xl font-bold mb-3 fade-in">Find Your Next Opportunity</h1>
+          <p className="text-blue-100 text-lg mb-8 fade-in animation-delay-100">Discover verified jobs matched to your skills and experience</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl fade-in animation-delay-200">
+            <div className="md:col-span-2 relative group">
+              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-sky-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Job title, company, skills..."
-                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 group-hover:shadow-lg"
               />
             </div>
             <select
               aria-label="Location"
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 hover:shadow-lg"
             >
               <option value="">All locations</option>
               {locations.map((loc) => (
@@ -89,7 +94,7 @@ export default function JobsClient() {
                   if (selectedLocation) params.set("location", selectedLocation);
                   router.push(`/jobs${params.toString() ? `?${params.toString()}` : ""}`);
                 }}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm"
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 Apply
               </button>
@@ -100,7 +105,7 @@ export default function JobsClient() {
                   setSelectedLocation("");
                   router.push(`/jobs`);
                 }}
-                className="px-3 py-2 bg-white text-gray-700 rounded-lg border"
+                className="px-3 py-2 bg-white text-gray-700 rounded-lg border transition-all duration-300 hover:shadow-md active:scale-95"
               >
                 Clear
               </button>
@@ -120,7 +125,7 @@ export default function JobsClient() {
         ) : (
           <div className="flex flex-col md:flex-row gap-8">
             {/* Filters Sidebar */}
-            <aside className="md:w-64 shrink-0">
+            <aside className="md:w-64 shrink-0 fade-in animation-delay-300">
               <div className="card-base p-6 sticky top-24">
                 <div className="flex items-center gap-2 mb-6">
                   <Filter className="w-5 h-5 text-sky-700" />
@@ -169,7 +174,7 @@ export default function JobsClient() {
 
             {/* Jobs List */}
             <div className="flex-1">
-              <div className="mb-6">
+              <div className="mb-6 fade-in animation-delay-200">
                 <p className="text-gray-600">
                   Showing <strong>{filteredJobs.length}</strong> job{filteredJobs.length !== 1 ? "s" : ""}
                 </p>
@@ -177,9 +182,13 @@ export default function JobsClient() {
 
               <div className="space-y-4">
                 {filteredJobs.length > 0 ? (
-                  filteredJobs.map((job) => <JobCard key={job.id} job={job} />)
+                  filteredJobs.map((job, idx) => (
+                    <div key={job.id} className="fade-in" style={{animationDelay: `${200 + idx * 100}ms`}}>
+                      <JobCard job={job} />
+                    </div>
+                  ))
                 ) : (
-                  <div className="card-base p-12 text-center">
+                  <div className="card-base p-12 text-center fade-in animation-delay-300">
                     <BriefcasePlaceholder />
                     <p className="text-gray-600 text-lg">No jobs found matching your criteria</p>
                     <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>

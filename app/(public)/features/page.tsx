@@ -53,11 +53,11 @@ export default function FeaturesPage() {
 
         {/* Features Grid */}
         <section className="py-20 max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-[rgb(12,43,78)] mb-4">
+          <div className="text-center mb-16 fade-in">
+            <h2 className="text-3xl md:text-4xl font-bold text-[rgb(12,43,78)] mb-4 fade-in animation-delay-100">
               What Makes CareerTrust Unique
             </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto text-lg">
+            <p className="text-gray-600 max-w-3xl mx-auto text-lg fade-in animation-delay-200">
               Each feature is built around one vision — creating an ecosystem of
               verified, fair, and intelligent employment that benefits every
               stakeholder.
@@ -68,7 +68,8 @@ export default function FeaturesPage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300"
+                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 fade-in hover:-translate-y-1"
+                style={{animationDelay: `${300 + index * 100}ms`}}
               >
                 <div className="text-[rgb(12,43,78)] text-4xl mb-4">
                   {feature.icon}
@@ -85,19 +86,19 @@ export default function FeaturesPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="bg-gradient-to-br from-[rgb(12,43,78)] via-[rgb(15,52,94)] to-[rgb(18,61,110)] py-20 text-center text-white">
-          <div className="max-w-4xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+        <section className="bg-linear-to-br from-[rgb(12,43,78)] via-[rgb(15,52,94)] to-[rgb(18,61,110)] py-20 text-center text-white">
+          <div className="max-w-4xl mx-auto px-6 fade-in">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 fade-in animation-delay-100">
               Building a Future of Trust and Opportunity
             </h2>
-            <p className="text-blue-200 text-lg mb-8">
+            <p className="text-blue-200 text-lg mb-8 fade-in animation-delay-200">
               At CareerTrust, we believe that every verified connection creates
-              a stronger professional ecosystem. Together, we’re shaping a job
+              a stronger professional ecosystem. Together, we're shaping a job
               market built on authenticity, fairness, and innovation.
             </p>
             <a
               href="/signup"
-              className="inline-block bg-white text-[rgb(12,43,78)] font-semibold py-3 px-8 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-100 transition"
+              className="inline-block bg-white text-[rgb(12,43,78)] font-semibold py-3 px-8 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-100 transition-all duration-300 hover:scale-105 active:scale-95 fade-in animation-delay-300"
             >
               Get Started Today
             </a>
