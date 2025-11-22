@@ -59,7 +59,7 @@ export default function LoginForm() {
         // Get user metadata to determine role
         console.log(result);
 
-        const userRole = result.userData?.unsafeMetadata?.role;
+        const userRole = (result.userData as any)?.unsafeMetadata?.role;
 
         Swal.fire({
           icon: "success",
