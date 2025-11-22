@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import { ACTIONS } from "@/constants/signupActions";
 import logger from "@/lib/logger";
+import axios from "axios";
 
 type Role = typeof JOBSEEKER | typeof EMPLOYER;
 
@@ -228,6 +229,23 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         strategy: "email_code",
       });
 
+      if (state.role === "jobseeker") {
+        const response = await axios.post(
+          "http://localhost:4000/api/users/check-cnic-phone",
+          {
+            phone: values.phone,
+            cnic: values.cnic,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log(response.data); // handle the response
+      }
+
       // Show verification modal
       dispatch({ type: ACTIONS.setVerifying, payload: true });
       // if (state.role === "jobseeker") {
@@ -312,6 +330,31 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           showConfirmButton: true,
         });
 
+        // calling our backend to create user record
+
+        const clerkUser = completeSignUp?.createdUserId; // Clerk's user ID
+
+        const response = await axios.post(
+          "http://localhost:4000/api/users/register",
+          {
+            clerkId: clerkUser, // IMPORTANT
+            email: values.email,
+            name: values.name,
+            role: state.role,
+            phone: values.phone,
+            cnic: values.cnic,
+            companyName: values.companyName,
+            companyURL: values.companyURL,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log(response.data); // handle the response
+
         // Redirect based on role
         setTimeout(() => {
           if (state.role === JOBSEEKER) {
@@ -330,18 +373,26 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
       let errorMessage = "An unexpected error occurred.";
 
+      // If it's an object, try to read server response
       if (typeof err === "object" && err !== null) {
-        const e = err as {
-          errors?: Array<{ longMessage?: string; message?: string }>;
-          message?: string;
-        };
-        if (Array.isArray(e.errors) && e.errors.length > 0) {
+        const e = err as any;
+
+        // Check for server response format
+        if (e.response?.data?.message) {
+          errorMessage = e.response.data.message;
+        }
+        // Optional: fallback to structured errors
+        else if (Array.isArray(e.errors) && e.errors.length > 0) {
           errorMessage =
             e.errors[0].longMessage || e.errors[0].message || errorMessage;
-        } else if (typeof e.message === "string") {
+        }
+        // Fallback to generic message field
+        else if (typeof e.message === "string") {
           errorMessage = e.message;
         }
-      } else if (typeof err === "string") {
+      }
+      // If it's a string directly
+      else if (typeof err === "string") {
         errorMessage = err;
       }
 
@@ -383,26 +434,26 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       formData.append("file", capturedImage);
       formData.append("user_id", pendingFormData.email);
       formData.append("save_if_new", "1");
-      const resp = await fetch("/api/auth/face-check", {
-        method: "POST",
-        body: formData,
-      });
-      let result: unknown = {};
-      try {
-        result = await resp.json();
-      } catch (e) {
-        console.error("Invalid JSON from face-check", e);
-      }
-      const resObj = result as {
+      // Use axios to POST multipart form data to our face-check API
+      let resObj: {
         error?: string;
         details?: string;
         match?: boolean;
         saved?: boolean;
-      };
-      if (!resp.ok) {
-        const message =
-          resObj?.error || resObj?.details || `Service returned ${resp.status}`;
-        throw new Error(message);
+      } = {};
+      try {
+        const axiosResp = await axios.post("/api/auth/face-check", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        resObj = axiosResp.data;
+      } catch (e) {
+        if (axios.isAxiosError(e)) {
+          const data = e.response?.data as any;
+          const message =
+            data?.error || data?.details || e.message || "Face check failed";
+          throw new Error(message);
+        }
+        throw e;
       }
       if (resObj?.match) {
         throw new Error(

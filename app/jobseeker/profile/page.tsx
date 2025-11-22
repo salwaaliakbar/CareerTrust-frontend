@@ -12,6 +12,7 @@ import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
+import axios from "axios";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -58,27 +59,31 @@ export default function ProfilePage() {
       // backend expects field name `resume`
       form.append("resume", file);
 
-      const res = await fetch("/api/resume/parse-resume", {
-        method: "POST",
-        body: form,
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        logger.error("Resume parse API error:", res.status, text);
+      let parsed: any = null;
+      try {
+        const resp = await axios.post("/api/resume/parse-resume", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const body = resp.data;
+        // API should return { parsed: { ... } } or parsed directly
+        parsed = body.parsed ?? body;
+      } catch (e) {
+        if (axios.isAxiosError(e)) {
+          const status = e.response?.status;
+          const text = e.response?.data ?? e.message;
+          logger.error("Resume parse API error:", status, text);
+        } else {
+          logger.error("Resume parse API unexpected error:", e);
+        }
         throw new Error("Resume parse failed");
       }
-
-      const body = await res.json();
-      // API should return { parsed: { ... } } or parsed directly
-      const parsed = body.parsed ?? body;
 
       if (!parsed) {
         // no parsed data, nothing to autofill
         return;
       }
 
-      console.log("Parsed resume data:", parsed);
+      logger.info("Parsed resume data:", parsed);
 
       // Map parsed fields to our form structure, falling back to existing values
       setForm((prev) => ({
