@@ -9,6 +9,7 @@ import * as faceapi from "face-api.js";
 import FaceCaptureModal from "../ui/FaceCaptureModal";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 type Role = "jobseeker" | "employer";
 
@@ -114,49 +115,49 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     dispatch({ type: "setStep", payload: 2 });
   };
 
-  useEffect(() => {
-    return () => {
-      if (state.preview) {
-        URL.revokeObjectURL(state.preview);
-      }
-      if (state.stream) {
-        state.stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
-      }
-    };
-  }, [state.preview, state.stream]);
+  // useEffect(() => {
+  //   return () => {
+  //     if (state.preview) {
+  //       URL.revokeObjectURL(state.preview);
+  //     }
+  //     if (state.stream) {
+  //       state.stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+  //     }
+  //   };
+  // }, [state.preview, state.stream]);
 
-  useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = "/models";
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      dispatch({ type: "setModelsLoaded", payload: true });
-    };
-    loadModels();
-  }, []);
+  // useEffect(() => {
+  //   const loadModels = async () => {
+  //     const MODEL_URL = "/models";
+  //     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+  //     dispatch({ type: "setModelsLoaded", payload: true });
+  //   };
+  //   loadModels();
+  // }, []);
 
-  useEffect(() => {
-    if (!state.modelsLoaded || !state.isStreaming || !videoRef.current) return;
-    let isMounted = true;
-    const interval = setInterval(async () => {
-      if (!videoRef.current) return;
-      try {
-        const detections = await faceapi.detectAllFaces(
-          videoRef.current as HTMLVideoElement,
-          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
-        );
-        if (isMounted)
-          dispatch({ type: "setFaceCount", payload: detections.length });
-      } catch (e) {
-        console.error("face detection error", e);
-      }
-    }, 500);
+  // useEffect(() => {
+  //   if (!state.modelsLoaded || !state.isStreaming || !videoRef.current) return;
+  //   let isMounted = true;
+  //   const interval = setInterval(async () => {
+  //     if (!videoRef.current) return;
+  //     try {
+  //       const detections = await faceapi.detectAllFaces(
+  //         videoRef.current as HTMLVideoElement,
+  //         new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
+  //       );
+  //       if (isMounted)
+  //         dispatch({ type: "setFaceCount", payload: detections.length });
+  //     } catch (e) {
+  //       console.error("face detection error", e);
+  //     }
+  //   }, 500);
 
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-      dispatch({ type: "setFaceCount", payload: 0 });
-    };
-  }, [state.modelsLoaded, state.isStreaming]);
+  //   return () => {
+  //     isMounted = false;
+  //     clearInterval(interval);
+  //     dispatch({ type: "setFaceCount", payload: 0 });
+  //   };
+  // }, [state.modelsLoaded, state.isStreaming]);
 
   const {
     register,
@@ -181,8 +182,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (state.role === "jobseeker") {
       setPendingFormData(values);
-      // await submitSignup(values);
-      dispatch({ type: "setShowFacePopup", payload: true });
+      await submitSignup(values);
+      // dispatch({ type: "setShowFacePopup", payload: true });
     } else {
       await submitSignup(values);
     }
@@ -224,6 +225,23 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       await signUp.prepareEmailAddressVerification({
         strategy: "email_code",
       });
+
+      if (state.role === "jobseeker") {
+        const response = await axios.post(
+          "http://localhost:4000/api/users/check-cnic-phone",
+          {
+            phone: values.phone,
+            cnic: values.cnic,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log(response.data); // handle the response
+      }
 
       // Show verification modal
       dispatch({ type: "setVerifying", payload: true });
@@ -309,6 +327,31 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           showConfirmButton: false,
         });
 
+        // calling our backend to create user record
+
+        const clerkUser = completeSignUp?.createdUserId; // Clerk's user ID
+
+        const response = await axios.post(
+          "http://localhost:4000/api/users/register",
+          {
+            clerkId: clerkUser, // IMPORTANT
+            email: values.email,
+            name: values.name,
+            role: state.role,
+            phone: values.phone,
+            cnic: values.cnic,
+            companyName: values.companyName,
+            companyURL: values.companyURL,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        console.log(response.data); // handle the response
+
         // Redirect based on role
         setTimeout(() => {
           if (state.role === "jobseeker") {
@@ -327,18 +370,26 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
       let errorMessage = "An unexpected error occurred.";
 
+      // If it's an object, try to read server response
       if (typeof err === "object" && err !== null) {
-        const e = err as {
-          errors?: Array<{ longMessage?: string; message?: string }>;
-          message?: string;
-        };
-        if (Array.isArray(e.errors) && e.errors.length > 0) {
+        const e = err as any;
+
+        // Check for server response format
+        if (e.response?.data?.message) {
+          errorMessage = e.response.data.message;
+        }
+        // Optional: fallback to structured errors
+        else if (Array.isArray(e.errors) && e.errors.length > 0) {
           errorMessage =
             e.errors[0].longMessage || e.errors[0].message || errorMessage;
-        } else if (typeof e.message === "string") {
+        }
+        // Fallback to generic message field
+        else if (typeof e.message === "string") {
           errorMessage = e.message;
         }
-      } else if (typeof err === "string") {
+      }
+      // If it's a string directly
+      else if (typeof err === "string") {
         errorMessage = err;
       }
 
