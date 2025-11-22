@@ -12,6 +12,7 @@
     "@clerk/nextjs": "^6.35.1",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/supabase-js": "^2.80.0",
+    "axios": "^1.13.2",
     "face-api.js": "^0.20.0",
     "formidable": "^3.5.4",
     "formik": "^2.4.8",
