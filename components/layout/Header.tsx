@@ -121,6 +121,36 @@ function Header() {
               </Link>
             </>
           )}
+          <Link
+            href="/about"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            About
+          </Link>
+          <Link
+            href="/features"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Features
+          </Link>
+          <Link
+            href="/services"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Services
+          </Link>
+          <Link
+            href="/blogs"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Blogs
+          </Link>
+          <Link
+            href="/contact"
+            className="text-gray-600 hover:text-primary font-medium transition-colors"
+          >
+            Contact
+          </Link>
         </div>
 
         {/* CTA Buttons / User Menu */}

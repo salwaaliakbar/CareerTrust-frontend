@@ -59,7 +59,6 @@ export default function AboutPage() {
   const prevSlide = () =>
     setCurrentSlide((prev) => (prev - 1 + founders.length) % founders.length);
   const goToSlide = (index: number) => setCurrentSlide(index);
-
   const visibleFounders = useMemo(() => {
     return Array.from({ length: 5 }, (_, i) => {
       const position = i - 2;

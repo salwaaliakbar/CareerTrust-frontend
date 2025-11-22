@@ -1,8 +1,9 @@
 import React from "react";
 import { User, Building2, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 
-type Role = "jobseeker" | "employer";
+type Role = typeof JOBSEEKER | typeof EMPLOYER;
 
 export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) => void }) {
   return (
@@ -15,7 +16,7 @@ export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) =
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-8">
           <button
-            onClick={() => onSelectRole("jobseeker")}
+            onClick={() => onSelectRole(JOBSEEKER)}
             className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl"
           >
             <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
@@ -31,7 +32,7 @@ export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) =
           </button>
 
           <button
-            onClick={() => onSelectRole("employer")}
+            onClick={() => onSelectRole(EMPLOYER)}
             className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl"
           >
             <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">

@@ -11,6 +11,8 @@ import WorkExperience from "@/components/jobseekerDashboard/WorkExperience";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import logger from "@/lib/logger";
+import axios from "axios";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -41,20 +43,7 @@ export default function ProfilePage() {
     deleteEmployment,
     handleDocumentUpload,
     removeDocument,
-  } = useEmployment([
-    {
-      id: "1",
-      company: "Tech Corp",
-      position: "Senior Developer",
-      startDate: "2020-01",
-      endDate: "2023-06",
-      currentlyWorking: false,
-      description: "Led development team for multiple projects",
-      verified: true,
-      verificationStatus: "verified",
-      documents: [],
-    },
-  ]);
+  } = useEmployment([]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -66,48 +55,86 @@ export default function ProfilePage() {
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const form = new FormData();
+      // backend expects field name `resume`
+      form.append("resume", file);
 
-      setForm({
-        fullName: "John Smith",
-        headline: "Senior Software Engineer",
-        location: "San Francisco, CA",
-        experience: "8 years",
-        skills: "React, TypeScript, Node.js, Python, AWS",
-        education: "BS Computer Science - Stanford University",
-        summary:
-          "Experienced software engineer with 8 years of expertise in building scalable web applications.",
-        email: form.email,
-      });
+      let parsed: any = null;
+      try {
+        const resp = await axios.post("/api/resume/parse-resume", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const body = resp.data;
+        // API should return { parsed: { ... } } or parsed directly
+        parsed = body.parsed ?? body;
+      } catch (e) {
+        if (axios.isAxiosError(e)) {
+          const status = e.response?.status;
+          const text = e.response?.data ?? e.message;
+          logger.error("Resume parse API error:", status, text);
+        } else {
+          logger.error("Resume parse API unexpected error:", e);
+        }
+        throw new Error("Resume parse failed");
+      }
 
-      const extractedEmployment: EmploymentRecord[] = [
-        {
-          id: Date.now().toString(),
-          company: "Google Inc.",
-          position: "Senior Software Engineer",
-          startDate: "2021-03",
-          endDate: "",
-          currentlyWorking: true,
-          description: "Working on cloud infrastructure and scalable systems",
-          verified: false,
-          verificationStatus: "draft",
-          documents: [],
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          company: "Microsoft",
-          position: "Software Engineer",
-          startDate: "2018-06",
-          endDate: "2021-02",
-          currentlyWorking: false,
-          description: "Developed enterprise applications using .NET and Azure",
-          verified: false,
-          verificationStatus: "draft",
-          documents: [],
-        },
-      ];
+      if (!parsed) {
+        // no parsed data, nothing to autofill
+        return;
+      }
 
-      setEmploymentHistory((prev) => [...extractedEmployment, ...prev]);
+      logger.info("Parsed resume data:", parsed);
+
+      // Map parsed fields to our form structure, falling back to existing values
+      setForm((prev) => ({
+        fullName: parsed.name ?? parsed.fullName ?? prev.fullName,
+        headline: parsed.headline ?? prev.headline,
+        location: parsed.location ?? prev.location,
+        experience: Array.isArray(parsed.experience)
+          ? (parsed.experience as Array<Record<string, unknown>>)
+              .map((x) => (x.title as string) ?? (x.position as string) ?? (x.company as string))
+              .filter(Boolean)
+              .join(", ")
+          : parsed.experience ?? prev.experience,
+        skills: Array.isArray(parsed.skills) ? parsed.skills.join(", ") : parsed.skills ?? prev.skills,
+        education:
+          Array.isArray(parsed.education) && parsed.education.length > 0
+            ? typeof parsed.education[0] === "string"
+              ? parsed.education[0]
+              : `${parsed.education[0].degree ?? ""} - ${parsed.education[0].institution ?? ""}`
+            : parsed.education ?? prev.education,
+        summary: parsed.summary ?? prev.summary,
+        email: prev.email,
+      }));
+
+      // Map experiences to EmploymentRecord[] if present
+      if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
+        const extractedEmployment: EmploymentRecord[] = (parsed.experience as Array<Record<string, unknown>>).map((e, i: number) => {
+          // generate stable client-side id; prefer crypto.randomUUID when available
+          const cryptoWithUuid = crypto as unknown as { randomUUID?: () => string };
+          const id = typeof crypto !== "undefined" && typeof cryptoWithUuid.randomUUID === "function"
+            ? cryptoWithUuid.randomUUID()
+            : `${Date.now()}-${i}`;
+
+          return {
+            id: id.toString(),
+            company: (e.company as string) ?? "",
+            position: (e.title as string) ?? (e.position as string) ?? "",
+            startDate: (e.start_date as string) ?? (e.startDate as string) ?? "",
+            endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+            currentlyWorking: !((e.end_date as string) ?? (e.endDate as string)) || false,
+            description: (e.description as string) ?? "",
+            verified: false,
+            verificationStatus: "draft",
+            documents: [],
+          } as EmploymentRecord;
+        });
+
+        setEmploymentHistory((prev) => [...extractedEmployment, ...prev]);
+      }
+
+      // Optionally show a success toast
+      // Swal.fire({ icon: 'success', title: 'Parsed', text: 'Resume parsed and profile autofilled.' })
     } catch (err) {
       console.error("Failed to parse resume:", err);
     } finally {
