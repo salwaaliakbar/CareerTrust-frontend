@@ -310,7 +310,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           title: "Account Created!",
           text: "Your account has been successfully created.",
           timer: 2000,
-          showConfirmButton: false,
+          showConfirmButton: true,
         });
 
         // Redirect based on role

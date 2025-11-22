@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useRef } from "react";
-import {
-  UploadCloud,
-  Trash,
-  FileText,
-  Sparkles,
-} from "lucide-react";
+import { UploadCloud, Trash, FileText, Sparkles } from "lucide-react";
+import Swal from "sweetalert2";
 
 interface ResumeUploadProps {
   resumeFile: File | null;
@@ -22,13 +18,39 @@ export default function ResumeUpload({
   onAutoFill,
 }: ResumeUploadProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [buttonLoading, setButtonLoading] = React.useState(false);
 
   async function handleResumePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
-    if (f) {
-      onFileChange(f);
+    if (!f) return;
+    onFileChange(f);
+    // Delegate parsing to the parent handler `onAutoFill` to avoid duplicate API calls.
+    try {
+      setButtonLoading(true);
       await onAutoFill(f);
+      Swal.fire({
+        title: "Auto-Fill Complete",
+        text: "Your profile has been updated from your resume.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (err) {
+      console.error("Resume parse/upload failed", err);
+      onFileChange(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      Swal.fire({
+        title: "Resume Parse Error",
+        text: "There was an error parsing your resume. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    } finally {
+      setButtonLoading(false);
     }
+    // if (f) {
+    //   onFileChange(f);
+    //   await onAutoFill(f);
+    // }
   }
 
   function removeResume() {
@@ -37,7 +59,7 @@ export default function ResumeUpload({
   }
 
   return (
-    <div className="top-6 group relative">
+    <div className="top-6 group relative" aria-busy={buttonLoading}>
       <div className="absolute -inset-0.5 bg-linear-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
       <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300 overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-linear-to-br from-blue-100 to-transparent rounded-full blur-3xl opacity-50"></div>
@@ -91,26 +113,27 @@ export default function ResumeUpload({
                   </p>
                   <div className="flex gap-1.5 justify-center">
                     <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
-                    <span
-                      className="w-2 h-2 bg-blue-600 rounded-full animate-bounce animation-delay-100"
-                    ></span>
-                    <span
-                      className="w-2 h-2 bg-blue-600 rounded-full animate-bounce animation-delay-200"
-                    ></span>
+                    <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce animation-delay-100"></span>
+                    <span className="w-2 h-2 bg-blue-600 rounded-full animate-bounce animation-delay-200"></span>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
             <div
-              className="border-3 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group/upload cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
+              className={`border-3 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group/upload cursor-pointer ${
+                buttonLoading ? "opacity-60 pointer-events-none" : ""
+              }`}
+              onClick={() => {
+                if (buttonLoading) return;
+                fileInputRef.current?.click();
+              }}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  fileInputRef.current?.click();
+                  if (!buttonLoading) fileInputRef.current?.click();
                 }
               }}
             >
@@ -126,20 +149,50 @@ export default function ResumeUpload({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              disabled={buttonLoading}
               className="w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 font-black overflow-hidden relative"
             >
               <div className="absolute inset-0 bg-linear-to-r from-[#1A3D64] to-[#0C2B4E] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
-              <UploadCloud className="w-6 h-6 relative z-10 group-hover/btn:animate-bounce text-white" />
-              <span className="relative z-10">
-                {resumeFile ? "Change Resume" : "Upload Resume"}
-              </span>
+              {buttonLoading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white relative z-10"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  <span className="relative z-10">Parsing...</span>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-6 h-6 relative z-10 group-hover/btn:animate-bounce text-white" />
+                  <span className="relative z-10">
+                    {resumeFile ? "Change Resume" : "Upload Resume"}
+                  </span>
+                </>
+              )}
             </button>
 
             {resumeFile && (
               <button
                 type="button"
                 onClick={removeResume}
-                className="w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-rose-50 to-red-100 text-rose-700 px-6 py-3.5 rounded-xl hover:from-rose-100 hover:to-red-200 hover:shadow-lg transition-all duration-200 font-black border-2 border-rose-200"
+                disabled={buttonLoading}
+                className="w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-rose-50 to-red-100 text-rose-700 px-6 py-3.5 rounded-xl hover:from-rose-100 hover:to-red-200 hover:shadow-lg transition-all duration-200 font-black border-2 border-rose-200 disabled:opacity-60 disabled:pointer-events-none"
               >
                 <Trash className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                 Remove Resume
@@ -153,6 +206,7 @@ export default function ResumeUpload({
             accept=".pdf,.doc,.docx"
             onChange={handleResumePick}
             className="hidden"
+            disabled={buttonLoading}
             aria-label="Upload resume file"
             title="Upload resume file"
           />
@@ -179,6 +233,15 @@ export default function ResumeUpload({
           </div>
         </div>
       </div>
+      {/* Full-screen dim overlay while parsing to block actions */}
+      {buttonLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex flex-col items-center gap-3 p-4">
+            <div className="w-14 h-14 border-4 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="text-white font-semibold">Parsing resume — please wait...</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

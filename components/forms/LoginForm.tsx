@@ -68,7 +68,7 @@ export default function LoginForm() {
           title: "Login Successful",
           text: "Welcome back to CareerTrust!",
           timer: 2000,
-          showConfirmButton: false,
+          showConfirmButton: true,
         });
 
       logger.info(`User logged in: ${values.email} as ${userRole}`);
