@@ -62,94 +62,41 @@ function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {isSignedIn ? (
-            // Logged in users see only About and Features
-            <>
-              <HomeDropdown />
-              <Link
-                href="/about"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                About
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-              <Link
-                href="/features"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                Features
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-              <Link
-                href="/services"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                Services
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-              <Link
-                href="/blogs"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                Blogs
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-              <Link
-                href="/contact"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                Contact
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-            </>
-          ) : (
-            // Logged out users see all pages except About and Features
-            <>
-              <Link
-                href="/about"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                About
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-              <Link
-                href="/features"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
-              >
-                Features
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
-              </Link>
-            </>
-          )}
+          {isSignedIn && <HomeDropdown />}
           <Link
             href="/about"
-            className="text-gray-600 hover:text-primary font-medium transition-colors"
+            className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
           >
             About
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
           </Link>
           <Link
             href="/features"
-            className="text-gray-600 hover:text-primary font-medium transition-colors"
+            className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
           >
             Features
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
           </Link>
           <Link
             href="/services"
-            className="text-gray-600 hover:text-primary font-medium transition-colors"
+            className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
           >
             Services
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
           </Link>
           <Link
             href="/blogs"
-            className="text-gray-600 hover:text-primary font-medium transition-colors"
+            className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
           >
             Blogs
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
           </Link>
           <Link
             href="/contact"
-            className="text-gray-600 hover:text-primary font-medium transition-colors"
+            className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
           >
             Contact
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
           </Link>
         </div>
 
@@ -164,14 +111,21 @@ function Header() {
           ) : isSignedIn ? (
             // User is logged in - Show user info and logout
             <>
-              <Link
-                href={
-                  userRole === "jobseeker"
-                    ? "/dashboard/jobseeker"
-                    : "/dashboard/employer"
-                }
-                className="flex items-center gap-2 px-3 py-1.5 text-gray-700 hover:text-[#0C2B4E] transition-all duration-300 hover:scale-105"
-              ></Link>
+              {userRole === "jobseeker" ? (
+                <Link
+                  href="/jobseeker/dashboard"
+                  className="text-gray-600 hover:text-primary font-medium transition-colors"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/employer/dashboard"
+                  className="text-gray-600 hover:text-primary font-medium transition-colors"
+                >
+                  Dashboard
+                </Link>
+              )}
 
               <div className="flex items-center gap-1 hover:bg-gray-200 rounded-full px-1 py-1 transition-all duration-300 cursor-pointer hover:scale-105">
                 <User className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" />
