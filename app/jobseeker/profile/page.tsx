@@ -13,6 +13,10 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
 import axios from "axios";
+import { useUser } from "@clerk/nextjs";
+import { API_ENDPOINTS } from "@/constants/api";
+import Swal from "sweetalert2";
+import { set } from "react-hook-form";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -28,8 +32,11 @@ export default function ProfilePage() {
 
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const { user } = useUser();
 
   const {
     employmentHistory,
@@ -51,6 +58,28 @@ export default function ProfilePage() {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
   }
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  // Autofill from Clerk on mount only
+  React.useEffect(() => {
+    if (!mounted || !user) return;
+
+    const name =
+      user.fullName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+
+    const email =
+      user.primaryEmailAddress?.emailAddress ||
+      user.emailAddresses?.[0]?.emailAddress ||
+      "";
+
+    setForm((prev) => ({
+      ...prev,
+      fullName: prev.fullName || name,
+      email: prev.email || email,
+    }));
+  }, [mounted, user]);
 
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
@@ -92,16 +121,25 @@ export default function ProfilePage() {
         location: parsed.location ?? prev.location,
         experience: Array.isArray(parsed.experience)
           ? (parsed.experience as Array<Record<string, unknown>>)
-              .map((x) => (x.title as string) ?? (x.position as string) ?? (x.company as string))
+              .map(
+                (x) =>
+                  (x.title as string) ??
+                  (x.position as string) ??
+                  (x.company as string)
+              )
               .filter(Boolean)
               .join(", ")
           : parsed.experience ?? prev.experience,
-        skills: Array.isArray(parsed.skills) ? parsed.skills.join(", ") : parsed.skills ?? prev.skills,
+        skills: Array.isArray(parsed.skills)
+          ? parsed.skills.join(", ")
+          : parsed.skills ?? prev.skills,
         education:
           Array.isArray(parsed.education) && parsed.education.length > 0
             ? typeof parsed.education[0] === "string"
               ? parsed.education[0]
-              : `${parsed.education[0].degree ?? ""} - ${parsed.education[0].institution ?? ""}`
+              : `${parsed.education[0].degree ?? ""} - ${
+                  parsed.education[0].institution ?? ""
+                }`
             : parsed.education ?? prev.education,
         summary: parsed.summary ?? prev.summary,
         email: prev.email,
@@ -109,20 +147,28 @@ export default function ProfilePage() {
 
       // Map experiences to EmploymentRecord[] if present
       if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
-        const extractedEmployment: EmploymentRecord[] = (parsed.experience as Array<Record<string, unknown>>).map((e, i: number) => {
+        const extractedEmployment: EmploymentRecord[] = (
+          parsed.experience as Array<Record<string, unknown>>
+        ).map((e, i: number) => {
           // generate stable client-side id; prefer crypto.randomUUID when available
-          const cryptoWithUuid = crypto as unknown as { randomUUID?: () => string };
-          const id = typeof crypto !== "undefined" && typeof cryptoWithUuid.randomUUID === "function"
-            ? cryptoWithUuid.randomUUID()
-            : `${Date.now()}-${i}`;
+          const cryptoWithUuid = crypto as unknown as {
+            randomUUID?: () => string;
+          };
+          const id =
+            typeof crypto !== "undefined" &&
+            typeof cryptoWithUuid.randomUUID === "function"
+              ? cryptoWithUuid.randomUUID()
+              : `${Date.now()}-${i}`;
 
           return {
             id: id.toString(),
             company: (e.company as string) ?? "",
             position: (e.title as string) ?? (e.position as string) ?? "",
-            startDate: (e.start_date as string) ?? (e.startDate as string) ?? "",
+            startDate:
+              (e.start_date as string) ?? (e.startDate as string) ?? "",
             endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
-            currentlyWorking: !((e.end_date as string) ?? (e.endDate as string)) || false,
+            currentlyWorking:
+              !((e.end_date as string) ?? (e.endDate as string)) || false,
             description: (e.description as string) ?? "",
             verified: false,
             verificationStatus: "draft",
@@ -145,16 +191,92 @@ export default function ProfilePage() {
   async function handleSave() {
     setSaving(true);
     try {
+      console.log("profile image: ", profileFile);
       const payload = new FormData();
       payload.append("profile", JSON.stringify(form));
       payload.append("employmentHistory", JSON.stringify(employmentHistory));
       if (resumeFile) payload.append("resume", resumeFile);
-      if (profileImage) payload.append("profileImage", profileImage);
-      // await fetch("/api/profile", { method: "POST", body: payload });
+      if (profileFile) payload.append("profileImage", profileFile);
+
+      const resp = await axios.post(
+        `${API_ENDPOINTS.JOBSEEKER_PROFILE_SAVE}`,
+        payload,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      const data = resp.data ?? {};
+
+      // Success path
+      if (data.success === true) {
+        Swal.fire({
+          icon: "success",
+          title: "Profile Saved",
+          text: data.message || "Your profile has been saved successfully.",
+        });
+        // only exit edit mode on success
+        setIsEditing(false);
+        return;
+      }
+
+      // Build a helpful, user-facing error message from the response
+      let userMessage =
+        "There was an issue saving your profile. Please try again.";
+
+      if (typeof data.error === "string" && data.error.trim()) {
+        userMessage = data.error;
+      } else if (typeof data.message === "string" && data.message.trim()) {
+        userMessage = data.message;
+      } else if (data.respData) {
+        // Some backends wrap service responses inside respData (e.g. face-check results)
+        const rd = data.respData;
+        if (typeof rd === "string") {
+          userMessage = rd;
+        } else if (rd?.error) {
+          userMessage = String(rd.error);
+        } else if (typeof rd?.similarity === "number") {
+          const pct = Math.round(rd.similarity * 100);
+          userMessage = rd.error
+            ? `${rd.error} (similarity: ${pct}%)`
+            : `Verification failed (similarity: ${pct}%).`;
+        } else if (rd?.match === false) {
+          userMessage =
+            rd.error || "Face embedding does not match our records.";
+        }
+      } else if (Array.isArray(data.errors) && data.errors.length > 0) {
+        userMessage = data.errors
+          .map((e: any) => e?.message || JSON.stringify(e))
+          .join("; ");
+      }
+
+      Swal.fire({ icon: "error", title: "Save Failed", text: userMessage });
+      handleReset();
     } catch (err) {
-      console.error(err);
+      // Try to extract a helpful message from axios errors
+      if (axios.isAxiosError(err)) {
+        const respData = err.response?.data;
+        const serverMsg =
+          respData?.error || respData?.message || respData?.respData || null;
+        const message =
+          serverMsg || err.message || "Network error while saving profile.";
+        Swal.fire({
+          icon: "error",
+          title: "Save Failed",
+          text: String(message),
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Save Failed",
+          text: "An unexpected error occurred.",
+        });
+      }
+      logger.error("Profile save error:", err);
+      handleReset();
     } finally {
       setSaving(false);
+      // keep edit mode if save failed; setIsEditing(false) is handled on success above
     }
   }
 
@@ -187,64 +309,83 @@ export default function ProfilePage() {
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-linear-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div
-            className="absolute -bottom-40 -left-40 w-96 h-96 bg-linear-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-1000"
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-linear-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse animation-delay-2000"
-          ></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-linear-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse animation-delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-linear-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Hero Header Section */}
+
           <ProfileHeader
             form={form}
             profileImage={profileImage}
+            setProfileFile={setProfileFile}
             onImageChange={setProfileImage}
             onSave={handleSave}
+            isEditing={isEditing}
+            onToggleEdit={() => setIsEditing((s) => !s)}
             onReset={handleReset}
             saving={saving}
           />
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Form Fields */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Personal Information Card */}
-              <PersonalInformation form={form} onChange={handleChange} />
 
-              {/* Professional Summary Card */}
-              <ProfessionalSummary
-                summary={form.summary}
-                onChange={handleChange}
-              />
+          <div
+            className={` ${!isEditing ? "opacity-40 grayscale pointer-events-none" : "opacity-100"}`}
+            aria-hidden={!isEditing}
+          >
+            {/* Responsive grid: main content (2fr) + sidebar (1fr) on large screens */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative">
+              {/* Left Column - Form Fields (spans 2 columns on lg+) */}
+              <div className="lg:col-span-2 space-y-8">
+                <PersonalInformation
+                  form={form}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                />
 
-              {/* Work Experience Section */}
-              <WorkExperience
-                employmentHistory={employmentHistory}
-                showAddEmployment={showAddEmployment}
-                newEmployment={newEmployment}
-                onToggleAddForm={() => setShowAddEmployment(!showAddEmployment)}
-                onNewEmploymentChange={handleNewEmploymentChange}
-                onAddEmployment={addEmploymentRecord}
-                onDeleteEmployment={deleteEmployment}
-                onDocumentUpload={handleDocumentUpload}
-                onDocumentRemove={removeDocument}
-                documentInputRefs={documentInputRefs}
-              />
-            </div>
+                <ProfessionalSummary
+                  summary={form.summary}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                />
 
-            {/* Right Column - Resume Upload */}
-            <div className="lg:col-span-1">
-              <ResumeUpload
-                resumeFile={resumeFile}
-                autoFilling={autoFilling}
-                onFileChange={setResumeFile}
-                onAutoFill={autoFillFromResume}
-              />
+                <WorkExperience
+                  employmentHistory={employmentHistory}
+                  showAddEmployment={showAddEmployment}
+                  newEmployment={newEmployment}
+                  onToggleAddForm={() => setShowAddEmployment(!showAddEmployment)}
+                  onNewEmploymentChange={handleNewEmploymentChange}
+                  onAddEmployment={addEmploymentRecord}
+                  onDeleteEmployment={deleteEmployment}
+                  onDocumentUpload={handleDocumentUpload}
+                  onDocumentRemove={removeDocument}
+                  documentInputRefs={documentInputRefs}
+                  disabled={!isEditing}
+                />
+              </div>
+
+              {/* Right Column - Resume Upload (sidebar) */}
+              <aside className="lg:col-span-1">
+                <ResumeUpload
+                  resumeFile={resumeFile}
+                  autoFilling={autoFilling}
+                  onFileChange={setResumeFile}
+                  onAutoFill={autoFillFromResume}
+                  disabled={!isEditing}
+                />
+              </aside>
+
+              {/* Read-only overlay message shown when not editing. Header edit button remains usable. */}
+              {!isEditing && (
+                <div className="absolute inset-0 flex items-start justify-center pointer-events-none">
+                  <div className="mt-4 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-full px-4 py-2 text-sm text-gray-700 shadow-sm">
+                    Read-only mode — click {"Edit Profile"} to make changes
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          
         </div>
       </div>
       <Footer />

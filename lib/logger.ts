@@ -27,18 +27,21 @@ if (isServer) {
   const isProd = process.env.NODE_ENV === "production";
   const level = process.env.LOG_LEVEL || (isProd ? "info" : "debug");
 
-  const transport = !isProd
-    ? {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          translateTime: "SYS:standard",
-          ignore: "pid,hostname",
-        },
-      }
-    : undefined;
-
-  logger = pino(transport ? { level, transport } : { level });
+  // In development, avoid using pino's transport API which may spawn worker
+  // threads via `thread-stream` (this can cause bundler/runtime errors).
+  // Use `pino-pretty` as a direct stream instead which does not spawn workers.
+  if (!isProd) {
+    // require at runtime to avoid bundling on the client
+    const pinoPretty = require("pino-pretty");
+    const prettyStream = pinoPretty({
+      colorize: true,
+      translateTime: "SYS:standard",
+      ignore: "pid,hostname",
+    });
+    logger = pino({ level }, prettyStream);
+  } else {
+    logger = pino({ level });
+  }
   httpLogger = pinoHttp({ logger });
 } else {
   // Client-side no-op logger to avoid errors when imported in shared modules

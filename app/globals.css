@@ -1,3 +1,4 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
@@ -447,6 +448,18 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* Slow pan used by Carousel and hero backgrounds */
+  .animate-slow-pan {
+    /* shorter duration and stronger motion for a more cinematic/video feel */
+    animation: slowPan 18s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* Smooth transition helper for opacity/transform changes */
+  .transition-smooth {
+    transition: opacity 1000ms ease-in-out, transform 1200ms ease-in-out;
+  }
 }
 
 /* Reduced motion support */
@@ -471,4 +484,12 @@ body {
     animation: none !important;
     transition: none !important;
   }
+}
+
+@keyframes slowPan {
+  0% { transform: scale(1.1) translate(0px, 0px); }
+  25% { transform: scale(1.16) translate(-2%, -1%); }
+  50% { transform: scale(1.21) translate(-4%, -3%); }
+  75% { transform: scale(1.18) translate(-3%, -2%); }
+  100% { transform: scale(1.13) translate(0px, 0px); }
 }

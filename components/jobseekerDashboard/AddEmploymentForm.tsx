@@ -8,6 +8,7 @@ interface AddEmploymentFormProps {
   onChange: (field: keyof EmploymentRecord, value: EmploymentRecord[keyof EmploymentRecord]) => void;
   onAdd: () => void;
   onCancel: () => void;
+  disabled?: boolean;
 }
 
 export default function AddEmploymentForm({
@@ -15,6 +16,7 @@ export default function AddEmploymentForm({
   onChange,
   onAdd,
   onCancel,
+  disabled = false,
 }: AddEmploymentFormProps) {
   return (
     <div className="mb-6 p-6 bg-linear-to-br from-indigo-50 via-purple-50 to-blue-50 rounded-xl border-2 border-indigo-200 shadow-inner">
@@ -29,6 +31,7 @@ export default function AddEmploymentForm({
             placeholder="Company Name"
             value={newEmployment.company || ""}
             onChange={(e) => onChange("company", e.target.value)}
+            disabled={disabled}
             className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
           />
           <input
@@ -36,6 +39,7 @@ export default function AddEmploymentForm({
             placeholder="Position/Title"
             value={newEmployment.position || ""}
             onChange={(e) => onChange("position", e.target.value)}
+            disabled={disabled}
             className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
           />
         </div>
@@ -45,6 +49,7 @@ export default function AddEmploymentForm({
             placeholder="Start Date"
             value={newEmployment.startDate || ""}
             onChange={(e) => onChange("startDate", e.target.value)}
+            disabled={disabled}
             className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
           />
           <input
@@ -53,19 +58,20 @@ export default function AddEmploymentForm({
             value={newEmployment.endDate || ""}
             onChange={(e) => onChange("endDate", e.target.value)}
             disabled={newEmployment.currentlyWorking}
+            aria-disabled={disabled}
             className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 disabled:bg-slate-100 disabled:border-slate-200 transition-all font-medium"
           />
         </div>
-        <label className="flex items-center gap-3 text-sm text-indigo-900 font-bold bg-white px-4 py-3 rounded-lg border-2 border-indigo-200 cursor-pointer hover:border-indigo-400 transition-all">
+          <label className={`flex items-center gap-3 text-sm text-indigo-900 font-bold bg-white px-4 py-3 rounded-lg border-2 border-indigo-200 cursor-pointer hover:border-indigo-400 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
           <input
             type="checkbox"
             checked={newEmployment.currentlyWorking || false}
-            onChange={(e) => {
-              onChange("currentlyWorking", e.target.checked);
-              if (e.target.checked) {
-                onChange("endDate", "");
-              }
-            }}
+              onChange={(e) => {
+                onChange("currentlyWorking", e.target.checked);
+                if (e.target.checked) {
+                  onChange("endDate", "");
+                }
+              }}
             className="w-5 h-5 accent-indigo-500"
           />
           I currently work here
@@ -74,6 +80,7 @@ export default function AddEmploymentForm({
           placeholder="Job description and responsibilities..."
           value={newEmployment.description || ""}
           onChange={(e) => onChange("description", e.target.value)}
+          disabled={disabled}
           rows={3}
           className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 resize-none transition-all font-medium"
         />
@@ -81,14 +88,16 @@ export default function AddEmploymentForm({
           <button
             type="button"
             onClick={onAdd}
-            className="flex-1 px-6 py-3 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white rounded-xl font-black hover:shadow-xl hover:scale-105 transition-all"
+            disabled={disabled}
+            className={`flex-1 px-6 py-3 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white rounded-xl font-black hover:shadow-xl hover:scale-105 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
           >
             Add Experience
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-3 bg-white text-slate-700 rounded-xl font-bold border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all"
+            disabled={disabled}
+            className={`px-6 py-3 bg-white text-slate-700 rounded-xl font-bold border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
           >
             Cancel
           </button>

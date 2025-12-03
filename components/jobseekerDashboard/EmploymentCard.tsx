@@ -1,4 +1,3 @@
-// components/EmploymentCard.tsx
 "use client";
 
 import React from "react";
@@ -23,6 +22,7 @@ interface EmploymentCardProps {
   onDocumentUpload: (empId: string, e: React.ChangeEvent<HTMLInputElement>) => void;
   onDocumentRemove: (empId: string, docId: string) => void;
   documentInputRef: (el: HTMLInputElement | null) => void;
+  disabled?: boolean;
 }
 
 export default function EmploymentCard({
@@ -31,6 +31,7 @@ export default function EmploymentCard({
   onDocumentUpload,
   onDocumentRemove,
   documentInputRef,
+  disabled = false,
 }: EmploymentCardProps) {
   return (
     <div className="group/card relative p-6 bg-linear-to-br from-white via-slate-50 to-blue-50/30 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden">
@@ -59,7 +60,10 @@ export default function EmploymentCard({
         <button
           type="button"
           onClick={() => onDelete(employment.id)}
-          className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 hover:scale-110 duration-200"
+          disabled={disabled}
+          className={`p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 hover:scale-110 duration-200 ${
+            disabled ? "opacity-40 pointer-events-none" : ""
+          }`}
           title="Delete Employment Record"
         >
           <Trash className="w-5 h-5" />
@@ -82,7 +86,10 @@ export default function EmploymentCard({
           <button
             type="button"
             onClick={() => document.getElementById(`file-input-${employment.id}`)?.click()}
-            className="inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold"
+            disabled={disabled}
+            className={`inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold ${
+              disabled ? "opacity-40 pointer-events-none" : ""
+            }`}
           >
             <Upload className="w-4 h-4" />
             Upload Documents
@@ -96,6 +103,7 @@ export default function EmploymentCard({
             onChange={(e) => onDocumentUpload(employment.id, e)}
             className="hidden"
             placeholder="upload documents"
+            disabled={disabled}
           />
         </div>
 
@@ -132,23 +140,32 @@ export default function EmploymentCard({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all"
+                    className={`p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all ${
+                      disabled ? "opacity-40 pointer-events-none" : ""
+                    }`}
                     title="View document"
+                    disabled={disabled}
                   >
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
-                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all"
+                    className={`p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all ${
+                      disabled ? "opacity-40 pointer-events-none" : ""
+                    }`}
                     title="Download document"
+                    disabled={disabled}
                   >
                     <Download className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => onDocumentRemove(employment.id, doc.id)}
-                    className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
+                    className={`p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-all ${
+                      disabled ? "opacity-40 pointer-events-none" : ""
+                    }`}
                     title="Remove document"
+                    disabled={disabled}
                   >
                     <Trash className="w-4 h-4" />
                   </button>

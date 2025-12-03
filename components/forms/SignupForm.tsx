@@ -468,7 +468,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         title: "Face Verified",
         text: "Identity verification successful. Creating your account...",
         timer: 2000,
-        showConfirmButton: false,
+        showConfirmButton: true,
       });
       closeFacePopup();
       await submitSignup(pendingFormData);

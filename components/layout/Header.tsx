@@ -62,7 +62,8 @@ function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {isSignedIn && <HomeDropdown />}
+          {/* {isSignedIn && <HomeDropdown />} */}
+          <HomeDropdown />
           <Link
             href="/about"
             className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"

@@ -1,6 +1,3 @@
-// components/DigitalEmploymentPassport.tsx
-"use client";
-
 import React from "react";
 import {
   CheckCircle2,

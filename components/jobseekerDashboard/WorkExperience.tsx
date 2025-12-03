@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import { Plus, Building2 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
@@ -19,6 +18,7 @@ interface WorkExperienceProps {
   documentInputRefs: React.MutableRefObject<{
     [key: string]: HTMLInputElement | null;
   }>;
+  disabled?: boolean;
 }
 
 export default function WorkExperience({
@@ -32,6 +32,7 @@ export default function WorkExperience({
   onDocumentUpload,
   onDocumentRemove,
   documentInputRefs,
+  disabled = false,
 }: WorkExperienceProps) {
   return (
     <div className="group relative">
@@ -47,18 +48,20 @@ export default function WorkExperience({
               Add and verify your employment history
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onToggleAddForm}
-            className="inline-flex items-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold"
-          >
-            <Plus className="w-5 h-5" />
-            Add Experience
-          </button>
+            <button
+              type="button"
+              onClick={onToggleAddForm}
+              disabled={disabled}
+              className="inline-flex items-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-5 h-5" />
+              Add Experience
+            </button>
+        
         </div>
 
         {/* Add Employment Form */}
-        {showAddEmployment && (
+        {showAddEmployment && !disabled && (
           <AddEmploymentForm
             newEmployment={newEmployment}
             onChange={onNewEmploymentChange}
@@ -87,6 +90,7 @@ export default function WorkExperience({
                 documentInputRef={(el) => {
                   documentInputRefs.current[emp.id] = el;
                 }}
+                disabled={disabled}
               />
             ))
           )}

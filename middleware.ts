@@ -16,8 +16,8 @@ const isSharedPrivateRoute = createRouteMatcher([
 
 // All private routes combined
 const isPrivateRoute = createRouteMatcher([
-  "/jobseeker(.*)",
-  "/employer(.*)",
+  // "/jobseeker(.*)",
+  // "/employer(.*)",
   "/dashboard(.*)",
   "/profile(.*)",
   "/settings(.*)",

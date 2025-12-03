@@ -7,12 +7,32 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const [inView, setInView] = useState(false);
 
   useEffect(() => {
     startTimer();
     return stopTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setInView(true);
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   function startTimer() {
     stopTimer();
@@ -50,7 +70,7 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
   }
 
   return (
-    <section className="py-16 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/8 to-white relative overflow-hidden">
+    <section ref={containerRef} className="py-16 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/8 to-white relative overflow-hidden">
         {/* subtle brand orb */}
         <div className="absolute -right-20 -top-16 w-[480px] h-[480px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/12 via-[#1A3D64]/10 to-transparent pointer-events-none -z-10" />
         {/* left blue overlay stripe for stronger tint */}
@@ -115,28 +135,34 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
 
           <nav className="md:w-1/2 px-8">
             <div className="flex flex-col md:gap-4">
-              {STEPS.map((s, i) => (
-                <button
-                  type="button"
-                  key={s.id}
-                  onClick={() => goTo(i)}
-                  className={`text-left p-4 rounded-lg mb-2 w-full flex items-center gap-4 transition shadow-sm ${
-                    i === index ? "bg-white shadow-lg" : "bg-white/60"
-                  }`}
-                  aria-current={i === index ? "true" : undefined}
-                >
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${i === index ? "bg-[#0C2B4E] text-white" : "bg-sky-100 text-[#0C2B4E]"}`}>
-                    {s.short}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900">{s.title}</div>
-                    {/* show a short preview in the nav for all items, and keep the full depth text in the detail area */}
-                    <div className="text-sm text-gray-600 mt-1">
-                      {i === index ? s.description : s.description.length > 70 ? `${s.description.slice(0,70).trim()}…` : s.description}
+              {STEPS.map((s, i) => {
+                const base = 320;
+                const stepDelay = 220;
+                const delay = base + i * stepDelay;
+                return (
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => goTo(i)}
+                    style={{ animationDelay: `${delay}ms` }}
+                    className={`text-left p-4 rounded-lg mb-2 w-full flex items-center gap-4 transition shadow-sm ${
+                      i === index ? "bg-white shadow-lg" : "bg-white/60"
+                    } ${inView ? "slide-in-right opacity-100" : "opacity-0 translate-x-6"}`}
+                    aria-current={i === index ? "true" : undefined}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${i === index ? "bg-[#0C2B4E] text-white" : "bg-sky-100 text-[#0C2B4E]"}`}>
+                      {s.short}
                     </div>
-                  </div>
-                </button>
-              ))}
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-gray-900">{s.title}</div>
+                      {/* show a short preview in the nav for all items, and keep the full depth text in the detail area */}
+                      <div className="text-sm text-gray-600 mt-1">
+                        {i === index ? s.description : s.description.length > 70 ? `${s.description.slice(0,70).trim()}…` : s.description}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </nav>
         </div>
