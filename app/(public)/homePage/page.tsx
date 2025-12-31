@@ -7,6 +7,7 @@ import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorksSection from "@/components/home/HowItWorkSection";
 import CTASection from "@/components/home/CTASection";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
+import StatsSection from "@/components/home/StatsSection";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -33,6 +34,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <HeroSection />
       <FeaturesSection />
+      <StatsSection />
       <HowItWorksSection />
       <CTASection />
     </div>

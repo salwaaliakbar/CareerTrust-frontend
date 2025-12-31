@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -16,7 +15,6 @@ import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
-import { set } from "react-hook-form";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -87,6 +85,8 @@ export default function ProfilePage() {
       const form = new FormData();
       // backend expects field name `resume`
       form.append("resume", file);
+      form.append("fullName", user?.fullName || `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || "")
+      form.append("email", user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || "")
 
       let parsed: any = null;
       try {

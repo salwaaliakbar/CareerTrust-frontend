@@ -2,11 +2,17 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { getAllJobs, type Job } from "@/src/store/slices/jobsSlice";
+import { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 
 export default function JobSearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
+  const dispatch = useAppDispatch();
+  const { items: jobs } = useAppSelector((state) => state.jobs);
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -17,6 +23,10 @@ export default function JobSearchBar() {
     const url = `/jobs${params.toString() ? `?${params.toString()}` : ""}`;
     router.push(url);
   };
+
+  const locations = useMemo(() => {
+      return Array.from(new Set(jobs.map((j) => j.location))).sort();
+    }, [jobs]);
 
   return (
     <form onSubmit={handleSearch} className="max-w-4xl mx-auto">
@@ -32,21 +42,27 @@ export default function JobSearchBar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Job title, keyword or company"
-              className="w-full py-4 text-gray-900 placeholder-gray-400 focus:outline-none"
+              className="w-full py-4 text-gray-900 placeholder-gray-600 focus:outline-none"
             />
           </div>
 
           {/* Location input */}
           <div className="hidden sm:flex items-center gap-3 px-4 border-l border-gray-100 flex-1">
             <label htmlFor="job-location" className="sr-only">Location</label>
-            <input
+            <select
               id="job-location"
-              type="text"
+              aria-label="Location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="City, state, zip or remote"
               className="w-full py-4 text-gray-900 placeholder-gray-400 focus:outline-none"
-            />
+            >
+            <option value="">All locations</option>
+              {locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Search button */}

@@ -26,6 +26,22 @@ export async function POST(req: Request) {
       );
     }
 
+    const fullName = form.get("fullName") as string | null;
+    if(!fullName) {
+      return NextResponse.json(
+        { error: "Full name is required" },
+        { status: 400 }
+      );
+    }
+
+    const email = form.get("email") as string | null;
+    if(!email) {
+      return NextResponse.json(
+        { error: "Email is required" },
+        { status: 400 }
+      );
+    }
+
     // Convert web File to a Blob/FormData we can forward
     const arrayBuffer = await file.arrayBuffer();
     const blob = new Blob([arrayBuffer], {
@@ -35,6 +51,8 @@ export async function POST(req: Request) {
     // use same field name 'file' so downstream parser receives it
     // Use the File.name directly (avoid `any`st) and fallback to a default filename.
     forwardForm.append("file", blob, file?.name ?? "resume-upload");
+    forwardForm.append("fullName", fullName);
+    forwardForm.append("email", email);
 
     // Forward the request to the external AI parser
     const forwardedRes = await fetch(parserUrl, {
