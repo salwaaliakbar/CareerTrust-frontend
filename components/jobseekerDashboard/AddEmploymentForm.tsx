@@ -20,8 +20,8 @@ export default function AddEmploymentForm({
 }: AddEmploymentFormProps) {
   return (
     <div className="mb-6 p-6 bg-linear-to-br from-indigo-50 via-purple-50 to-blue-50 rounded-xl border-2 border-indigo-200 shadow-inner">
-      <h3 className="text-sm font-black text-indigo-900 mb-5 flex items-center gap-2">
-        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+      <h3 className="text-sm font-black text-[#0C2A4E] mb-5 flex items-center gap-2">
+        <div className="w-2 h-2 bg-[#0C2A4E] rounded-full animate-pulse"></div>
         Add New Work Experience
       </h3>
       <div className="space-y-4">
@@ -32,7 +32,7 @@ export default function AddEmploymentForm({
             value={newEmployment.company || ""}
             onChange={(e) => onChange("company", e.target.value)}
             disabled={disabled}
-            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
+            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-[0C2A4E] focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
           />
           <input
             type="text"
@@ -40,29 +40,35 @@ export default function AddEmploymentForm({
             value={newEmployment.position || ""}
             onChange={(e) => onChange("position", e.target.value)}
             disabled={disabled}
-            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
+            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-[#0C2A4E] focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input
-            type="month"
-            placeholder="Start Date"
-            value={newEmployment.startDate || ""}
-            onChange={(e) => onChange("startDate", e.target.value)}
-            disabled={disabled}
-            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
-          />
-          <input
-            type="month"
-            placeholder="End Date"
-            value={newEmployment.endDate || ""}
-            onChange={(e) => onChange("endDate", e.target.value)}
-            disabled={newEmployment.currentlyWorking}
-            aria-disabled={disabled}
-            className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 disabled:bg-slate-100 disabled:border-slate-200 transition-all font-medium"
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-[0C2A4E] px-1">Start Date</label>
+            <input
+              type="text"
+              placeholder="MM/YYYY (e.g., 01/2024)"
+              value={newEmployment.startDate || ""}
+              onChange={(e) => onChange("startDate", e.target.value)}
+              disabled={disabled}
+              className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-[#0C2A4E] focus:ring-4 focus:ring-indigo-500/20 transition-all font-medium"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-[#0C2A4E] px-1">End Date</label>
+            <input
+              type="text"
+              placeholder="MM/YYYY (e.g., 12/2024)"
+              value={newEmployment.endDate || ""}
+              onChange={(e) => onChange("endDate", e.target.value)}
+              disabled={newEmployment.currentlyWorking || disabled}
+              aria-disabled={disabled}
+              className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-[#0C2A4E] focus:ring-4 focus:ring-indigo-500/20 disabled:bg-slate-100 disabled:border-slate-200 transition-all font-medium"
+            />
+          </div>
         </div>
-          <label className={`flex items-center gap-3 text-sm text-indigo-900 font-bold bg-white px-4 py-3 rounded-lg border-2 border-indigo-200 cursor-pointer hover:border-indigo-400 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
+          <label className={`flex items-center gap-3 text-sm text-[#0C2A4E] font-bold bg-white px-4 py-3 rounded-lg border-2 border-indigo-200 cursor-pointer hover:border-indigo-400 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}>
           <input
             type="checkbox"
             checked={newEmployment.currentlyWorking || false}
@@ -82,7 +88,7 @@ export default function AddEmploymentForm({
           onChange={(e) => onChange("description", e.target.value)}
           disabled={disabled}
           rows={3}
-          className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 resize-none transition-all font-medium"
+          className="w-full rounded-lg border-2 border-indigo-200 bg-white px-4 py-3 focus:outline-none focus:border-[#0C2A4E] focus:ring-4 focus:ring-indigo-500/20 resize-none transition-all font-medium"
         />
         <div className="flex gap-3">
           <button

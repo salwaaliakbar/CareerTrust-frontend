@@ -10,8 +10,8 @@ function HeroSection() {
       <div className="relative max-w-7xl mx-auto z-20">
         <div className="flex item-center justify-center mt-8">
           <div className="w-full">
-            <h1 className="text-5xl sm:text-6xl font-extrabold text-white mb-6  leading-tight text-center drop-shadow-lg fade-in-down">
-              Find verified jobs and apply with confidence
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-6  leading-tight text-center drop-shadow-lg fade-in-down">
+              Find <span className="text-sky-300"> verified jobs</span> and apply with<br></br><span className="text-sky-300"> confidence </span>
             </h1>
             <p className="text-lg sm:text-xl text-white mb-17 leading-relaxed text-center max-w-4xl mx-auto opacity-95 drop-shadow-sm fade-in animation-delay-100">
               Search verified opportunities and filter by location, role, and more.

@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { ProfileData, EmploymentRecord } from "@/types/jobseeker.types";
+import {
+  ProfileData,
+  EmploymentRecord,
+  EducationRecord,
+} from "@/types/jobseeker.types";
 import { useEmployment } from "@/hooks/useEmployment";
 import ProfileHeader from "@/components/jobseekerDashboard/ProfileHeader";
 import PersonalInformation from "@/components/jobseekerDashboard/PersonalInformation";
 import ProfessionalSummary from "@/components/jobseekerDashboard/ProfessionalSummary";
 import WorkExperience from "@/components/jobseekerDashboard/WorkExperience";
+import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
+import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -21,11 +27,25 @@ export default function ProfilePage() {
     fullName: "",
     headline: "",
     location: "",
+    education: "",
     experience: "",
     skills: "",
-    education: "",
     summary: "",
     email: "",
+    total_experience: "",
+    total_experience_years: 0,
+  });
+
+  // Education state management
+  const [educationHistory, setEducationHistory] = useState<EducationRecord[]>(
+    []
+  );
+  const [showAddEducation, setShowAddEducation] = useState(false);
+  const [newEducation, setNewEducation] = useState<Partial<EducationRecord>>({
+    institution: "",
+    degree: "",
+    startDate: "",
+    endDate: "",
   });
 
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -57,6 +77,53 @@ export default function ProfilePage() {
     setForm((s) => ({ ...s, [name]: value }));
   }
 
+  // Education handlers
+  function handleNewEducationChange(
+    field: keyof EducationRecord,
+    value: EducationRecord[keyof EducationRecord]
+  ) {
+    setNewEducation((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function addEducationRecord() {
+    if (!newEducation.institution || !newEducation.degree) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Information",
+        text: "Please fill in at least the institution and degree.",
+      });
+      return;
+    }
+
+    const cryptoWithUuid = crypto as unknown as { randomUUID?: () => string };
+    const id =
+      typeof crypto !== "undefined" &&
+      typeof cryptoWithUuid.randomUUID === "function"
+        ? cryptoWithUuid.randomUUID()
+        : `${Date.now()}`;
+
+    const eduRecord: EducationRecord = {
+      id,
+      institution: newEducation.institution || "",
+      degree: newEducation.degree || "",
+      startDate: newEducation.startDate || "",
+      endDate: newEducation.endDate || "",
+    };
+
+    setEducationHistory((prev) => [...prev, eduRecord]);
+    setNewEducation({
+      institution: "",
+      degree: "",
+      startDate: "",
+      endDate: "",
+    });
+    setShowAddEducation(false);
+  }
+
+  function deleteEducation(id: string) {
+    setEducationHistory((prev) => prev.filter((e) => e.id !== id));
+  }
+
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
@@ -82,20 +149,23 @@ export default function ProfilePage() {
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
     try {
-      const form = new FormData();
+      const sendindForm = new FormData();
       // backend expects field name `resume`
-      form.append("resume", file);
-      form.append("fullName", user?.fullName || `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || "")
-      form.append("email", user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || "")
+      sendindForm.append("resume", file);
+      // Use form state values which are already populated from Clerk user data
+      sendindForm.append("fullName", form.fullName || "");
+      sendindForm.append("email", form.email || "");
 
       let parsed: any = null;
+      let mismatches: any = {};
       try {
-        const resp = await axios.post("/api/resume/parse-resume", form, {
+        const resp = await axios.post("/api/resume/parse-resume", sendindForm, {
           headers: { "Content-Type": "multipart/form-data" },
         });
         const body = resp.data;
         // API should return { parsed: { ... } } or parsed directly
         parsed = body.parsed ?? body;
+        mismatches = body.mismatches;
       } catch (e) {
         if (axios.isAxiosError(e)) {
           const status = e.response?.status;
@@ -106,19 +176,82 @@ export default function ProfilePage() {
         }
         throw new Error("Resume parse failed");
       }
-
       if (!parsed) {
         // no parsed data, nothing to autofill
         return;
       }
-
+      console.log("Parsed resume data: ", parsed);
       logger.info("Parsed resume data:", parsed);
+
+      // Check for mismatches between resume and account data
+      if (mismatches.name || mismatches.email) {
+        const mismatchMessages = [];
+        if (mismatches.name) {
+          console.log(
+            "Name mismatch detected:",
+            parsed.name,
+            form.fullName,
+            user?.fullName
+          );
+          mismatchMessages.push(
+            `Name: Resume has "${
+              parsed.name || "N/A"
+            }" but your account shows "${
+              form.fullName || user?.fullName || "N/A"
+            }"`
+          );
+        }
+        if (mismatches.email) {
+          mismatchMessages.push(
+            `Email: Resume has "${
+              parsed.email || "N/A"
+            }" but your account shows "${
+              form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
+            }"`
+          );
+        }
+
+        const result = await Swal.fire({
+          icon: "warning",
+          title: "Information Mismatch Detected",
+          html: `
+            <div style="text-align: left;">
+              <p>The following information in your resume differs from your account:</p>
+              <ul style="margin-top: 10px;">
+                ${mismatchMessages.map((msg) => `<li>${msg}</li>`).join("")}
+              </ul>
+              <p style="margin-top: 15px;">Do you want to proceed with autofilling your profile from the resume?</p>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: "Yes, Autofill",
+          cancelButtonText: "Cancel",
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+        });
+
+        if (!result.isConfirmed) {
+           Swal.fire({
+            icon: "info",
+            title: "Autofill Cancelled",
+            text: "Your profile was not changed.",
+          });
+          setAutoFilling(false);
+          return;
+        }
+      }
 
       // Map parsed fields to our form structure, falling back to existing values
       setForm((prev) => ({
         fullName: parsed.name ?? parsed.fullName ?? prev.fullName,
         headline: parsed.headline ?? prev.headline,
         location: parsed.location ?? prev.location,
+        education: Array.isArray(parsed.education)
+          ? (parsed.education as Array<Record<string, unknown>>)
+              .map((x) => (x.institution as string) ?? "")
+              .filter(Boolean)
+              .join(", ")
+          : parsed.education ?? prev.education,
         experience: Array.isArray(parsed.experience)
           ? (parsed.experience as Array<Record<string, unknown>>)
               .map(
@@ -133,17 +266,39 @@ export default function ProfilePage() {
         skills: Array.isArray(parsed.skills)
           ? parsed.skills.join(", ")
           : parsed.skills ?? prev.skills,
-        education:
-          Array.isArray(parsed.education) && parsed.education.length > 0
-            ? typeof parsed.education[0] === "string"
-              ? parsed.education[0]
-              : `${parsed.education[0].degree ?? ""} - ${
-                  parsed.education[0].institution ?? ""
-                }`
-            : parsed.education ?? prev.education,
         summary: parsed.summary ?? prev.summary,
         email: prev.email,
+        total_experience: parsed.total_experience ?? prev.total_experience,
+        total_experience_years:
+          parsed.total_experience_years ?? prev.total_experience_years,
       }));
+
+      // Map education to EducationRecord[] if present
+      if (Array.isArray(parsed.education) && parsed.education.length > 0) {
+        const extractedEducation: EducationRecord[] = (
+          parsed.education as Array<Record<string, unknown>>
+        ).map((e, i: number) => {
+          const cryptoWithUuid = crypto as unknown as {
+            randomUUID?: () => string;
+          };
+          const id =
+            typeof crypto !== "undefined" &&
+            typeof cryptoWithUuid.randomUUID === "function"
+              ? cryptoWithUuid.randomUUID()
+              : `${Date.now()}-${i}`;
+
+          return {
+            id: id.toString(),
+            institution: (e.institution as string) ?? "",
+            degree: (e.degree as string) ?? "",
+            startDate:
+              (e.start_date as string) ?? (e.startDate as string) ?? "",
+            endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+          } as EducationRecord;
+        });
+
+        setEducationHistory((prev) => [...extractedEducation, ...prev]);
+      }
 
       // Map experiences to EmploymentRecord[] if present
       if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
@@ -195,6 +350,7 @@ export default function ProfilePage() {
       const payload = new FormData();
       payload.append("profile", JSON.stringify(form));
       payload.append("employmentHistory", JSON.stringify(employmentHistory));
+      payload.append("educationHistory", JSON.stringify(educationHistory));
       if (resumeFile) payload.append("resume", resumeFile);
       if (profileFile) payload.append("profileImage", profileFile);
 
@@ -290,6 +446,8 @@ export default function ProfilePage() {
       education: "",
       summary: "",
       email: "",
+      total_experience: "",
+      total_experience_years: 0,
     });
     setResumeFile(null);
     setProfileImage(null);
@@ -331,7 +489,11 @@ export default function ProfilePage() {
           {/* Main Content Grid */}
 
           <div
-            className={` ${!isEditing ? "opacity-40 grayscale pointer-events-none" : "opacity-100"}`}
+            className={` ${
+              !isEditing
+                ? "opacity-40 grayscale pointer-events-none"
+                : "opacity-100"
+            }`}
             aria-hidden={!isEditing}
           >
             {/* Responsive grid: main content (2fr) + sidebar (1fr) on large screens */}
@@ -350,11 +512,31 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                 />
 
+                {showAddEducation && (
+                  <AddEducationForm
+                    newEducation={newEducation}
+                    onChange={handleNewEducationChange}
+                    onAdd={addEducationRecord}
+                    onCancel={() => setShowAddEducation(false)}
+                    disabled={!isEditing}
+                  />
+                )}
+
+                <EducationHistory
+                  educationHistory={educationHistory}
+                  showAddEducation={showAddEducation}
+                  onToggleAdd={() => setShowAddEducation(!showAddEducation)}
+                  onDelete={deleteEducation}
+                  disabled={!isEditing}
+                />
+
                 <WorkExperience
                   employmentHistory={employmentHistory}
                   showAddEmployment={showAddEmployment}
                   newEmployment={newEmployment}
-                  onToggleAddForm={() => setShowAddEmployment(!showAddEmployment)}
+                  onToggleAddForm={() =>
+                    setShowAddEmployment(!showAddEmployment)
+                  }
                   onNewEmploymentChange={handleNewEmploymentChange}
                   onAddEmployment={addEmploymentRecord}
                   onDeleteEmployment={deleteEmployment}

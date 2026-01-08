@@ -49,10 +49,6 @@ export default function ResumeUpload({
     } finally {
       setButtonLoading(false);
     }
-    // if (f) {
-    //   onFileChange(f);
-    //   await onAutoFill(f);
-    // }
   }
 
   function removeResume() {

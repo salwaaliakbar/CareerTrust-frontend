@@ -7,7 +7,6 @@ import {
   MapPin,
   Award,
   Sparkles,
-  GraduationCap,
 } from "lucide-react";
 import { ProfileData } from "@/types/jobseeker.types";
 
@@ -89,8 +88,8 @@ export default function PersonalInformation({
                 Experience
               </span>
               <input
-                name="experience"
-                value={form.experience}
+                name="total_experience"
+                value={form.total_experience}
                 onChange={onChange}
                 disabled={disabled}
                 className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
@@ -109,25 +108,10 @@ export default function PersonalInformation({
                 onChange={onChange}
                 disabled={disabled}
                 className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
-                placeholder="React, Node.js"
+                placeholder="ReactJS, NodeJS, MongoDB, Python (comma-separated)"
               />
             </label>
           </div>
-
-          <label className="block group/input">
-            <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <GraduationCap className="w-4 h-4 text-blue-600" />
-              Education
-            </span>
-            <input
-              name="education"
-              value={form.education}
-              onChange={onChange}
-              disabled={disabled}
-              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
-              placeholder="BS Computer Science - MIT"
-            />
-          </label>
         </div>
       </div>
     </div>
