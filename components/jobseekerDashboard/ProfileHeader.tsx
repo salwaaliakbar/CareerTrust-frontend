@@ -12,7 +12,7 @@ import {
   Edit2,
   Mail,
 } from "lucide-react";
-import { ProfileData } from "@/types/jobseeker.types";
+import { ProfileData, EducationRecord } from "@/types/jobseeker.types";
 
 interface ProfileHeaderProps {
   form: ProfileData;
@@ -24,6 +24,7 @@ interface ProfileHeaderProps {
   saving: boolean;
   isEditing?: boolean;
   onToggleEdit?: () => void;
+  educationHistory?: EducationRecord[];
 }
 
 export default function ProfileHeader({
@@ -36,6 +37,7 @@ export default function ProfileHeader({
   saving,
   isEditing = false,
   onToggleEdit,
+  educationHistory = [],
 }: ProfileHeaderProps) {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
  
@@ -174,10 +176,10 @@ export default function ProfileHeader({
                 </span>
               )}
 
-              {form?.education && (
+              {educationHistory && educationHistory.length > 0 && (
                 <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <GraduationCap className="w-4 h-4" />
-                  {form.education.split("-")[0].trim()}
+                  {educationHistory[0].degree || educationHistory[0].institution}
                 </span>
               )}
             </div>
