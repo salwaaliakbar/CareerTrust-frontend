@@ -4,15 +4,19 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
     // Enable optimized package imports to reduce bundle size
-    optimizePackageImports: ['lucide-react', '@tensorflow/tfjs', 'face-api.js'],
+    optimizePackageImports: ["lucide-react", "@tensorflow/tfjs", "face-api.js"],
   },
-  
+  // Ensure Turbopack uses this project root (prevents picking parent lockfiles)
+  turbopack: {
+    root: __dirname,
+  },
+
   // Reduce compilation time
   typescript: {
     // Only type-check on build, not during dev
     ignoreBuildErrors: false,
   },
-  
+
   // Optimize images
   images: {
     remotePatterns: [],
@@ -24,7 +28,7 @@ const nextConfig: NextConfig = {
     if (dev && !isServer) {
       // Reduce the number of modules that need to be processed
       config.watchOptions = {
-        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**'],
+        ignored: ["**/node_modules/**", "**/.git/**", "**/.next/**"],
         poll: false,
       };
     }
