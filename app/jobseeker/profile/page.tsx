@@ -7,6 +7,7 @@ import {
   EducationRecord,
 } from "@/types/jobseeker.types";
 import { useEmployment } from "@/hooks/useEmployment";
+import { useEducation } from "@/hooks/useEducation";
 import ProfileHeader from "@/components/jobseekerDashboard/ProfileHeader";
 import PersonalInformation from "@/components/jobseekerDashboard/PersonalInformation";
 import ProfessionalSummary from "@/components/jobseekerDashboard/ProfessionalSummary";
@@ -27,8 +28,6 @@ export default function ProfilePage() {
     fullName: "",
     headline: "",
     location: "",
-    education: "",
-    experience: "",
     skills: "",
     summary: "",
     email: "",
@@ -36,17 +35,30 @@ export default function ProfilePage() {
     total_experience_years: 0,
   });
 
-  // Education state management
-  const [educationHistory, setEducationHistory] = useState<EducationRecord[]>(
-    []
-  );
-  const [showAddEducation, setShowAddEducation] = useState(false);
-  const [newEducation, setNewEducation] = useState<Partial<EducationRecord>>({
-    institution: "",
-    degree: "",
-    startDate: "",
-    endDate: "",
-  });
+  const {
+    educationHistory,
+    setEducationHistory,
+    showAddEducation,
+    setShowAddEducation,
+    newEducation,
+    handleNewEducationChange,
+    addEducationRecord,
+    deleteEducation,
+  } = useEducation([]);
+
+  const {
+    employmentHistory,
+    setEmploymentHistory,
+    showAddEmployment,
+    setShowAddEmployment,
+    newEmployment,
+    documentInputRefs,
+    addEmploymentRecord,
+    handleNewEmploymentChange,
+    deleteEmployment,
+    handleDocumentUpload,
+    removeDocument,
+  } = useEmployment([]);
 
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -55,73 +67,12 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { user } = useUser();
-
-  const {
-    employmentHistory,
-    setEmploymentHistory,
-    showAddEmployment,
-    setShowAddEmployment,
-    newEmployment,
-    setNewEmployment,
-    documentInputRefs,
-    addEmploymentRecord,
-    deleteEmployment,
-    handleDocumentUpload,
-    removeDocument,
-  } = useEmployment([]);
-
+ 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
-  }
-
-  // Education handlers
-  function handleNewEducationChange(
-    field: keyof EducationRecord,
-    value: EducationRecord[keyof EducationRecord]
-  ) {
-    setNewEducation((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function addEducationRecord() {
-    if (!newEducation.institution || !newEducation.degree) {
-      Swal.fire({
-        icon: "warning",
-        title: "Missing Information",
-        text: "Please fill in at least the institution and degree.",
-      });
-      return;
-    }
-
-    const cryptoWithUuid = crypto as unknown as { randomUUID?: () => string };
-    const id =
-      typeof crypto !== "undefined" &&
-      typeof cryptoWithUuid.randomUUID === "function"
-        ? cryptoWithUuid.randomUUID()
-        : `${Date.now()}`;
-
-    const eduRecord: EducationRecord = {
-      id,
-      institution: newEducation.institution || "",
-      degree: newEducation.degree || "",
-      startDate: newEducation.startDate || "",
-      endDate: newEducation.endDate || "",
-    };
-
-    setEducationHistory((prev) => [...prev, eduRecord]);
-    setNewEducation({
-      institution: "",
-      degree: "",
-      startDate: "",
-      endDate: "",
-    });
-    setShowAddEducation(false);
-  }
-
-  function deleteEducation(id: string) {
-    setEducationHistory((prev) => prev.filter((e) => e.id !== id));
   }
 
   const [mounted, setMounted] = React.useState(false);
@@ -178,9 +129,8 @@ export default function ProfilePage() {
       }
       if (!parsed) {
         // no parsed data, nothing to autofill
-        return;
+        throw new Error("No data extracted from resume");
       }
-      console.log("Parsed resume data: ", parsed);
       logger.info("Parsed resume data:", parsed);
 
       // Check for mismatches between resume and account data
@@ -231,13 +181,12 @@ export default function ProfilePage() {
         });
 
         if (!result.isConfirmed) {
-           Swal.fire({
+          Swal.fire({
             icon: "info",
             title: "Autofill Cancelled",
             text: "Your profile was not changed.",
           });
-          setAutoFilling(false);
-          return;
+          throw new Error("Autofill cancelled by user");
         }
       }
 
@@ -246,23 +195,6 @@ export default function ProfilePage() {
         fullName: parsed.name ?? parsed.fullName ?? prev.fullName,
         headline: parsed.headline ?? prev.headline,
         location: parsed.location ?? prev.location,
-        education: Array.isArray(parsed.education)
-          ? (parsed.education as Array<Record<string, unknown>>)
-              .map((x) => (x.institution as string) ?? "")
-              .filter(Boolean)
-              .join(", ")
-          : parsed.education ?? prev.education,
-        experience: Array.isArray(parsed.experience)
-          ? (parsed.experience as Array<Record<string, unknown>>)
-              .map(
-                (x) =>
-                  (x.title as string) ??
-                  (x.position as string) ??
-                  (x.company as string)
-              )
-              .filter(Boolean)
-              .join(", ")
-          : parsed.experience ?? prev.experience,
         skills: Array.isArray(parsed.skills)
           ? parsed.skills.join(", ")
           : parsed.skills ?? prev.skills,
@@ -338,6 +270,7 @@ export default function ProfilePage() {
       // Swal.fire({ icon: 'success', title: 'Parsed', text: 'Resume parsed and profile autofilled.' })
     } catch (err) {
       console.error("Failed to parse resume:", err);
+      throw err;
     } finally {
       setAutoFilling(false);
     }
@@ -346,13 +279,50 @@ export default function ProfilePage() {
   async function handleSave() {
     setSaving(true);
     try {
-      console.log("profile image: ", profileFile);
       const payload = new FormData();
-      payload.append("profile", JSON.stringify(form));
-      payload.append("employmentHistory", JSON.stringify(employmentHistory));
-      payload.append("educationHistory", JSON.stringify(educationHistory));
+
+      // Build a partial profile object: include only non-empty, non-null fields
+      const partialProfile: Record<string, any> = {};
+      Object.entries(form).forEach(([key, value]) => {
+        if (value === null || value === undefined) return;
+        if (typeof value === "string" && value.trim() === "") return;
+        partialProfile[key] = value;
+      });
+
+      // Ensure email is present for face verification, even if not editing other fields
+      if (!partialProfile.email && form.email) {
+        partialProfile.email = form.email;
+      }
+
+      const userId = user?.id;
+
+      // console.log("userId: ", userId)
+
+      if (userId) {
+        payload.append("userId", userId);
+      }
+
+      // Only append profile if we actually have fields to update
+      if (Object.keys(partialProfile).length > 0) {
+        payload.append("profile", JSON.stringify(partialProfile));
+      }
+
+      // Only append histories if provided and non-empty
+      if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
+        payload.append("employmentHistory", JSON.stringify(employmentHistory));
+      }
+      if (Array.isArray(educationHistory) && educationHistory.length > 0) {
+        payload.append("educationHistory", JSON.stringify(educationHistory));
+      }
+
+      // Files: append if selected
       if (resumeFile) payload.append("resume", resumeFile);
-      if (profileFile) payload.append("profileImage", profileFile);
+      if (profileFile) {
+        payload.append("profileImage", profileFile);
+      } else if (profileImage) {
+        // If no file but we have a data URL string, send it for AI verification
+        payload.append("profileImage", profileImage);
+      }
 
       const resp = await axios.post(
         `${API_ENDPOINTS.JOBSEEKER_PROFILE_SAVE}`,
@@ -441,9 +411,7 @@ export default function ProfilePage() {
       fullName: "",
       headline: "",
       location: "",
-      experience: "",
       skills: "",
-      education: "",
       summary: "",
       email: "",
       total_experience: "",
@@ -451,13 +419,6 @@ export default function ProfilePage() {
     });
     setResumeFile(null);
     setProfileImage(null);
-  }
-
-  function handleNewEmploymentChange<K extends keyof EmploymentRecord>(
-    field: K,
-    value: EmploymentRecord[K]
-  ) {
-    setNewEmployment((prev) => ({ ...prev, [field]: value }));
   }
 
   return (
@@ -484,6 +445,7 @@ export default function ProfilePage() {
             onToggleEdit={() => setIsEditing((s) => !s)}
             onReset={handleReset}
             saving={saving}
+            educationHistory={educationHistory}
           />
 
           {/* Main Content Grid */}
