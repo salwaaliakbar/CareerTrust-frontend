@@ -2,8 +2,6 @@ export type ProfileData = {
   fullName: string;
   headline: string;
   location: string;
-  experience: string;
-  education: string;
   skills: string;
   summary: string;
   email?: string;
