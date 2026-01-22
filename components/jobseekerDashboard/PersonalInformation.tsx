@@ -7,18 +7,19 @@ import {
   MapPin,
   Award,
   Sparkles,
-  GraduationCap,
 } from "lucide-react";
 import { ProfileData } from "@/types/jobseeker.types";
 
 interface PersonalInformationProps {
   form: ProfileData;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  disabled?: boolean;
 }
 
 export default function PersonalInformation({
   form,
   onChange,
+  disabled = false,
 }: PersonalInformationProps) {
   return (
     <div className="group relative">
@@ -43,7 +44,8 @@ export default function PersonalInformation({
                 name="fullName"
                 value={form.fullName}
                 onChange={onChange}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+                disabled={disabled}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
                 placeholder="John Doe"
               />
             </label>
@@ -57,7 +59,8 @@ export default function PersonalInformation({
                 name="headline"
                 value={form.headline}
                 onChange={onChange}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+                disabled={disabled}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
                 placeholder="Senior Software Engineer"
               />
             </label>
@@ -73,7 +76,8 @@ export default function PersonalInformation({
                 name="location"
                 value={form.location}
                 onChange={onChange}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+                disabled={disabled}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
                 placeholder="New York, USA"
               />
             </label>
@@ -84,10 +88,11 @@ export default function PersonalInformation({
                 Experience
               </span>
               <input
-                name="experience"
-                value={form.experience}
+                name="total_experience"
+                value={form.total_experience}
                 onChange={onChange}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+                disabled={disabled}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
                 placeholder="5+ years"
               />
             </label>
@@ -101,25 +106,12 @@ export default function PersonalInformation({
                 name="skills"
                 value={form.skills}
                 onChange={onChange}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-                placeholder="React, Node.js"
+                disabled={disabled}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium disabled:cursor-not-allowed"
+                placeholder="ReactJS, NodeJS, MongoDB, Python (comma-separated)"
               />
             </label>
           </div>
-
-          <label className="block group/input">
-            <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-              <GraduationCap className="w-4 h-4 text-blue-600" />
-              Education
-            </span>
-            <input
-              name="education"
-              value={form.education}
-              onChange={onChange}
-              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-              placeholder="BS Computer Science - MIT"
-            />
-          </label>
         </div>
       </div>
     </div>

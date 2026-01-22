@@ -5,7 +5,6 @@ import RoleSelect from "./RoleSelect";
 import SignupFields from "./SignupFields";
 import { useForm, SubmitHandler } from "react-hook-form";
 import Swal from "sweetalert2";
-import * as faceapi from "face-api.js";
 import FaceCaptureModal from "../ui/FaceCaptureModal";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -132,6 +131,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = "/models";
+      // ⚡ PERFORMANCE: Load face-api only when needed (lazy loading)
+      const faceapi = await import("face-api.js");
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       dispatch({ type: ACTIONS.setModelsLoaded , payload: true });
     };
@@ -144,6 +145,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     const interval = setInterval(async () => {
       if (!videoRef.current) return;
       try {
+        const faceapi = await import("face-api.js");
         const detections = await faceapi.detectAllFaces(
           videoRef.current as HTMLVideoElement,
           new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
@@ -468,7 +470,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         title: "Face Verified",
         text: "Identity verification successful. Creating your account...",
         timer: 2000,
-        showConfirmButton: false,
+        showConfirmButton: true,
       });
       closeFacePopup();
       await submitSignup(pendingFormData);

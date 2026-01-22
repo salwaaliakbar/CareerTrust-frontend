@@ -8,16 +8,16 @@ const isJobseekerRoute = createRouteMatcher(["(.*)/jobseeker(.*)"]);
 const isEmployerRoute = createRouteMatcher(["(.*)/employer(.*)"]);
 
 // Define shared private routes (accessible by both roles)
-const isSharedPrivateRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/profile(.*)",
-  "/settings(.*)",
-]);
+// const isSharedPrivateRoute = createRouteMatcher([
+//   "/dashboard(.*)",
+//   "/profile(.*)",
+//   "/settings(.*)",
+// ]);
 
 // All private routes combined
 const isPrivateRoute = createRouteMatcher([
-  "/jobseeker(.*)",
-  "/employer(.*)",
+  // "/jobseeker(.*)",
+  // "/employer(.*)",
   "/dashboard(.*)",
   "/profile(.*)",
   "/settings(.*)",

@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
   // Users (Next.js API)
   USERS: `${API_BASE_URL}/users`,
   USER_BY_ID: (id: string | number) => `${API_BASE_URL}/users/${id}`,
+  JOBSEEKER_PROFILE_SAVE: `${BACKEND_API_URL}/jobseeker/update-profile`,
+  RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`
 };
 
 export default API_ENDPOINTS;

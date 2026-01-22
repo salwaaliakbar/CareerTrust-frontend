@@ -1,12 +1,40 @@
+"use client";
+
 // components/home/HowItWorksSection.tsx
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { STEPS } from "@/data/home/steps";
 
 const steps = STEPS;
 
 function HowItWorksSection() {
+  const containerRef = useRef<HTMLElement | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setInView(true);
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
   return (
-    <section className="pb-20 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/12 to-white relative overflow-hidden">
+    <section
+      ref={containerRef}
+      className="py-20 px-4 bg-linear-to-b from-[#0C2B4E]/10 via-[#60A5FA]/20 to-white relative overflow-hidden"
+    >
+      {/* Top decorative blue stripe */}
+      <div className="absolute top-0 left-0 right-0 h-4 bg-linear-to-r from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] opacity-90 pointer-events-none -z-10" />
       {/* decorative blurred orb  */}
       <div className="absolute -left-24 -top-12 w-[520px] h-[520px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/18 via-[#1A3D64]/14 to-[#1D546C]/10 pointer-events-none -z-10" />
       {/* blue overlay stripe to add horizontal blue tint similar to Employer/FeaturedCandidates */}
@@ -25,13 +53,13 @@ function HowItWorksSection() {
           <div className="flex justify-center md:justify-start mx-20">
             <div className="rounded-3xl overflow-hidden shadow-lg w-full max-w-md fade-in animation-delay-200">
               <Image
-                src="/assets/images/PhoneImg - Copy.png"
-                alt="How It Works Illustration"
-                width={720}
-                height={720}
-                className="w-full h-full object-cover"
-                priority
-              />
+                  src="/assets/images/PhoneImg - Copy.png"
+                  alt="How It Works Illustration"
+                  width={720}
+                  height={720}
+                  className="w-full h-full object-cover transform will-change-transform transition-smooth pointer-events-none"
+                  priority
+                />
             </div>
           </div>
 
@@ -46,8 +74,17 @@ function HowItWorksSection() {
             ];
             const pal = palettes[idx % palettes.length];
 
+                const baseDelay = 450;
+                const stagger = 260;
+                const delayMs = baseDelay + idx * stagger;
                 return (
-                  <div key={step.number} className={`p-6 bg-white rounded-2xl border border-gray-100 border-l-4 ${pal.border} hover:shadow-lg transition transform hover:-translate-y-1 fade-in`} style={{animationDelay: `${300 + idx * 100}ms`}}>
+                  <div
+                    key={step.number}
+                    style={{ animationDelay: `${delayMs}ms` }}
+                    className={`p-6 bg-white rounded-2xl border border-gray-100 border-l-4 ${pal.border} hover:shadow-lg transition transform ${
+                      inView ? "slide-in-right opacity-100" : "opacity-0 translate-x-6"
+                    }`}
+                  >
                     <div className="flex items-start gap-4">
                       <div className="relative shrink-0">
                         <div className={`absolute -inset-1 rounded-xl ${pal.bg} opacity-90`} />

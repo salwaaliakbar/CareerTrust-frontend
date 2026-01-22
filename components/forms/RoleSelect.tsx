@@ -17,7 +17,7 @@ export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) =
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-8">
           <button
             onClick={() => onSelectRole(JOBSEEKER)}
-            className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl"
+            className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-gray-400 shadow-xl hover:scale-105 delay-150"
           >
             <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
               <User className="w-7 h-7 text-[#0C2B4E]" />
@@ -33,7 +33,7 @@ export default function RoleSelect({ onSelectRole }: { onSelectRole: (r: Role) =
 
           <button
             onClick={() => onSelectRole(EMPLOYER)}
-            className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-[#0C2B4E] shadow-xl"
+            className="bg-white border border-gray-300 rounded-lg p-8 text-left hover:shadow-lg transition-all hover:border-gray-400 hover:scale-105 hover:delay-150 shadow-xl"
           >
             <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
               <Building2 className="w-7 h-7 text-[#0C2B4E]" />

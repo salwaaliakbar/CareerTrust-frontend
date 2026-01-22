@@ -9,6 +9,7 @@ interface ResumeUploadProps {
   autoFilling: boolean;
   onFileChange: (file: File | null) => void;
   onAutoFill: (file: File) => Promise<void>;
+  disabled?: boolean;
 }
 
 export default function ResumeUpload({
@@ -16,6 +17,7 @@ export default function ResumeUpload({
   autoFilling,
   onFileChange,
   onAutoFill,
+  disabled = false,
 }: ResumeUploadProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [buttonLoading, setButtonLoading] = React.useState(false);
@@ -47,10 +49,6 @@ export default function ResumeUpload({
     } finally {
       setButtonLoading(false);
     }
-    // if (f) {
-    //   onFileChange(f);
-    //   await onAutoFill(f);
-    // }
   }
 
   function removeResume() {
@@ -121,11 +119,11 @@ export default function ResumeUpload({
             </div>
           ) : (
             <div
-              className={`border-3 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group/upload cursor-pointer ${
-                buttonLoading ? "opacity-60 pointer-events-none" : ""
+              className={`border-3 border-dashed border-slate-300 rounded-2xl p-10 text-center hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group/upload ${
+                buttonLoading || disabled ? "opacity-70 cursor-not-allowed" : "cursor-pointer"
               }`}
               onClick={() => {
-                if (buttonLoading) return;
+                if (buttonLoading || disabled) return;
                 fileInputRef.current?.click();
               }}
               role="button"
@@ -133,7 +131,7 @@ export default function ResumeUpload({
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  if (!buttonLoading) fileInputRef.current?.click();
+                  if (!buttonLoading && !disabled) fileInputRef.current?.click();
                 }
               }}
             >
@@ -149,10 +147,10 @@ export default function ResumeUpload({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={buttonLoading}
-              className="w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 font-black overflow-hidden relative"
+              disabled={buttonLoading || disabled}
+              className={`w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-4 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 font-black overflow-hidden relative ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              <div className="absolute inset-0 bg-linear-to-r from-[#1A3D64] to-[#0C2B4E] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-[#1A3D64] to-[#0C2B4E] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 disabled:opacity-70 disabled:cursor-not-allowed"></div>
               {buttonLoading ? (
                 <>
                   <svg
@@ -191,8 +189,8 @@ export default function ResumeUpload({
               <button
                 type="button"
                 onClick={removeResume}
-                disabled={buttonLoading}
-                className="w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-rose-50 to-red-100 text-rose-700 px-6 py-3.5 rounded-xl hover:from-rose-100 hover:to-red-200 hover:shadow-lg transition-all duration-200 font-black border-2 border-rose-200 disabled:opacity-60 disabled:pointer-events-none"
+                disabled={buttonLoading || disabled}
+                className={`w-full group/btn inline-flex items-center justify-center gap-2 bg-linear-to-r from-rose-50 to-red-100 text-rose-700 px-6 py-3.5 rounded-xl hover:from-rose-100 hover:to-red-200 hover:shadow-lg transition-all duration-200 font-black border-2 border-rose-200 disabled:opacity-60 disabled:pointer-events-none ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
               >
                 <Trash className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
                 Remove Resume
@@ -206,7 +204,7 @@ export default function ResumeUpload({
             accept=".pdf,.doc,.docx"
             onChange={handleResumePick}
             className="hidden"
-            disabled={buttonLoading}
+            disabled={buttonLoading || disabled}
             aria-label="Upload resume file"
             title="Upload resume file"
           />

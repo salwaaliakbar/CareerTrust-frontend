@@ -109,6 +109,13 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     );
   };
 
+   function handleNewEmploymentChange<K extends keyof EmploymentRecord>(
+    field: K,
+    value: EmploymentRecord[K]
+  ) {
+    setNewEmployment((prev) => ({ ...prev, [field]: value }));
+  }
+
   const getVerifiedEmployment = () => {
     return employmentHistory.filter((emp) => emp.verificationStatus === "verified");
   };
@@ -124,6 +131,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     addEmploymentRecord,
     deleteEmployment,
     handleDocumentUpload,
+    handleNewEmploymentChange,
     removeDocument,
     getVerifiedEmployment,
   };

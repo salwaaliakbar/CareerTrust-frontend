@@ -81,6 +81,7 @@ export default function LoginForm() {
             router.push("/employer");
             // router.push("/");
           } else {
+            console.log("role", userRole)
             router.push("/");
             // router.push("/dashboard");
           }

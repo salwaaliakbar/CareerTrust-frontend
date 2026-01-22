@@ -6,6 +6,8 @@ import HeroSection from "@/components/home/HeroSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorksSection from "@/components/home/HowItWorkSection";
 import CTASection from "@/components/home/CTASection";
+import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
+import StatsSection from "@/components/home/StatsSection";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -20,15 +22,19 @@ export default async function HomePage() {
   const user = await currentUser();
   console.log(user);
   const userRole = user?.unsafeMetadata?.role as string;
-  if (userRole === "jobseeker") {
-    redirect("/jobseeker");
-  } else if (userRole === "employer") {
+  if (userRole === JOBSEEKER) {
+    redirect("/jobseeker")
+  } else if (userRole === EMPLOYER) {
     redirect("/employer");
   }
+//   else{
+// redirect("/employer")
+//   }
   return (
     <div className="min-h-screen bg-white">
       <HeroSection />
       <FeaturesSection />
+      <StatsSection />
       <HowItWorksSection />
       <CTASection />
     </div>

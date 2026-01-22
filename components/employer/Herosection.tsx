@@ -10,7 +10,7 @@ export default function HeroSection() {
 
       <div className="relative max-w-7xl mx-auto z-20 flex items-center justify-center min-h-[48vh]">
         <div className="text-white text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-8 leading-tight mt-6 fade-in-down">
+            <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold mb-8 leading-tight mt-6 fade-in-down">
               Hire faster, hire smarter
             </h1>
             <p className="text-lg text-sky-100 max-w-2xl mb-6 fade-in animation-delay-100">

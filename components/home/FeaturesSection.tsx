@@ -2,7 +2,7 @@ import { FEATURE } from "@/data/home/featuredData";
 
 function FeaturesSection() {
   return (
-    <section id="features" className="pt-15 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/4 to-white relative overflow-hidden">
+    <section id="features" className="pt-15 pb-25 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/4 to-white relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute -top-20 -right-12 w-[420px] h-[420px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/12 via-[#1A3D64]/8 to-transparent pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none">
@@ -80,13 +80,6 @@ function FeaturesSection() {
           })}
         </div>
       </div>
-
-     <div>
-            <div className="relative h-px my-20">
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#1A3D64]/25 to-transparent opacity-75 shadow-2xl"></div>
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#1D546C]/20 to-transparent blur-sm"></div>
-          </div>
-        </div>
     </section>
   );
 }

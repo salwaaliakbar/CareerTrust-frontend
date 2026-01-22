@@ -1,71 +1,61 @@
-import logger from "@/lib/logger";
 import { NextResponse } from "next/server";
+import logger from "@/lib/logger";
+import axios from "axios";
+import { API_ENDPOINTS } from "@/constants/api";
 
-// Valid runtime values: 'nodejs', 'edge', 'experimental-edge'
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  logger.info("[/api/resume/parse-resume] POST request received");
+  
   try {
-    const parserUrl = process.env.AI_SERVICE_BASE_URL
-      ? new URL("/parse-resume", process.env.AI_SERVICE_BASE_URL).toString()
-      : null;
-    if (!parserUrl) {
-      return NextResponse.json(
-        { error: "AI_SERVICE_BASE_URL not configured" },
-        { status: 500 }
-      );
-    }
-
-    // Parse incoming multipart form-data
     const form = await req.formData();
     const file = form.get("resume") as File | null;
-    if (!file) {
-      return NextResponse.json(
-        { error: "Resume file not found" },
-        { status: 400 }
-      );
+    const fullName = form.get("fullName") as string | null;
+    const email = form.get("email") as string | null;
+
+    logger.info("[/api/resume/parse-resume] Form data extracted:", {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      fullName: fullName ? "provided" : "missing",
+      email: email ? "provided" : "missing",
+    });
+
+    if (!file || !fullName || !email) {
+      logger.warn("[/api/resume/parse-resume] Missing required fields");
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Convert web File to a Blob/FormData we can forward
     const arrayBuffer = await file.arrayBuffer();
-    const blob = new Blob([arrayBuffer], {
-      type: file.type || "application/octet-stream",
-    });
+    const blob = new Blob([arrayBuffer], { type: file.type || "application/octet-stream" });
     const forwardForm = new FormData();
-    // use same field name 'file' so downstream parser receives it
-    // Use the File.name directly (avoid `any`st) and fallback to a default filename.
-    forwardForm.append("file", blob, file?.name ?? "resume-upload");
+    forwardForm.append("resume", blob, file.name);
+    forwardForm.append("fullName", fullName);
+    forwardForm.append("email", email);
 
-    // Forward the request to the external AI parser
-    const forwardedRes = await fetch(parserUrl, {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.AI_API_KEY!,
-      },
-      body: forwardForm,
+    // Forward to Node backend (SSOT)
+    const backendUrl = `${API_ENDPOINTS.RESUME_PARSING}`;
+    const response = await axios.post(
+        backendUrl,
+        forwardForm,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+    logger.info("[/api/resume/parse-resume] Backend response received:", {
+      status: response.status,
+      dataKeys: Object.keys(response.data),
     });
 
-    const contentType =
-      forwardedRes.headers.get("content-type") || "application/json";
-
-    // If the parser returned non-OK, forward the message
-    if (!forwardedRes.ok) {
-      const data = await forwardedRes.json();
-      return new Response(data, {
-        status: forwardedRes.status,
-        headers: { "content-type": contentType },
-      });
-    }
-
-    // Successful parse: return the parser response (JSON expected)
-    const data = await forwardedRes.json();
-    return NextResponse.json(data, { status: forwardedRes.status });
+    return NextResponse.json(response.data, { status: response.status });
   } catch (err) {
-    // Log server-side error and return generic message
-    logger.error("/api/resume/parse-resume error:", err);
-    return NextResponse.json(
-      { error: "Failed to parse resume" },
-      { status: 500 }
-    );
+    logger.error("[/api/resume/parse-resume] Error occurred:", {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      type: err instanceof Error ? err.constructor.name : typeof err,
+    });
+    return NextResponse.json({ error: "Failed to parse resume" }, { status: 500 });
   }
 }
