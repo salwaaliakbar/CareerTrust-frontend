@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import JobPostForm from "@/components/employer/JobPostForm";
 import { JobFormData } from "@/types/job.types";
 import { createJob } from "@/services/api/jobs.service";
+import { checkCompanyStatus } from "@/services/api/employerCompany.service";
 import Swal from "sweetalert2";
 import logger from "@/lib/logger";
 import { EMPLOYER } from "@/constants/constant";
@@ -16,35 +17,81 @@ export default function PostJobPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingCompany, setIsCheckingCompany] = useState(true);
+  const [employerId, setEmployerId] = useState<number | null>(null);
 
-  // Check if user is an employer
-  React.useEffect(() => {
-    if (isLoaded && user) {
-      const userRole = user.unsafeMetadata?.role as string;
-      if (userRole !== EMPLOYER) {
-        Swal.fire({
-          icon: "error",
-          title: "Access Denied",
-          text: "Only employers can post jobs",
-        }).then(() => {
+  // Check if user is an employer and has company profile
+  useEffect(() => {
+    async function checkAccess() {
+      if (isLoaded && user) {
+        const userRole = user.unsafeMetadata?.role as string;
+
+        if (userRole !== EMPLOYER) {
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "Only employers can post jobs",
+          });
           router.push("/");
-        });
+          return;
+        }
+
+        // Get employer ID from metadata or use a temporary ID
+        // TODO: Replace with actual employer ID from your auth system
+        const empId = (user.unsafeMetadata?.employerId as number) || 1;
+        setEmployerId(empId);
+
+        try {
+          // Check if employer has company profile
+          const status = await checkCompanyStatus(empId);
+
+          if (!status.hasCompany || status.needsSetup) {
+            await Swal.fire({
+              icon: "info",
+              title: "Company Profile Required",
+              html: `
+                <p class="mb-4">Before posting jobs, you need to create your company profile.</p>
+                <p class="text-sm text-gray-600">This helps candidates learn about your company and builds trust.</p>
+              `,
+              confirmButtonText: "Create Company Profile",
+              confirmButtonColor: "#3b82f6",
+              allowOutsideClick: false,
+            });
+            router.push("/employer/company/setup");
+            return;
+          }
+        } catch (error) {
+          logger.error("Error checking company status:", error);
+          // Continue anyway - backend will handle validation
+        } finally {
+          setIsCheckingCompany(false);
+        }
       }
     }
+
+    checkAccess();
   }, [isLoaded, user, router]);
 
   const handleSubmit = async (data: JobFormData) => {
+    if (!employerId) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Employer ID not found. Please try logging in again.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       logger.info("Submitting job post:", data);
 
-      // Prepare job data
+      // Prepare job data with employerId
       const jobData = {
         ...data,
+        employerId, // Required by backend
         featured: data.featured || false,
         postedDate: new Date().toISOString(),
-        employerId: user?.id || "",
-        employerName: user?.fullName || "",
       };
 
       // Submit to API
@@ -73,12 +120,27 @@ export default function PostJobPage() {
     } catch (error) {
       logger.error("Error creating job:", error);
 
-      Swal.fire({
-        icon: "error",
-        title: "Failed to Post Job",
-        text: error instanceof Error ? error.message : "Please try again later",
-        confirmButtonColor: "#dc2626",
-      });
+      const errorMessage =
+        error instanceof Error ? error.message : "Please try again later";
+
+      // Check if error is about missing company profile
+      if (errorMessage.includes("company profile")) {
+        await Swal.fire({
+          icon: "error",
+          title: "Company Profile Required",
+          text: errorMessage,
+          confirmButtonText: "Create Company Profile",
+          confirmButtonColor: "#3b82f6",
+        });
+        router.push("/employer/company/setup");
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Failed to Post Job",
+          text: errorMessage,
+          confirmButtonColor: "#dc2626",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -102,10 +164,15 @@ export default function PostJobPage() {
     });
   };
 
-  if (!isLoaded) {
+  if (!isLoaded || isCheckingCompany) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">
+            {isCheckingCompany ? "Verifying company profile..." : "Loading..."}
+          </p>
+        </div>
       </div>
     );
   }

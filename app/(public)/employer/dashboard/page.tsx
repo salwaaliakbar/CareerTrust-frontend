@@ -8,8 +8,17 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EmployerJobsList from "@/components/employer/EmployerJobsList";
 import EmployerStats from "@/components/employer/EmployerStats";
-import { Briefcase, Plus, Users, Search, Filter } from "lucide-react";
+import {
+  Briefcase,
+  Plus,
+  Users,
+  Search,
+  Filter,
+  Building2,
+  AlertCircle,
+} from "lucide-react";
 import { fetchEmployerJobs } from "@/services/api/employer.service";
+import { checkCompanyStatus } from "@/services/api/employerCompany.service";
 import { EmployerJob } from "@/types/application.types";
 import { EMPLOYER } from "@/constants/constant";
 import Swal from "sweetalert2";
@@ -20,6 +29,9 @@ const EmployerDashboard = () => {
   const [jobs, setJobs] = useState<EmployerJob[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<EmployerJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasCompany, setHasCompany] = useState(true);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [employerId, setEmployerId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "closed" | "draft"
@@ -41,18 +53,43 @@ const EmployerDashboard = () => {
     }
   }, [isLoaded, user, router]);
 
+  // Check company status
+  useEffect(() => {
+    const checkCompany = async () => {
+      if (!user?.id) return;
+
+      try {
+        const empId = (user.unsafeMetadata?.employerId as number) || 1;
+        console.log("[Dashboard] Using employerId:", empId);
+        setEmployerId(empId);
+        const status = await checkCompanyStatus(empId);
+        console.log("[Dashboard] Company status:", status);
+        setHasCompany(status.hasCompany);
+        setCompanyName(status.companyName);
+      } catch (error) {
+        console.error("[Dashboard] Error checking company status:", error);
+      }
+    };
+
+    if (user?.id) {
+      checkCompany();
+    }
+  }, [user?.id]);
+
   // Fetch employer's jobs
   useEffect(() => {
     const loadJobs = async () => {
-      if (!user?.id) return;
+      if (!employerId) return;
 
+      console.log("[Dashboard] Fetching jobs for employerId:", employerId);
       setLoading(true);
       try {
-        const employerJobs = await fetchEmployerJobs(user.id);
+        const employerJobs = await fetchEmployerJobs(employerId.toString());
+        console.log("[Dashboard] Fetched jobs:", employerJobs);
         setJobs(employerJobs);
         setFilteredJobs(employerJobs);
       } catch (error) {
-        console.error("Error loading jobs:", error);
+        console.error("[Dashboard] Error loading jobs:", error);
         Swal.fire({
           icon: "error",
           title: "Failed to Load Jobs",
@@ -63,10 +100,10 @@ const EmployerDashboard = () => {
       }
     };
 
-    if (user?.id) {
+    if (employerId) {
       loadJobs();
     }
-  }, [user?.id]);
+  }, [employerId]);
 
   // Filter jobs based on search and status
   useEffect(() => {
@@ -125,7 +162,9 @@ const EmployerDashboard = () => {
                 Employer Dashboard
               </h1>
               <p className="text-lg text-slate-600">
-                Manage your job postings and find the perfect candidates
+                {companyName
+                  ? `Managing jobs for ${companyName}`
+                  : "Manage your job postings and find the perfect candidates"}
               </p>
             </div>
             <Link
@@ -137,6 +176,34 @@ const EmployerDashboard = () => {
             </Link>
           </div>
         </div>
+
+        {/* Company Setup Banner */}
+        {!hasCompany && (
+          <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 shadow-lg animate-fade-in-up">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <AlertCircle className="w-8 h-8 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
+                  Company Profile Required
+                </h3>
+                <p className="text-slate-700 mb-4">
+                  Before you can post jobs, you need to set up your company
+                  profile. This helps candidates learn about your company and
+                  builds trust.
+                </p>
+                <Link
+                  href="/employer/company/setup"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700 transition-colors"
+                >
+                  <Building2 className="w-5 h-5" />
+                  Create Company Profile
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Overview */}
         <EmployerStats jobs={jobs} />
