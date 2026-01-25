@@ -45,3 +45,6 @@ next-env.d.ts
 
 # local Python virtual environments
 .venv
+
+# custom notes
+what_happened.txt
