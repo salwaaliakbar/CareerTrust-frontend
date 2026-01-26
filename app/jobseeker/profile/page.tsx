@@ -22,6 +22,16 @@ import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchJobseekerProfile,
+  selectJobseekerProfile,
+  selectProfileLoading,
+  setEducation,
+  setEmployment,
+  setProfile,
+} from "@/src/store/slices/jobseeker/profileSlice";
+import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -34,6 +44,12 @@ export default function ProfilePage() {
     total_experience: "",
     total_experience_years: 0,
   });
+
+  // Redux hooks
+  const dispatch = useDispatch();
+  const reduxProfile = useSelector(selectJobseekerProfile);
+  const profileLoading = useSelector(selectProfileLoading);
+  const [hasCheckedRedux, setHasCheckedRedux] = useState(false);
 
   const {
     educationHistory,
@@ -67,9 +83,9 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { user } = useUser();
- 
+
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
@@ -78,9 +94,53 @@ export default function ProfilePage() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
+  // Load from Redux or fetch from backend on mount
+  // React.useEffect(() => {
+  //   if (!mounted || !user) return;
+
+  //   // Check if we have data in Redux
+  //   if (reduxProfile.profile?.fullName) {
+  //     // Data exists in Redux, use it
+  //     setForm(reduxProfile.profile);
+  //     setEducationHistory(reduxProfile.education);
+  //     setEmploymentHistory(reduxProfile.employment);
+  //     setHasCheckedRedux(true);
+  //     logger.info("Loaded profile data from Redux");
+  //   } else if (!hasCheckedRedux && !profileLoading) {
+  //     // No data in Redux, fetch from backend
+  //     const clerkId = user.id;
+  //     if (clerkId) {
+  //       dispatch(fetchJobseekerProfile(clerkId) as any).then((action: any) => {
+  //         if (action.payload) {
+  //           // Data fetched successfully, update local form state
+  //           const fetchedData = action.payload;
+  //           setForm({
+  //             fullName: fetchedData.fullName || "",
+  //             headline: fetchedData.headline || "",
+  //             location: fetchedData.location || "",
+  //             skills: typeof fetchedData.skills === "string"
+  //               ? fetchedData.skills
+  //               : Array.isArray(fetchedData.skills)
+  //                 ? fetchedData.skills.join(", ")
+  //                 : "",
+  //             summary: fetchedData.summary || "",
+  //             email: fetchedData.email || "",
+  //             total_experience: fetchedData.total_experience || "",
+  //             total_experience_years: fetchedData.total_experience_years || 0,
+  //           });
+  //           setEducationHistory(fetchedData.educationHistory || []);
+  //           setEmploymentHistory(fetchedData.employmentHistory || []);
+  //           logger.info("Fetched and loaded profile data from backend");
+  //         }
+  //         setHasCheckedRedux(true);
+  //       });
+  //     }
+  //   }
+  // }, [mounted, user, reduxProfile.profile?.email, hasCheckedRedux, profileLoading, dispatch]);
+
   // Autofill from Clerk on mount only
   React.useEffect(() => {
-    if (!mounted || !user) return;
+    if (!mounted || !user || hasCheckedRedux) return;
 
     const name =
       user.fullName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -95,7 +155,7 @@ export default function ProfilePage() {
       fullName: prev.fullName || name,
       email: prev.email || email,
     }));
-  }, [mounted, user]);
+  }, [mounted, user, hasCheckedRedux]);
 
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
@@ -141,23 +201,23 @@ export default function ProfilePage() {
             "Name mismatch detected:",
             parsed.name,
             form.fullName,
-            user?.fullName
+            user?.fullName,
           );
           mismatchMessages.push(
-            `Name: Resume has "${
+            `<strong>Name:</strong> Resume has "${
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
-            }"`
+            }" (will be updated)`,
           );
         }
         if (mismatches.email) {
           mismatchMessages.push(
-            `Email: Resume has "${
+            `<strong>Email:</strong> Resume has "${
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
-            }"`
+            }" (protected - will not be changed)`,
           );
         }
 
@@ -167,10 +227,16 @@ export default function ProfilePage() {
           html: `
             <div style="text-align: left;">
               <p>The following information in your resume differs from your account:</p>
-              <ul style="margin-top: 10px;">
+              <ul style="margin-top: 10px; line-height: 1.8;">
                 ${mismatchMessages.map((msg) => `<li>${msg}</li>`).join("")}
               </ul>
-              <p style="margin-top: 15px;">Do you want to proceed with autofilling your profile from the resume?</p>
+              <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-left: 4px solid #3085d6; border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.9em; color: #555;">
+                  <strong>Note:</strong> Your email is linked to your account authentication and cannot be changed during autofill. 
+                  If you need to update your email, please do so through your account settings.
+                </p>
+              </div>
+              <p style="margin-top: 15px;">Do you want to proceed with autofilling your profile?</p>
             </div>
           `,
           showCancelButton: true,
@@ -197,7 +263,7 @@ export default function ProfilePage() {
         location: parsed.location ?? prev.location,
         skills: Array.isArray(parsed.skills)
           ? parsed.skills.join(", ")
-          : parsed.skills ?? prev.skills,
+          : (parsed.skills ?? prev.skills),
         summary: parsed.summary ?? prev.summary,
         email: prev.email,
         total_experience: parsed.total_experience ?? prev.total_experience,
@@ -205,7 +271,7 @@ export default function ProfilePage() {
           parsed.total_experience_years ?? prev.total_experience_years,
       }));
 
-      // Map education to EducationRecord[] if present
+      // Map education to EducationRecord[] if present - REPLACE not append
       if (Array.isArray(parsed.education) && parsed.education.length > 0) {
         const extractedEducation: EducationRecord[] = (
           parsed.education as Array<Record<string, unknown>>
@@ -229,10 +295,12 @@ export default function ProfilePage() {
           } as EducationRecord;
         });
 
-        setEducationHistory((prev) => [...extractedEducation, ...prev]);
+        setEducationHistory(extractedEducation);
+      } else {
+        setEducationHistory([]);
       }
 
-      // Map experiences to EmploymentRecord[] if present
+      // Map experiences to EmploymentRecord[] if present - REPLACE not append
       if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
         const extractedEmployment: EmploymentRecord[] = (
           parsed.experience as Array<Record<string, unknown>>
@@ -263,7 +331,9 @@ export default function ProfilePage() {
           } as EmploymentRecord;
         });
 
-        setEmploymentHistory((prev) => [...extractedEmployment, ...prev]);
+        setEmploymentHistory(extractedEmployment);
+      } else {
+        setEmploymentHistory([]);
       }
 
       // Optionally show a success toast
@@ -329,7 +399,7 @@ export default function ProfilePage() {
         payload,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       const data = resp.data ?? {};
@@ -343,8 +413,26 @@ export default function ProfilePage() {
         });
         // only exit edit mode on success
         setIsEditing(false);
-        return;
-      }
+
+        const clerkId = user?.id;
+
+        // Callback to fetch new recommendations
+      //   const fetchNewRecommendations = async () => {
+      //     if (!clerkId) return;
+      //     try {
+      //       const res = await axios.get(
+      //         `/api/jobRecommendations?clerkId=${clerkId}`,
+      //       );
+      //       setJobRecommendations(res.data.recommendations || []);
+      //     } catch (err) {
+      //       logger.error("Failed to fetch job recommendations", err);
+      //     }
+      //   };
+
+      //   // Start polling for job recommendations
+      //   useJobRecommendationPolling(clerkId || "", fetchNewRecommendations);
+      //   return;
+      // }
 
       // Build a helpful, user-facing error message from the response
       let userMessage =
