@@ -112,7 +112,7 @@ function Header() {
           ) : isSignedIn ? (
             // User is logged in - Show user info and logout
             <>
-              {userRole === "jobseeker" ? (
+              {/* {userRole === "jobseeker" ? (
                 <Link
                   href="/jobseeker/dashboard"
                   className="text-gray-600 hover:text-primary font-medium transition-colors"
@@ -126,7 +126,7 @@ function Header() {
                 >
                   Dashboard
                 </Link>
-              )}
+              )} */}
 
               <div className="flex items-center gap-1 hover:bg-gray-200 rounded-full px-1 py-1 transition-all duration-300 cursor-pointer hover:scale-105">
                 <User className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" />
