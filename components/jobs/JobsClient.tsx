@@ -1,23 +1,34 @@
 "use client";
+
 import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { getAllJobs, type Job } from "@/src/store/slices/jobsSlice";
+import { useUser } from "@clerk/nextjs";
 
 export default function JobsClient() {
   const dispatch = useAppDispatch();
   const { items: jobs, loading } = useAppSelector((state) => state.jobs);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedSalary, setSelectedSalary] = useState<string[]>([]);
+  const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [sortByRelevant, setSortByRelevant] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user, isSignedIn } = useUser();
 
   // Initialize Redux
   useEffect(() => {
-    dispatch(getAllJobs());
-  }, [dispatch]);
+    if (isSignedIn && user?.id) {
+      dispatch(getAllJobs({ clerkId: user.id }));
+    } else {
+      dispatch(getAllJobs({}));
+    }
+  }, [dispatch, isSignedIn, user]);
 
   // initialize filters from URL (so JobSearchBar navigation applies filters)
   useEffect(() => {
@@ -36,79 +47,130 @@ export default function JobsClient() {
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
+    let filtered = jobs.filter((job) => {
       const matchesSearch =
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.company.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLocation =
         !selectedLocation ||
         job.location.toLowerCase().includes(selectedLocation.toLowerCase());
-      return matchesSearch && matchesLocation;
+
+      // Salary filter
+      let matchesSalary = true;
+      if (selectedSalary.length > 0) {
+        // Parse job.salary as number (remove commas, PKR, etc.)
+        let salaryNum = 0;
+        if (typeof job.salary === 'number') {
+          salaryNum = job.salary;
+        } else if (typeof job.salary === 'string') {
+          salaryNum = parseInt(job.salary.replace(/[^\d]/g, ''), 10);
+        }
+        matchesSalary = selectedSalary.some((range) => {
+          if (range === "PKR 80,000 - 120,000") return salaryNum >= 80000 && salaryNum <= 120000;
+          if (range === "PKR 120,000 - 180,000") return salaryNum > 120000 && salaryNum <= 180000;
+          if (range === "PKR 180,000+") return salaryNum > 180000;
+          return false;
+        });
+      }
+
+      // Company rating filter
+      let matchesRating = true;
+      if (selectedRatings.length > 0) {
+        matchesRating = selectedRatings.some((rating) => (job.rating || 0) >= rating);
+      }
+
+      // Posted date filter
+      let matchesDate = true;
+      if (selectedDates.length > 0) {
+        matchesDate = selectedDates.some((date) => {
+          if (!job.postedDate) return false;
+          const posted = new Date(job.postedDate);
+          const now = new Date();
+          if (date === "Last 7 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 7;
+          if (date === "Last 30 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 30;
+          if (date === "Last 90 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 90;
+          return false;
+        });
+      }
+
+      return matchesSearch && matchesLocation && matchesSalary && matchesRating && matchesDate;
     });
-  }, [jobs, searchTerm, selectedLocation]);
+
+    // Sort by most relevant if enabled and user is logged in
+    if (sortByRelevant && isSignedIn) {
+      filtered = [...filtered].sort((a, b) => (b.match || 0) - (a.match || 0));
+    }
+    return filtered;
+  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, isSignedIn]);
 
   return (
+
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Hero Section */}
-      <section className="bg-linear-to-br from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] text-white py-12 px-4 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-0"></div>
-          <div className="absolute bottom-0 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <h1 className="text-4xl font-bold mb-3 fade-in">Find Your Next Opportunity</h1>
-          <p className="text-blue-100 text-lg mb-8 fade-in animation-delay-100">Discover verified jobs matched to your skills and experience</p>
+      {/* Hero Section with enhanced styling */}
+      <section className="relative overflow-hidden py-12 px-4">
+        {/* Gradient and blur background */}
+        <div className="absolute inset-0 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+        <div className="relative bg-linear-to-r from-[#0A1F44] via-[#1e3a5f] to-[#2d4a6f] rounded-3xl p-10 shadow-2xl border border-white/10 backdrop-blur-sm overflow-hidden max-w-7xl mx-auto">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-linear-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-linear-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+          <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl fade-in animation-delay-200">
-            <div className="md:col-span-2 relative group">
-              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-sky-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Job title, company, skills..."
-                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 group-hover:shadow-lg"
-              />
-            </div>
-            <select
-              aria-label="Location"
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 hover:shadow-lg"
-            >
-              <option value="">All locations</option>
-              {locations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc}
-                </option>
-              ))}
-            </select>
+          <div className="relative z-10">
+            <h1 className="text-4xl font-bold mb-3 fade-in text-white">Find Your Next Opportunity</h1>
+            <p className="text-blue-100 text-lg mb-8 fade-in animation-delay-100">Discover verified jobs matched to your skills and experience</p>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const params = new URLSearchParams();
-                  if (searchTerm) params.set("q", searchTerm);
-                  if (selectedLocation) params.set("location", selectedLocation);
-                  router.push(`/jobs${params.toString() ? `?${params.toString()}` : ""}`);
-                }}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl fade-in animation-delay-200">
+              <div className="md:col-span-2 relative group">
+                <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-sky-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Job title, company, skills..."
+                  className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 group-hover:shadow-lg"
+                />
+              </div>
+              <select
+                aria-label="Location"
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                className="px-4 py-3 bg-white text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all duration-300 hover:shadow-lg"
               >
-                Apply
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedLocation("");
-                  router.push(`/jobs`);
-                }}
-                className="px-3 py-2 bg-white text-gray-700 rounded-lg border transition-all duration-300 hover:shadow-md active:scale-95"
-              >
-                Clear
-              </button>
+                <option value="">All locations</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set("q", searchTerm);
+                    if (selectedLocation) params.set("location", selectedLocation);
+                    router.push(`/jobs${params.toString() ? `?${params.toString()}` : ""}`);
+                  }}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedLocation("");
+                    router.push(`/jobs`);
+                  }}
+                  className="px-3 py-2 bg-white text-gray-700 rounded-lg border transition-all duration-300 hover:shadow-md active:scale-95"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -134,11 +196,38 @@ export default function JobsClient() {
 
                 <div className="space-y-6">
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">Salary</h4>
+                    {/* Most Relevant filter for logged-in users */}
+                  {isSignedIn && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Sort</h4>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                          checked={sortByRelevant}
+                          onChange={() => setSortByRelevant((prev) => !prev)}
+                        />
+                        <span className="text-gray-600 text-sm">Most Relevant</span>
+                      </label>
+                    </div>
+                  )}
+
+                    <h4 className="font-semibold text-gray-900 my-3">Salary</h4>
                     <div className="space-y-2">
                       {["PKR 80,000 - 120,000", "PKR 120,000 - 180,000", "PKR 180,000+"].map((range) => (
                         <label key={range} className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                            checked={selectedSalary.includes(range)}
+                            onChange={() => {
+                              setSelectedSalary((prev) =>
+                                prev.includes(range)
+                                  ? prev.filter((r) => r !== range)
+                                  : [...prev, range]
+                              );
+                            }}
+                          />
                           <span className="text-gray-600 text-sm">{range}</span>
                         </label>
                       ))}
@@ -150,7 +239,18 @@ export default function JobsClient() {
                     <div className="space-y-2">
                       {[{ rating: 4.5, label: "4.5+ stars" }, { rating: 4, label: "4+ stars" }, { rating: 3.5, label: "3.5+ stars" }].map((item) => (
                         <label key={item.rating} className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                            checked={selectedRatings.includes(item.rating)}
+                            onChange={() => {
+                              setSelectedRatings((prev) =>
+                                prev.includes(item.rating)
+                                  ? prev.filter((r) => r !== item.rating)
+                                  : [...prev, item.rating]
+                              );
+                            }}
+                          />
                           <span className="text-gray-600 text-sm">{item.label}</span>
                         </label>
                       ))}
@@ -162,7 +262,18 @@ export default function JobsClient() {
                     <div className="space-y-2">
                       {["Last 7 days", "Last 30 days", "Last 90 days"].map((date) => (
                         <label key={date} className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-sky-700" />
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                            checked={selectedDates.includes(date)}
+                            onChange={() => {
+                              setSelectedDates((prev) =>
+                                prev.includes(date)
+                                  ? prev.filter((d) => d !== date)
+                                  : [...prev, date]
+                              );
+                            }}
+                          />
                           <span className="text-gray-600 text-sm">{date}</span>
                         </label>
                       ))}

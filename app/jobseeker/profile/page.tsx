@@ -22,6 +22,8 @@ import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
+import { useRef, useCallback } from "react";
+import { useNotificationState } from "@/hooks/useNotificationState";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchJobseekerProfile,
@@ -31,9 +33,53 @@ import {
   setEmployment,
   setProfile,
 } from "@/src/store/slices/jobseeker/profileSlice";
+import { updateJobMatches } from "@/src/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
 
 export default function ProfilePage() {
+  const { user } = useUser();
+  // Job Recommendation Polling and Redux update
+  const clerkId = user?.id;
+  const [startPolling, setStartPolling] = useState(false);
+  const dispatch = useDispatch();
+  // Notification state
+  const { notifications, addNotification } = useNotificationState();
+  const [showPopup, setShowPopup] = useState(false);
+  const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch new recommendations from BFF
+  const fetchNewRecommendations = async () => {
+    if (!clerkId) return;
+    try {
+      const res = await axios.get(`/api/jobRecommendation/recommendations?clerkId=${clerkId}`);
+      const recommendations = res.data.recommendations || [];
+      console.log("Fetched new job recommendations:", recommendations);
+      // Map score (0-1) to match (0-100) percent
+      dispatch(updateJobMatches(recommendations.map((r: any) => ({ id: r.jobId, match: Math.round((r.score ?? 0) * 100) }))));
+      // Add notification and show popup
+      addNotification({
+        type: "job_recommendation",
+        title: "New Job Recommendations!",
+        message: "You have new job recommendations. Check the jobs page.",
+      });
+      setShowPopup(true);
+      if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+      popupTimeoutRef.current = setTimeout(() => setShowPopup(false), 3500);
+    } catch (err) {
+      logger.error("Failed to fetch job recommendations", err);
+    }
+  };
+  // Only start polling after profile update
+  useJobRecommendationPolling(
+    startPolling && clerkId ? clerkId : "",
+    () => {
+      fetchNewRecommendations();
+      setStartPolling(false); // Stop polling after update
+    },
+    10000,
+    10 // maxAttempts
+  );
+  
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
     headline: "",
@@ -46,7 +92,6 @@ export default function ProfilePage() {
   });
 
   // Redux hooks
-  const dispatch = useDispatch();
   const reduxProfile = useSelector(selectJobseekerProfile);
   const profileLoading = useSelector(selectProfileLoading);
   const [hasCheckedRedux, setHasCheckedRedux] = useState(false);
@@ -82,7 +127,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useUser();
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -347,6 +391,7 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
+
     setSaving(true);
     try {
       const payload = new FormData();
@@ -365,8 +410,6 @@ export default function ProfilePage() {
       }
 
       const userId = user?.id;
-
-      // console.log("userId: ", userId)
 
       if (userId) {
         payload.append("userId", userId);
@@ -413,26 +456,9 @@ export default function ProfilePage() {
         });
         // only exit edit mode on success
         setIsEditing(false);
-
-        const clerkId = user?.id;
-
-        // Callback to fetch new recommendations
-      //   const fetchNewRecommendations = async () => {
-      //     if (!clerkId) return;
-      //     try {
-      //       const res = await axios.get(
-      //         `/api/jobRecommendations?clerkId=${clerkId}`,
-      //       );
-      //       setJobRecommendations(res.data.recommendations || []);
-      //     } catch (err) {
-      //       logger.error("Failed to fetch job recommendations", err);
-      //     }
-      //   };
-
-      //   // Start polling for job recommendations
-      //   useJobRecommendationPolling(clerkId || "", fetchNewRecommendations);
-      //   return;
-      // }
+        setStartPolling(true);
+        return;
+      }
 
       // Build a helpful, user-facing error message from the response
       let userMessage =
@@ -621,6 +647,21 @@ export default function ProfilePage() {
         </div>
       </div>
       <Footer />
+      {showPopup && (
+        <div className="fixed top-6 right-6 z-[9999] bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          New notification arrived!
+          <button
+            className="ml-3 text-white hover:text-gray-200 text-lg font-bold px-2 focus:outline-none"
+            onClick={() => setShowPopup(false)}
+            aria-label="Close notification popup"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

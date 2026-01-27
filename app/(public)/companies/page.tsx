@@ -41,34 +41,38 @@ export default function CompaniesPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-linear-to-br from-[#0C2B4E] via-[#1D546C] to-[#0C2B4E] text-white py-12 px-8 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-0"></div>
-          <div className="absolute bottom-0 right-10 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        </div>
+      {/* Hero Section with enhanced styling */}
+      <section className="relative overflow-hidden py-12 px-8">
+        {/* Gradient and blur background */}
+        <div className="absolute inset-0 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
+        <div className="relative bg-linear-to-r from-[#0A1F44] via-[#1e3a5f] to-[#2d4a6f] rounded-3xl p-10 shadow-2xl border border-white/10 backdrop-blur-sm overflow-hidden max-w-7xl mx-auto">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-linear-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-linear-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+          <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="fade-in-down animation-delay-0">
-            <h1 className="text-4xl font-bold mb-3">Explore Companies</h1>
-            <p className="text-gray-100 text-lg mb-4">
-              Discover trusted employers and read verified reviews
-            </p>
-          </div>
+          <div className="relative z-10 pb-10 pt-4">
+            <div className="fade-in-down animation-delay-0">
+              <h1 className="text-4xl font-bold mb-3 text-white">Explore Companies</h1>
+              <p className="text-gray-100 text-lg mb-4">
+                Discover trusted employers and read verified reviews
+              </p>
+            </div>
 
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mt-4 fade-in animation-delay-300 group">
-            <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-white" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by company name or industry..."
-              className="w-full pl-10 pr-4 py-3 bg-white/95 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 hover:bg-white placeholder-gray-500"
-              aria-label="Search companies"
-            />
-            <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/5 group-hover:via-white/10 group-hover:to-white/5 rounded-lg transition-all duration-500 pointer-events-none"></div>
+            {/* Search Bar */}
+            <div className="relative max-w-2xl mt-4 fade-in animation-delay-300 group">
+              <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-white" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by company name or industry..."
+                className="w-full pl-10 pr-4 py-3 bg-white/95 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 hover:bg-white placeholder-gray-500"
+                aria-label="Search companies"
+              />
+              <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/0 to-white/0 group-hover:from-white/5 group-hover:via-white/10 group-hover:to-white/5 rounded-lg transition-all duration-500 pointer-events-none"></div>
+            </div>
           </div>
         </div>
       </section>

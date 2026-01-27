@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { fetchJobs, fetchJobById, fetchFeaturedJobs } from '@/services/api/jobs.service';
+import { API_ENDPOINTS } from '@/constants/api';
 
 export interface Job {
   id: number | string;
@@ -55,14 +56,15 @@ const CACHE_DURATION = 10 * 60 * 1000;
 // Async thunks
 export const getAllJobs = createAsyncThunk<
   Job[],
-  { forceRefresh?: boolean } | undefined
+  { forceRefresh?: boolean; clerkId?: string } | undefined
 >(
   'jobs/getAllJobs',
-  async (args: { forceRefresh?: boolean } | undefined = {}, { getState, rejectWithValue }) => {
+  async (args: { forceRefresh?: boolean; clerkId?: string } | undefined = {}, { getState, rejectWithValue }) => {
     try {
       const state = (getState() as any).jobs as JobsState;
       const now = Date.now();
       const forceRefresh = typeof args === 'object' && args?.forceRefresh;
+      const clerkId = args?.clerkId;
 
       // Return cached data if fresh (unless force refresh)
       if (
@@ -74,7 +76,18 @@ export const getAllJobs = createAsyncThunk<
         return state.items;
       }
 
-      const jobs = await fetchJobs();
+      let jobs;
+      if (clerkId) {
+        // Personalized jobs with match %
+        const res = await fetch(`${API_ENDPOINTS.JOBS}/recommended?clerkId=${clerkId}`);
+        const data = await res.json();
+        jobs = data.data || [];
+      } else {
+        // General jobs
+        const res = await fetch(`${API_ENDPOINTS.JOBS}`);
+        const data = await res.json();
+        jobs = data.data || [];
+      }
       return jobs;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to fetch jobs');
@@ -143,6 +156,17 @@ const jobsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    // Update job match values from recommendations
+    updateJobMatches: (state, action: PayloadAction<{ id: string | number; match: number }[]>) => {
+      const updates = action.payload;
+      updates.forEach(({ id, match }) => {
+        // Update in items array
+        const job = state.items.find((j) => j.id === id);
+        if (job) job.match = match;
+        // Update in jobsById cache
+        if (state.jobsById[id]) state.jobsById[id].match = match;
+      });
+    },
   },
   extraReducers: (builder) => {
     // Get all jobs
@@ -153,7 +177,8 @@ const jobsSlice = createSlice({
       })
       .addCase(getAllJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
         state.loading = false;
-        state.items = action.payload;
+        // Ensure every job has match: 0 if not present
+        state.items = action.payload.map(job => ({ ...job, match: typeof job.match === 'number' ? job.match : 0 }));
         state.totalCount = action.payload.length;
         state.lastFetchTime = Date.now();
       })
@@ -171,9 +196,11 @@ const jobsSlice = createSlice({
       .addCase(getJobById.fulfilled, (state, action: PayloadAction<Job | null>) => {
         state.loading = false;
         if (action.payload) {
-          state.selectedJob = action.payload;
-          state.jobsById[action.payload.id] = action.payload;
-          state.lastFetchTimeById[action.payload.id] = Date.now();
+          // Ensure match: 0 if not present
+          const job = { ...action.payload, match: typeof action.payload.match === 'number' ? action.payload.match : 0 };
+          state.selectedJob = job;
+          state.jobsById[job.id] = job;
+          state.lastFetchTimeById[job.id] = Date.now();
         }
       })
       .addCase(getJobById.rejected, (state, action) => {
@@ -199,5 +226,5 @@ const jobsSlice = createSlice({
   },
 });
 
-export const { clearSelectedJob, clearError } = jobsSlice.actions;
+export const { clearSelectedJob, clearError, updateJobMatches } = jobsSlice.actions;
 export default jobsSlice.reducer;
