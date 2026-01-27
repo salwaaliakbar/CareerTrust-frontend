@@ -32,7 +32,9 @@ export const API_ENDPOINTS = {
   USER_BY_ID: (id: string | number) => `${API_BASE_URL}/users/${id}`,
   JOBSEEKER_PROFILE_GET: `${BACKEND_API_URL}/jobseeker/profile`,
   JOBSEEKER_PROFILE_SAVE: `${BACKEND_API_URL}/jobseeker/update-profile`,
-  RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`
+  RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`,
+  JOB_RECOMMENDATION_STATUS: `${BACKEND_API_URL}/jobRecommendation/status`,
+  JOB_RECOMMENDATIONS: `${BACKEND_API_URL}/jobRecommendation/recommendations`,
 };
 
 export default API_ENDPOINTS;
