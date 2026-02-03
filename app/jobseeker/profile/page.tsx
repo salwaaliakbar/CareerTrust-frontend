@@ -22,6 +22,7 @@ import axios from "axios";
 import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
+import Test from "@/app/Test";
 
 export default function ProfilePage() {
   const [form, setForm] = useState<ProfileData>({
@@ -67,9 +68,9 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { user } = useUser();
- 
+
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
@@ -141,14 +142,14 @@ export default function ProfilePage() {
             "Name mismatch detected:",
             parsed.name,
             form.fullName,
-            user?.fullName
+            user?.fullName,
           );
           mismatchMessages.push(
             `Name: Resume has "${
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
-            }"`
+            }"`,
           );
         }
         if (mismatches.email) {
@@ -157,7 +158,7 @@ export default function ProfilePage() {
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
-            }"`
+            }"`,
           );
         }
 
@@ -197,7 +198,7 @@ export default function ProfilePage() {
         location: parsed.location ?? prev.location,
         skills: Array.isArray(parsed.skills)
           ? parsed.skills.join(", ")
-          : parsed.skills ?? prev.skills,
+          : (parsed.skills ?? prev.skills),
         summary: parsed.summary ?? prev.summary,
         email: prev.email,
         total_experience: parsed.total_experience ?? prev.total_experience,
@@ -329,7 +330,7 @@ export default function ProfilePage() {
         payload,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       const data = resp.data ?? {};
