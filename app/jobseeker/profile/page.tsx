@@ -23,8 +23,64 @@ import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
 import Test from "@/app/Test";
+import { useRef, useCallback } from "react";
+import { useNotificationState } from "@/hooks/useNotificationState";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchJobseekerProfile,
+  selectJobseekerProfile,
+  selectProfileLoading,
+  setEducation,
+  setEmployment,
+  setProfile,
+} from "@/src/store/slices/jobseeker/profileSlice";
+import { updateJobMatches } from "@/src/store/slices/jobsSlice";
+import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
 
 export default function ProfilePage() {
+  const { user } = useUser();
+  // Job Recommendation Polling and Redux update
+  const clerkId = user?.id;
+  const [startPolling, setStartPolling] = useState(false);
+  const dispatch = useDispatch();
+  // Notification state
+  const { notifications, addNotification } = useNotificationState();
+  const [showPopup, setShowPopup] = useState(false);
+  const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch new recommendations from BFF
+  const fetchNewRecommendations = async () => {
+    if (!clerkId) return;
+    try {
+      const res = await axios.get(`/api/jobRecommendation/recommendations?clerkId=${clerkId}`);
+      const recommendations = res.data.recommendations || [];
+      console.log("Fetched new job recommendations:", recommendations);
+      // Map score (0-1) to match (0-100) percent
+      dispatch(updateJobMatches(recommendations.map((r: any) => ({ id: r.jobId, match: Math.round((r.score ?? 0) * 100) }))));
+      // Add notification and show popup
+      addNotification({
+        type: "job_recommendation",
+        title: "New Job Recommendations!",
+        message: "You have new job recommendations. Check the jobs page.",
+      });
+      setShowPopup(true);
+      if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+      popupTimeoutRef.current = setTimeout(() => setShowPopup(false), 3500);
+    } catch (err) {
+      logger.error("Failed to fetch job recommendations", err);
+    }
+  };
+  // Only start polling after profile update
+  useJobRecommendationPolling(
+    startPolling && clerkId ? clerkId : "",
+    () => {
+      fetchNewRecommendations();
+      setStartPolling(false); // Stop polling after update
+    },
+    10000,
+    10 // maxAttempts
+  );
+  
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
     headline: "",
@@ -35,6 +91,11 @@ export default function ProfilePage() {
     total_experience: "",
     total_experience_years: 0,
   });
+
+  // Redux hooks
+  const reduxProfile = useSelector(selectJobseekerProfile);
+  const profileLoading = useSelector(selectProfileLoading);
+  const [hasCheckedRedux, setHasCheckedRedux] = useState(false);
 
   const {
     educationHistory,
@@ -79,9 +140,53 @@ export default function ProfilePage() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
+  // Load from Redux or fetch from backend on mount
+  // React.useEffect(() => {
+  //   if (!mounted || !user) return;
+
+  //   // Check if we have data in Redux
+  //   if (reduxProfile.profile?.fullName) {
+  //     // Data exists in Redux, use it
+  //     setForm(reduxProfile.profile);
+  //     setEducationHistory(reduxProfile.education);
+  //     setEmploymentHistory(reduxProfile.employment);
+  //     setHasCheckedRedux(true);
+  //     logger.info("Loaded profile data from Redux");
+  //   } else if (!hasCheckedRedux && !profileLoading) {
+  //     // No data in Redux, fetch from backend
+  //     const clerkId = user.id;
+  //     if (clerkId) {
+  //       dispatch(fetchJobseekerProfile(clerkId) as any).then((action: any) => {
+  //         if (action.payload) {
+  //           // Data fetched successfully, update local form state
+  //           const fetchedData = action.payload;
+  //           setForm({
+  //             fullName: fetchedData.fullName || "",
+  //             headline: fetchedData.headline || "",
+  //             location: fetchedData.location || "",
+  //             skills: typeof fetchedData.skills === "string"
+  //               ? fetchedData.skills
+  //               : Array.isArray(fetchedData.skills)
+  //                 ? fetchedData.skills.join(", ")
+  //                 : "",
+  //             summary: fetchedData.summary || "",
+  //             email: fetchedData.email || "",
+  //             total_experience: fetchedData.total_experience || "",
+  //             total_experience_years: fetchedData.total_experience_years || 0,
+  //           });
+  //           setEducationHistory(fetchedData.educationHistory || []);
+  //           setEmploymentHistory(fetchedData.employmentHistory || []);
+  //           logger.info("Fetched and loaded profile data from backend");
+  //         }
+  //         setHasCheckedRedux(true);
+  //       });
+  //     }
+  //   }
+  // }, [mounted, user, reduxProfile.profile?.email, hasCheckedRedux, profileLoading, dispatch]);
+
   // Autofill from Clerk on mount only
   React.useEffect(() => {
-    if (!mounted || !user) return;
+    if (!mounted || !user || hasCheckedRedux) return;
 
     const name =
       user.fullName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -96,7 +201,7 @@ export default function ProfilePage() {
       fullName: prev.fullName || name,
       email: prev.email || email,
     }));
-  }, [mounted, user]);
+  }, [mounted, user, hasCheckedRedux]);
 
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
@@ -145,20 +250,22 @@ export default function ProfilePage() {
             user?.fullName,
           );
           mismatchMessages.push(
-            `Name: Resume has "${
+            `<strong>Name:</strong> Resume has "${
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
             }"`,
+            }" (will be updated)`,
           );
         }
         if (mismatches.email) {
           mismatchMessages.push(
-            `Email: Resume has "${
+            `<strong>Email:</strong> Resume has "${
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
             }"`,
+            }" (protected - will not be changed)`,
           );
         }
 
@@ -168,10 +275,16 @@ export default function ProfilePage() {
           html: `
             <div style="text-align: left;">
               <p>The following information in your resume differs from your account:</p>
-              <ul style="margin-top: 10px;">
+              <ul style="margin-top: 10px; line-height: 1.8;">
                 ${mismatchMessages.map((msg) => `<li>${msg}</li>`).join("")}
               </ul>
-              <p style="margin-top: 15px;">Do you want to proceed with autofilling your profile from the resume?</p>
+              <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-left: 4px solid #3085d6; border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.9em; color: #555;">
+                  <strong>Note:</strong> Your email is linked to your account authentication and cannot be changed during autofill. 
+                  If you need to update your email, please do so through your account settings.
+                </p>
+              </div>
+              <p style="margin-top: 15px;">Do you want to proceed with autofilling your profile?</p>
             </div>
           `,
           showCancelButton: true,
@@ -206,7 +319,7 @@ export default function ProfilePage() {
           parsed.total_experience_years ?? prev.total_experience_years,
       }));
 
-      // Map education to EducationRecord[] if present
+      // Map education to EducationRecord[] if present - REPLACE not append
       if (Array.isArray(parsed.education) && parsed.education.length > 0) {
         const extractedEducation: EducationRecord[] = (
           parsed.education as Array<Record<string, unknown>>
@@ -230,10 +343,12 @@ export default function ProfilePage() {
           } as EducationRecord;
         });
 
-        setEducationHistory((prev) => [...extractedEducation, ...prev]);
+        setEducationHistory(extractedEducation);
+      } else {
+        setEducationHistory([]);
       }
 
-      // Map experiences to EmploymentRecord[] if present
+      // Map experiences to EmploymentRecord[] if present - REPLACE not append
       if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
         const extractedEmployment: EmploymentRecord[] = (
           parsed.experience as Array<Record<string, unknown>>
@@ -264,7 +379,9 @@ export default function ProfilePage() {
           } as EmploymentRecord;
         });
 
-        setEmploymentHistory((prev) => [...extractedEmployment, ...prev]);
+        setEmploymentHistory(extractedEmployment);
+      } else {
+        setEmploymentHistory([]);
       }
 
       // Optionally show a success toast
@@ -278,6 +395,7 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
+
     setSaving(true);
     try {
       const payload = new FormData();
@@ -296,8 +414,6 @@ export default function ProfilePage() {
       }
 
       const userId = user?.id;
-
-      // console.log("userId: ", userId)
 
       if (userId) {
         payload.append("userId", userId);
@@ -344,6 +460,7 @@ export default function ProfilePage() {
         });
         // only exit edit mode on success
         setIsEditing(false);
+        setStartPolling(true);
         return;
       }
 
@@ -534,6 +651,21 @@ export default function ProfilePage() {
         </div>
       </div>
       <Footer />
+      {showPopup && (
+        <div className="fixed top-6 right-6 z-[9999] bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          New notification arrived!
+          <button
+            className="ml-3 text-white hover:text-gray-200 text-lg font-bold px-2 focus:outline-none"
+            onClick={() => setShowPopup(false)}
+            aria-label="Close notification popup"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

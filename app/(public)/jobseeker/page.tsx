@@ -13,13 +13,13 @@ export default function JobseekerPage() {
       {/* Jobseeker hero (search + filters) */}
       <HeroSection />
 
-  {/* Steps carousel explaining job seeker flow */}
-  <StepsCarousel />
+      {/* Steps carousel explaining job seeker flow */}
+      <StepsCarousel />
 
-  {/* Jobseeker-specific CTA: quick link to job listings */}
-  <JobseekerCTA />
+      {/* Jobseeker-specific CTA: quick link to job listings */}
+      <JobseekerCTA />
 
-  {/* <CTASection /> */}
+      {/* <CTASection /> */}
 
       {/* You can add more jobseeker-specific sections below (features, CTA, etc.) */}
 

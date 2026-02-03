@@ -2,12 +2,14 @@
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+
 import HeroSection from "@/components/home/HeroSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import HowItWorksSection from "@/components/home/HowItWorkSection";
 import CTASection from "@/components/home/CTASection";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import StatsSection from "@/components/home/StatsSection";
+import TestimonialSection from "@/components/home/TestimonialSection";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -36,6 +38,7 @@ export default async function HomePage() {
       <FeaturesSection />
       <StatsSection />
       <HowItWorksSection />
+      <TestimonialSection />
       <CTASection />
     </div>
   );
