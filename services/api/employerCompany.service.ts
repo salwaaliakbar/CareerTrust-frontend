@@ -1,6 +1,4 @@
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
-const API_BASE_URL = `${BACKEND_BASE_URL}/api`;
+import { api } from "@/lib/apiClient";
 
 export interface CompanyProfile {
   id: number;
@@ -36,16 +34,10 @@ export async function checkCompanyStatus(
   employerId: number,
 ): Promise<CompanyStatus> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/employer/company-status?employerId=${employerId}`,
+    const response = await api.get(
+      `/api/employer/company-status?employerId=${employerId}`,
     );
-
-    if (!response.ok) {
-      throw new Error("Failed to check company status");
-    }
-
-    const data = await response.json();
-    return data.data;
+    return response.data;
   } catch (error) {
     console.error("[Company Service] Error checking status:", error);
     throw error;
@@ -59,16 +51,10 @@ export async function getCompanyProfile(
   employerId: number,
 ): Promise<CompanyProfile | null> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/employer/company-profile?employerId=${employerId}`,
+    const response = await api.get(
+      `/api/employer/company-profile?employerId=${employerId}`,
     );
-
-    if (!response.ok) {
-      throw new Error("Failed to get company profile");
-    }
-
-    const data = await response.json();
-    return data.data.company;
+    return response.data.company;
   } catch (error) {
     console.error("[Company Service] Error getting profile:", error);
     throw error;
@@ -82,22 +68,16 @@ export async function createCompanyProfile(
   companyData: CreateCompanyRequest,
 ): Promise<CompanyProfile> {
   try {
-    const response = await fetch(`${API_BASE_URL}/employer/company-profile`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(companyData),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to create company profile");
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
+    const response = await api.post(
+      `/api/employer/company-profile`,
+      companyData,
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("[Company Service] Error creating profile:", error);
+    throw new Error(error.message || "Failed to create company profile");
+  }
+}
     console.error("[Company Service] Error creating profile:", error);
     throw error;
   }
@@ -112,26 +92,13 @@ export async function updateCompanyProfile(
   updateData: Partial<CreateCompanyRequest>,
 ): Promise<CompanyProfile> {
   try {
-    const response = await fetch(
-      `${API_BASE_URL}/employer/company-profile/${companyId}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ employerId, ...updateData }),
-      },
+    const response = await api.patch(
+      `/api/employer/company-profile/${companyId}`,
+      { employerId, ...updateData },
     );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to update company profile");
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
+    return response.data;
+  } catch (error: any) {
     console.error("[Company Service] Error updating profile:", error);
-    throw error;
+    throw new Error(error.message || "Failed to update company profile");
   }
 }
