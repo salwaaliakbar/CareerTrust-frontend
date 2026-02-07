@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   // Applications (Next.js API)
   APPLICATIONS: `${API_BASE_URL}/applications`,
   APPLICATION_BY_ID: (id: string | number) => `${API_BASE_URL}/applications/${id}`,
+  SUBMIT_APPLICATION: `${API_BASE_URL}/applications/submit`,
   
   // Users (Next.js API)
   USERS: `${API_BASE_URL}/users`,

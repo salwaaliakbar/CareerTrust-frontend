@@ -29,9 +29,10 @@ export default function RootLayout({
     <ClerkProvider>
       <ReduxProvider>
         <NotificationProvider>
-          <html lang="en">
+          <html lang="en" suppressHydrationWarning>
             <body
               className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+              suppressHydrationWarning
             >
               {children}
             </body>
