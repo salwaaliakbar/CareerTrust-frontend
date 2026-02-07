@@ -2,12 +2,11 @@
 import Link from "next/link";
 import { Briefcase, MapPin, DollarSign, Star } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import { useAppSelector } from "@/src/store/hooks";
 
 type Job = {
   id: number | string;
   title: string;
-  company: string;
+  company: string | { id: number; name: string };
   location: string;
   salary?: string;
   rating?: number;
@@ -15,21 +14,27 @@ type Job = {
   match?: number;
   postedDaysAgo?: number | string;
   description?: string;
+  responsibilities?: string[];
   [key: string]: any;
 };
 
 export default function JobCard({ job }: { job: Job }) {
-  // Debug: log job prop and Redux jobseekerProfile
-  const reduxProfile = useAppSelector((state) => state.jobseekerProfile);
-  console.log('[JobCard] job:', job);
-  console.log('[JobCard] reduxProfile:', reduxProfile);
-
   const { isSignedIn } = useUser();
   let matchDisplay = null;
   if (!isSignedIn) {
     matchDisplay = (
       <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-300 group-hover:shadow-md group-hover:scale-105">
-        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <svg
+          className="w-3.5 h-3.5 text-blue-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
         Login to see match %
       </span>
     );
@@ -56,12 +61,18 @@ export default function JobCard({ job }: { job: Job }) {
               <Briefcase className="w-6 h-6 text-sky-700" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors duration-300">{job.title}</h3>
-              <p className="text-gray-600 font-semibold group-hover:text-primary/70 transition-colors duration-300">{job.company}</p>
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors duration-300">
+                {job.title}
+              </h3>
+              <p className="text-gray-600 font-semibold group-hover:text-primary/70 transition-colors duration-300">
+                {typeof job.company === 'object' ? job.company.name : job.company}
+              </p>
             </div>
           </div>
 
-          <p className="text-gray-600 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors duration-300">{job.description}</p>
+          <p className="text-gray-600 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors duration-300">
+            {job.description}
+          </p>
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1 transition-all duration-300 group-hover:text-primary">
@@ -81,7 +92,9 @@ export default function JobCard({ job }: { job: Job }) {
 
         <div className="flex flex-col items-end gap-3">
           {matchDisplay}
-          <p className="text-xs text-gray-500 transition-all duration-300 group-hover:text-gray-600">Posted {job.postedDaysAgo}d ago</p>
+          <p className="text-xs text-gray-500 transition-all duration-300 group-hover:text-gray-600">
+            Posted {job.postedDaysAgo}d ago
+          </p>
         </div>
       </div>
     </Link>

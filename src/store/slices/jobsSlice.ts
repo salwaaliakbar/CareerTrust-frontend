@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { fetchJobs, fetchJobById, fetchFeaturedJobs } from '@/services/api/jobs.service';
+import { fetchJobById, fetchFeaturedJobs } from '@/services/api/jobs.service';
 import { API_ENDPOINTS } from '@/constants/api';
 
 export interface Job {
@@ -12,6 +12,7 @@ export interface Job {
   jobType: string;
   experience: string;
   skills: string[];
+  responsibilities?: string[];
   postedDate?: string;
   deadline?: string;
   image?: string;

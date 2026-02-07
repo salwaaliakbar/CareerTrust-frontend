@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 
 interface ResumeUploadProps {
   resumeFile: File | null;
+  previousResumeUrl?: string | null;
   autoFilling: boolean;
   onFileChange: (file: File | null) => void;
   onAutoFill: (file: File) => Promise<void>;
@@ -14,6 +15,7 @@ interface ResumeUploadProps {
 
 export default function ResumeUpload({
   resumeFile,
+  previousResumeUrl,
   autoFilling,
   onFileChange,
   onAutoFill,
@@ -90,6 +92,33 @@ export default function ResumeUpload({
                   <p className="text-xs font-bold text-blue-700 bg-white/80 px-3 py-1.5 rounded-full inline-block shadow-sm">
                     {(resumeFile.size / 1024).toFixed(2)} KB
                   </p>
+                </div>
+              </div>
+            </div>
+          ) : previousResumeUrl ? (
+            <div className="border-3 border-green-500 bg-linear-to-br from-green-50 to-emerald-50 rounded-2xl p-8 shadow-lg">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-linear-to-r from-green-500 to-emerald-500 rounded-full blur-md animate-pulse"></div>
+                  <div className="relative p-5 bg-linear-to-br from-green-600 to-emerald-600 rounded-full shadow-xl">
+                    <FileText className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-black text-slate-800 mb-2">
+                    Resume Uploaded
+                  </p>
+                  <p className="text-xs font-bold text-green-700 bg-white/80 px-3 py-1.5 rounded-full inline-block shadow-sm mb-3">
+                    ✓ Current Resume on File
+                  </p>
+                  <a
+                    href={previousResumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-green-700 hover:text-green-900 underline"
+                  >
+                    View Resume
+                  </a>
                 </div>
               </div>
             </div>

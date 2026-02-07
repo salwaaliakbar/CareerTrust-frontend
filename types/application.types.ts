@@ -8,6 +8,31 @@ export type ApplicationStatus =
   | "rejected"
   | "hired";
 
+export interface ApplicationData {
+  fullName: string;
+  email: string;
+  phone: string;
+  coverLetter?: string;
+  resumeOption: "existing" | "new";
+  resumeFile?: File;
+}
+
+export interface ApplyModalProfileData {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface ApplyModalProps {
+  isOpen: boolean;
+  jobTitle: string;
+  companyName: string;
+  resumeUrl: string | null;
+  onClose: () => void;
+  onSubmit: (data: ApplicationData) => Promise<void>;
+  profileData?: ApplyModalProfileData;
+}
+
 export interface Applicant {
   id: string;
   userId: string;
