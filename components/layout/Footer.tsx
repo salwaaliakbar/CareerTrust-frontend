@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, Linkedin, Twitter } from "lucide-react";
+import Test from "@/app/Test";
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -71,11 +72,18 @@ function Footer() {
           </div>
 
           {/* Product Column */}
-          <div className="animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+          <div
+            className="animate-fade-in-up"
+            style={{ animationDelay: "100ms" }}
+          >
             <h3 className="font-semibold text-white mb-6 text-lg">Product</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link, index) => (
-                <li key={link.href} style={{ animationDelay: `${100 + index * 50}ms` }} className="animate-fade-in">
+                <li
+                  key={link.href}
+                  style={{ animationDelay: `${100 + index * 50}ms` }}
+                  className="animate-fade-in"
+                >
                   <Link
                     href={link.href}
                     className="text-gray-400 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
@@ -88,11 +96,18 @@ function Footer() {
           </div>
 
           {/* Company Column */}
-          <div className="animate-fade-in-up" style={{ animationDelay: "200ms" }}>
+          <div
+            className="animate-fade-in-up"
+            style={{ animationDelay: "200ms" }}
+          >
             <h3 className="font-semibold text-white mb-6 text-lg">Company</h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link, index) => (
-                <li key={link.href} style={{ animationDelay: `${200 + index * 50}ms` }} className="animate-fade-in">
+                <li
+                  key={link.href}
+                  style={{ animationDelay: `${200 + index * 50}ms` }}
+                  className="animate-fade-in"
+                >
                   <Link
                     href={link.href}
                     className="text-gray-400 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
@@ -105,11 +120,18 @@ function Footer() {
           </div>
 
           {/* Legal Column */}
-          <div className="animate-fade-in-up" style={{ animationDelay: "300ms" }}>
+          <div
+            className="animate-fade-in-up"
+            style={{ animationDelay: "300ms" }}
+          >
             <h3 className="font-semibold text-white mb-6 text-lg">Legal</h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link, index) => (
-                <li key={link.href} style={{ animationDelay: `${300 + index * 50}ms` }} className="animate-fade-in">
+                <li
+                  key={link.href}
+                  style={{ animationDelay: `${300 + index * 50}ms` }}
+                  className="animate-fade-in"
+                >
                   <Link
                     href={link.href}
                     className="text-gray-400 hover:text-white transition-all duration-300 hover:translate-x-1 inline-block"
@@ -126,21 +148,31 @@ function Footer() {
         <div className="border-t border-gray-800"></div>
 
         {/* Bottom Section */}
-        <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in-up" style={{ animationDelay: "400ms" }}>
+        <div
+          className="pt-8 flex flex-col md:flex-row justify-between items-center gap-6 animate-fade-in-up"
+          style={{ animationDelay: "400ms" }}
+        >
           <p className="text-gray-500 text-sm">
             © {currentYear} CareerTrust. All rights reserved.
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <Link href="/sitemap" className="text-gray-400 hover:text-white transition-all duration-300">
+            <Link
+              href="/sitemap"
+              className="text-gray-400 hover:text-white transition-all duration-300"
+            >
               Sitemap
             </Link>
             <span className="text-gray-700">•</span>
-            <Link href="/accessibility" className="text-gray-400 hover:text-white transition-all duration-300">
+            <Link
+              href="/accessibility"
+              className="text-gray-400 hover:text-white transition-all duration-300"
+            >
               Accessibility
             </Link>
           </div>
         </div>
       </div>
+      <Test />
     </footer>
   );
 }
