@@ -5,8 +5,6 @@ import { use } from "react";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import ApplyModal from "@/components/jobs/ApplyModal";
-import type { ApplicationData } from "@/types/application.types";
 import {
   Star,
   Clock,
@@ -29,7 +27,6 @@ import {
 } from "@/src/store/slices/jobseeker/profileSlice";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
-import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
 
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -42,9 +39,9 @@ export default function JobDetail({
   const { id } = use(params);
   const dispatch = useAppDispatch();
   const { user } = useUser();
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isSubmittingApplication, setIsSubmittingApplication] =
     useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
   const {
     selectedJob: job,
     items: allJobs,
@@ -79,8 +76,52 @@ export default function JobDetail({
     }
   }, [dispatch, isProfileLoading, jobseekerProfile?.resumeUrl, user?.id]);
 
-  // Handle job application submission
-  const handleApplySubmit = async (data: ApplicationData) => {
+  // Check if user has already applied for this job
+  useEffect(() => {
+    const fetchAppliedStatus = async () => {
+      if (!user?.id) {
+        console.log("[JobDetail] User not signed in, skipping applied status check");
+        return;
+      }
+
+      try {
+        console.log("[JobDetail] Fetching applied status for job:", id);
+        const response = await fetch("/api/applications/user", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("[JobDetail] Response status:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("[JobDetail] Applied jobs data:", data);
+          if (data.success && data.data) {
+            // Normalize all IDs to strings for comparison
+            const normalizedAppliedIds = data.data.map((jobId: string | number) => String(jobId));
+            const currentJobId = String(id);
+            const hasAppliedToJob = normalizedAppliedIds.includes(currentJobId);
+            console.log("[JobDetail] Has applied check:", { currentJobId, normalizedAppliedIds, hasAppliedToJob });
+            setHasApplied(hasAppliedToJob);
+          } else {
+            console.log("[JobDetail] No applied jobs data in response");
+          }
+        } else {
+          const errorData = await response.text();
+          console.error("[JobDetail] Failed to fetch applied status:", response.status, errorData);
+        }
+      } catch (error) {
+        console.error("[JobDetail] Error fetching applied status:", error);
+      }
+    };
+
+    fetchAppliedStatus();
+  }, [user?.id, id]);
+
+  // Handle direct job application
+  const handleApplyJob = async () => {
     if (!user?.id || !job?.id) {
       Swal.fire({
         icon: "error",
@@ -90,58 +131,69 @@ export default function JobDetail({
       return;
     }
 
+    // Confirmation dialog
+    const confirmed = await Swal.fire({
+      icon: "question",
+      title: "Confirm Application",
+      html: `<p>Apply for <strong>${job.title}</strong><br/>at <strong>${companyName}</strong>?</p>`,
+      showCancelButton: true,
+      confirmButtonColor: "#0C2B4E",
+      confirmButtonText: "Yes, Apply",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirmed.isConfirmed) return;
+
     try {
       setIsSubmittingApplication(true);
 
-      // Build form data for file upload support
-      const formData = new FormData();
-      formData.append("jobId", String(job.id));
-      formData.append("userId", user.id);
-      formData.append("fullName", data.fullName);
-      formData.append("email", data.email);
-      formData.append("phone", data.phone);
-      formData.append("coverLetter", data.coverLetter || "");
-      formData.append("resumeOption", data.resumeOption);
-
-      // Add resume file if uploading new one
-      if (data.resumeOption === "new" && data.resumeFile) {
-        formData.append("resumeFile", data.resumeFile);
-      } else if (data.resumeOption === "existing") {
-        // Use existing resume from profile
-        formData.append("resumeUrl", jobseekerProfile?.resumeUrl || "");
-      }
-
-      // Submit application to API
+      // Call BFF endpoint (which will handle backend communication)
       const response = await axios.post(
-        API_ENDPOINTS.SUBMIT_APPLICATION || "/api/applications/submit",
-        formData,
+        "/api/applications/submit",
+        {
+          jobId: job.id,
+        },
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (response.status === 200 || response.status === 201) {
-        setIsApplyModalOpen(false);
+        setHasApplied(true);
         Swal.fire({
           icon: "success",
           title: "Application Submitted!",
-          text: "Your job application has been submitted successfully. We'll notify you soon!",
+          text: "Your job application has been submitted successfully. Track it in your dashboard!",
           confirmButtonColor: "#0C2B4E",
+        }).then(() => {
+          // Optionally navigate to dashboard
+          window.location.href = "/dashboard";
         });
       }
     } catch (error) {
       console.error("Error submitting application:", error);
       const axiosError = error as { response?: { data?: { message?: string } } };
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text:
-          axiosError?.response?.data?.message ||
-          "Failed to submit application. Please try again.",
-        confirmButtonColor: "#0C2B4E",
-      });
+      const errorMessage = axiosError?.response?.data?.message || "";
+      
+      // Check if error is "already applied"
+      if (errorMessage.toLowerCase().includes("already applied") || errorMessage.toLowerCase().includes("application already exists")) {
+        setHasApplied(true);
+        Swal.fire({
+          icon: "info",
+          title: "Already Applied",
+          text: "You have already applied for this job. Check your applications in the dashboard.",
+          confirmButtonColor: "#0C2B4E",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Submission Failed",
+          text: errorMessage || "Failed to submit application. Please try again.",
+          confirmButtonColor: "#0C2B4E",
+        });
+      }
     } finally {
       setIsSubmittingApplication(false);
     }
@@ -487,14 +539,37 @@ export default function JobDetail({
             <div className="smooth-enter-right animation-delay-300">
               <button
                 type="button"
-                onClick={() => setIsApplyModalOpen(true)}
-                disabled={isSubmittingApplication}
-                className="w-full bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white font-black py-4 rounded-xl transition-all duration-500 shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 relative overflow-hidden group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={hasApplied ? undefined : handleApplyJob}
+                disabled={isSubmittingApplication || hasApplied}
+                className={`w-full font-black py-4 rounded-xl transition-all duration-500 shadow-lg relative overflow-hidden group cursor-pointer flex items-center justify-center gap-2 ${
+                  hasApplied
+                    ? "bg-linear-to-r from-green-500 to-emerald-600 text-white hover:shadow-xl disabled:opacity-100 disabled:cursor-not-allowed"
+                    : "bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white hover:shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                }`}
               >
-                <div className="absolute inset-0 bg-linear-330-to-r from-[#1A3D64] to-[#0C2B4E] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className={`absolute inset-0 ${hasApplied ? "bg-linear-330-to-r from-green-600 to-emerald-700" : "bg-linear-330-to-r from-[#1A3D64] to-[#0C2B4E]"} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Briefcase className="w-6 h-6 group-hover:animate-bounce" />
-                  {isSubmittingApplication ? "Submitting..." : "Apply for This Job"}
+                  {hasApplied ? (
+                    <>
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {isSubmittingApplication ? "Processing..." : "You've Applied"}
+                    </>
+                  ) : (
+                    <>
+                      <Briefcase className="w-6 h-6 group-hover:animate-bounce" />
+                      {isSubmittingApplication ? "Submitting..." : "Apply for This Job"}
+                    </>
+                  )}
                 </span>
               </button>
             </div>
@@ -580,21 +655,6 @@ export default function JobDetail({
           </div>
         </div>
       </main>
-
-      {/* Apply Modal */}
-      <ApplyModal
-        isOpen={isApplyModalOpen}
-        jobTitle={job?.title || ""}
-        companyName={companyName}
-        resumeUrl={jobseekerProfile?.resumeUrl || null}
-        onClose={() => setIsApplyModalOpen(false)}
-        onSubmit={handleApplySubmit}
-        profileData={{
-          fullName: jobseekerProfile?.profile?.fullName || user?.fullName || "",
-          email: jobseekerProfile?.profile?.email || user?.primaryEmailAddress?.emailAddress || "",
-          phone: "",
-        }}
-      />
 
       <Footer />
     </div>

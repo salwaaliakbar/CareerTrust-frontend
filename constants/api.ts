@@ -36,6 +36,8 @@ export const API_ENDPOINTS = {
   RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`,
   JOB_RECOMMENDATION_STATUS: `${BACKEND_API_URL}/jobRecommendation/status`,
   JOB_RECOMMENDATIONS: `${BACKEND_API_URL}/jobRecommendation/recommendations`,
+  APPLICATION_SUBMIT: `${BACKEND_API_URL}/applications/submit`,
+  USER_APPLICATIONS_BACKEND: (clerkId: string) => `${BACKEND_API_URL}/jobseeker/${clerkId}/applications`,
 };
 
 export default API_ENDPOINTS;

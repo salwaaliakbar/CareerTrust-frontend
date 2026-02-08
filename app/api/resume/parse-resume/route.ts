@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import logger from "@/lib/logger";
 import axios from "axios";
 import { API_ENDPOINTS } from "@/constants/api";
+import { requireAuth } from "@/lib/middleware/auth";
+import { rateLimit, RateLimitPresets } from "@/lib/middleware/ratelimit";
 
 export const runtime = "nodejs";
 
@@ -9,6 +11,16 @@ export async function POST(req: Request) {
   logger.info("[/api/resume/parse-resume] POST request received");
   
   try {
+    // 1. Verify user is authenticated
+    const { userId, error: authError } = await requireAuth();
+    if (authError) return authError;
+
+    // 2. Apply rate limiting (5 resume uploads per minute)
+    const rateLimitError = await rateLimit(
+      `resume-parse:${userId}`,
+      RateLimitPresets.STRICT
+    );
+    if (rateLimitError) return rateLimitError;
     const form = await req.formData();
     const file = form.get("resume") as File | null;
     const fullName = form.get("fullName") as string | null;
