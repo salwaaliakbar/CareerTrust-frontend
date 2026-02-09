@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { Briefcase, MapPin, DollarSign, Star } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { useAppSelector } from "@/src/store/hooks";
 
 type Job = {
   id: number | string;
@@ -17,6 +19,27 @@ type Job = {
 };
 
 export default function JobCard({ job }: { job: Job }) {
+  // Debug: log job prop and Redux jobseekerProfile
+  const reduxProfile = useAppSelector((state) => state.jobseekerProfile);
+  console.log('[JobCard] job:', job);
+  console.log('[JobCard] reduxProfile:', reduxProfile);
+
+  const { isSignedIn } = useUser();
+  let matchDisplay = null;
+  if (!isSignedIn) {
+    matchDisplay = (
+      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-300 group-hover:shadow-md group-hover:scale-105">
+        <svg className="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Login to see match %
+      </span>
+    );
+  } else {
+    matchDisplay = (
+      <span className="bg-linear-to-r from-green-100 to-green-50 text-green-800 px-3 py-1 rounded-full text-sm font-semibold transition-all duration-300 group-hover:shadow-md group-hover:scale-105">
+        {job.match}% Match
+      </span>
+    );
+  }
   return (
     <Link
       href={`/jobs/${job.id}`}
@@ -57,9 +80,7 @@ export default function JobCard({ job }: { job: Job }) {
         </div>
 
         <div className="flex flex-col items-end gap-3">
-          <span className="bg-linear-to-r from-green-100 to-green-50 text-green-800 px-3 py-1 rounded-full text-sm font-semibold transition-all duration-300 group-hover:shadow-md group-hover:scale-105">
-            {job.match}% Match
-          </span>
+          {matchDisplay}
           <p className="text-xs text-gray-500 transition-all duration-300 group-hover:text-gray-600">Posted {job.postedDaysAgo}d ago</p>
         </div>
       </div>
