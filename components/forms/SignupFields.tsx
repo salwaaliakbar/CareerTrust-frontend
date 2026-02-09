@@ -12,7 +12,11 @@ import {
 import type { FormValues, SignupAction } from "./SignupForm";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 
-type SignupFieldsState = { role: typeof JOBSEEKER | typeof EMPLOYER; isProcessing: boolean; verifying: boolean };
+type SignupFieldsState = {
+  role: typeof JOBSEEKER | typeof EMPLOYER;
+  isProcessing: boolean;
+  verifying: boolean;
+};
 
 type Props = {
   state: SignupFieldsState;
@@ -263,6 +267,44 @@ export default function SignupFields({
                         {rhfErrors.companyURL && (
                           <div className="text-sm text-red-500 mt-1">
                             {String(rhfErrors.companyURL.message)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="linkedinUrl"
+                          className="block text-sm font-semibold text-gray-900 mb-2"
+                        >
+                          Company LinkedIn Page *
+                        </label>
+                        <div className="relative">
+                          <Building2 className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                          <input
+                            id="linkedinUrl"
+                            {...register("linkedinUrl", {
+                              required:
+                                state.role === "employer"
+                                  ? "Company LinkedIn URL is required"
+                                  : false,
+                              pattern: {
+                                value:
+                                  /^https:\/\/(www\.)?linkedin\.com\/(company|in)\//,
+                                message:
+                                  "Invalid LinkedIn URL (must be a LinkedIn company or profile page)",
+                              },
+                            })}
+                            placeholder="https://www.linkedin.com/company/your-company"
+                            className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${
+                              rhfErrors.linkedinUrl
+                                ? "border-red-400"
+                                : "border-gray-300"
+                            }`}
+                          />
+                        </div>
+                        {rhfErrors.linkedinUrl && (
+                          <div className="text-sm text-red-500 mt-1">
+                            {String(rhfErrors.linkedinUrl.message)}
                           </div>
                         )}
                       </div>

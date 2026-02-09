@@ -19,6 +19,7 @@ export type FormValues = {
   name: string;
   companyName: string;
   companyURL: string;
+  linkedinUrl: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -104,7 +105,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   const [state, dispatch] = useReducer(reducer, initialState);
   const [pendingFormData, setPendingFormData] = useState<FormValues | null>(
-    null
+    null,
   );
   const [capturedImage, setCapturedImage] = useState<File | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -134,7 +135,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       // ⚡ PERFORMANCE: Load face-api only when needed (lazy loading)
       const faceapi = await import("face-api.js");
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      dispatch({ type: ACTIONS.setModelsLoaded , payload: true });
+      dispatch({ type: ACTIONS.setModelsLoaded, payload: true });
     };
     loadModels();
   }, []);
@@ -148,12 +149,12 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         const faceapi = await import("face-api.js");
         const detections = await faceapi.detectAllFaces(
           videoRef.current as HTMLVideoElement,
-          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })
+          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }),
         );
         if (isMounted)
           dispatch({ type: ACTIONS.setFaceCount, payload: detections.length });
       } catch (e) {
-       logger.error("Face detection error:", e);
+        logger.error("Face detection error:", e);
       }
     }, 500);
 
@@ -175,6 +176,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       name: "",
       companyName: "",
       companyURL: "",
+      linkedinUrl: "",
       phone: "",
       cnic: "",
       email: "",
@@ -222,6 +224,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           ...(state.role === EMPLOYER && {
             companyName: values.companyName,
             companyURL: values.companyURL,
+            linkedinUrl: values.linkedinUrl,
           }),
         },
       });
@@ -242,7 +245,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
             headers: {
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         console.log(response.data); // handle the response
@@ -271,7 +274,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
             maxlength="1" 
             class="otp-input w-10 h-12 text-center text-xl font-semibold border border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-400 transition-all duration-200"
           />
-        `
+        `,
         )
         .join("")}
     </div>
@@ -284,7 +287,9 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         preConfirm: () => {
           let finalCode = "";
           for (let i = 0; i < 6; i++) {
-            const element = document.getElementById(`otp-${i}`) as HTMLInputElement | null;
+            const element = document.getElementById(
+              `otp-${i}`,
+            ) as HTMLInputElement | null;
             const val = element?.value;
             if (!val) return Swal.showValidationMessage("Enter all 6 digits");
             finalCode += val;
@@ -292,7 +297,9 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           return finalCode;
         },
         didOpen: () => {
-          const inputs = document.querySelectorAll(".otp-input") as NodeListOf<HTMLInputElement>;
+          const inputs = document.querySelectorAll(
+            ".otp-input",
+          ) as NodeListOf<HTMLInputElement>;
           inputs[0]?.focus();
 
           inputs.forEach((input, index) => {
@@ -348,12 +355,13 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
             cnic: values.cnic,
             companyName: values.companyName,
             companyURL: values.companyURL,
+            linkedinUrl: values.linkedinUrl,
           },
           {
             headers: {
               "Content-Type": "application/json",
             },
-          }
+          },
         );
 
         console.log(response.data); // handle the response
@@ -460,7 +468,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       }
       if (resObj?.match) {
         throw new Error(
-          "This face is already registered. If this is your face, please contact support or use a different verification method."
+          "This face is already registered. If this is your face, please contact support or use a different verification method.",
         );
       }
 

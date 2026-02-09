@@ -42,8 +42,8 @@ export default function PostJobPage() {
         setEmployerId(empId);
 
         try {
-          // Check if employer has company profile
-          const status = await checkCompanyStatus(empId);
+          // Check if employer has company profile (pass Clerk ID)
+          const status = await checkCompanyStatus(user.id, getToken);
 
           if (!status.hasCompany || status.needsSetup) {
             await Swal.fire({
