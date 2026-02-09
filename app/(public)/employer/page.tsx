@@ -11,7 +11,7 @@ export default function EmployerPage() {
       <Header />
 
       <main>
-        <HeroSection />
+        <HeroSection />s
 
         {/* How it works for employers */}
         <EmployerSteps />

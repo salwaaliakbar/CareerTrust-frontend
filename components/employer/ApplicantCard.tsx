@@ -16,10 +16,13 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { updateApplicationStatus } from "@/services/api/employer.service";
 import Swal from "sweetalert2";
 import Image from "next/image";
+import Link from "next/link";
 
 interface ApplicantCardProps {
   application: JobApplication;
@@ -117,8 +120,12 @@ export default function ApplicantCard({
       <div className="p-6">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Profile Image */}
-          <div className="flex-shrink-0">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-black shadow-lg">
+          <Link
+            href={`/profile/${applicant.id}`}
+            className="flex-shrink-0 group/profile cursor-pointer"
+            title="View Full Profile"
+          >
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-black shadow-lg group-hover/profile:shadow-2xl group-hover/profile:scale-110 transition-all duration-300">
               {applicant.profileImage ? (
                 <Image
                   src={applicant.profileImage}
@@ -131,15 +138,21 @@ export default function ApplicantCard({
                 applicant.fullName.charAt(0).toUpperCase()
               )}
             </div>
-          </div>
+          </Link>
 
           {/* Applicant Details */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-3">
               <div>
-                <h3 className="text-2xl font-black text-slate-900 mb-1">
-                  {applicant.fullName}
-                </h3>
+                <Link
+                  href={`/profile/${applicant.id}`}
+                  className="group/name"
+                  title="View Full Profile"
+                >
+                  <h3 className="text-2xl font-black text-slate-900 mb-1 group-hover/name:text-blue-600 transition-colors cursor-pointer">
+                    {applicant.fullName}
+                  </h3>
+                </Link>
                 {applicant.headline && (
                   <p className="text-slate-600 font-semibold">
                     {applicant.headline}
@@ -147,23 +160,50 @@ export default function ApplicantCard({
                 )}
               </div>
 
-              {/* Status Dropdown */}
-              <select
-                value={application.status}
-                onChange={(e) =>
-                  handleStatusChange(e.target.value as ApplicationStatus)
-                }
-                disabled={isUpdating}
-                className={`px-4 py-2 rounded-lg text-sm font-bold border cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  statusColors[application.status]
-                }`}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Quick Action Buttons */}
+                {application.status !== "hired" &&
+                  application.status !== "rejected" && (
+                    <>
+                      <button
+                        onClick={() => handleStatusChange("hired")}
+                        disabled={isUpdating}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        title="Accept Candidate"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange("rejected")}
+                        disabled={isUpdating}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        title="Reject Candidate"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                {/* Status Dropdown */}
+                <select
+                  value={application.status}
+                  onChange={(e) =>
+                    handleStatusChange(e.target.value as ApplicationStatus)
+                  }
+                  disabled={isUpdating}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    statusColors[application.status]
+                  }`}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Contact Info */}
