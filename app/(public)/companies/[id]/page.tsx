@@ -8,8 +8,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CompanyEditForm from "@/components/companies/CompanyEditForm";
 import { Star, Users, Briefcase, MapPin, ArrowLeft, Edit2 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getCompanyById } from "@/src/store/slices/companiesSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getCompanyById } from "@/redux/store/slices/companiesSlice";
 import { Company } from "@/types/company.types";
 
 export default function CompanyPage({

@@ -3,8 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import BlogCard from "@/components/blogs/BlogCard";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getAllBlogs } from "@/src/store/slices/blogsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getAllBlogs } from "@/redux/store/slices/blogsSlice";
 
 type Blog = {
   id: number;

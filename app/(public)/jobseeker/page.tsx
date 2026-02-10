@@ -4,6 +4,7 @@ import HeroSection from "@/components/jobseeker/Herosection";
 import StepsCarousel from "@/components/jobseeker/StepsCarousel";
 // import CTASection from "@/components/home/CTASection";
 import JobseekerCTA from "@/components/jobseeker/JobseekerCTA";
+import TrustStats from "@/components/jobseeker/TrustStats";
 
 export default function JobseekerPage() {
   return (
@@ -15,6 +16,9 @@ export default function JobseekerPage() {
 
       {/* Steps carousel explaining job seeker flow */}
       <StepsCarousel />
+
+
+      {/* <TrustStats /> */}
 
       {/* Jobseeker-specific CTA: quick link to job listings */}
       <JobseekerCTA />

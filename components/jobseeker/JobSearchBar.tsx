@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { getAllJobs, type Job } from "@/src/store/slices/jobsSlice";
+import { getAllJobs, type Job } from "@/redux/store/slices/jobsSlice";
 import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
 
 export default function JobSearchBar() {
   const router = useRouter();
