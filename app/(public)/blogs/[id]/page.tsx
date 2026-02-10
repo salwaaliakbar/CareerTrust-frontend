@@ -6,8 +6,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
 import { Calendar, User, ArrowLeft, Clock } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getBlogById } from "@/src/store/slices/blogsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getBlogById } from "@/redux/store/slices/blogsSlice";
 
 export default function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
