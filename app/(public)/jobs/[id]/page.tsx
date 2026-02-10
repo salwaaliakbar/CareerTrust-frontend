@@ -25,6 +25,12 @@ import {
   selectJobseekerProfile,
   selectProfileLoading,
 } from "@/src/store/slices/jobseeker/profileSlice";
+import {
+  fetchUserApplications,
+  addAppliedJob,
+  selectHasAppliedToJob,
+  selectApplicationsLoading,
+} from "@/src/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -41,7 +47,7 @@ export default function JobDetail({
   const { user } = useUser();
   const [isSubmittingApplication, setIsSubmittingApplication] =
     useState(false);
-  const [hasApplied, setHasApplied] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false); // Local state synced with Redux
   const {
     selectedJob: job,
     items: allJobs,
@@ -76,49 +82,29 @@ export default function JobDetail({
     }
   }, [dispatch, isProfileLoading, jobseekerProfile?.resumeUrl, user?.id]);
 
-  // Check if user has already applied for this job
+  // Fetch user's applied jobs from Redux on mount/user change
+  const hasAppliedFromRedux = useAppSelector(selectHasAppliedToJob(id));
+  const { appliedJobIds: reduxAppliedJobIds } = useAppSelector(
+    (state) => state.applications
+  );
+
   useEffect(() => {
-    const fetchAppliedStatus = async () => {
-      if (!user?.id) {
-        console.log("[JobDetail] User not signed in, skipping applied status check");
-        return;
-      }
+    // Only fetch if we don't have data in Redux yet
+    if (user?.id && reduxAppliedJobIds.length === 0) {
+      console.log("[JobDetail] Fetching user applications - no data in Redux");
+      dispatch(fetchUserApplications({ forceRefresh: false }));
+    } else if (user?.id && reduxAppliedJobIds.length > 0) {
+      console.log(
+        "[JobDetail] Using cached applications from Redux, count:",
+        reduxAppliedJobIds.length
+      );
+    }
+  }, [user?.id, reduxAppliedJobIds.length, dispatch]);
 
-      try {
-        console.log("[JobDetail] Fetching applied status for job:", id);
-        const response = await fetch("/api/applications/user", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        console.log("[JobDetail] Response status:", response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[JobDetail] Applied jobs data:", data);
-          if (data.success && data.data) {
-            // Normalize all IDs to strings for comparison
-            const normalizedAppliedIds = data.data.map((jobId: string | number) => String(jobId));
-            const currentJobId = String(id);
-            const hasAppliedToJob = normalizedAppliedIds.includes(currentJobId);
-            console.log("[JobDetail] Has applied check:", { currentJobId, normalizedAppliedIds, hasAppliedToJob });
-            setHasApplied(hasAppliedToJob);
-          } else {
-            console.log("[JobDetail] No applied jobs data in response");
-          }
-        } else {
-          const errorData = await response.text();
-          console.error("[JobDetail] Failed to fetch applied status:", response.status, errorData);
-        }
-      } catch (error) {
-        console.error("[JobDetail] Error fetching applied status:", error);
-      }
-    };
-
-    fetchAppliedStatus();
-  }, [user?.id, id]);
+  // Sync Redux state with local hasApplied state
+  useEffect(() => {
+    setHasApplied(hasAppliedFromRedux);
+  }, [hasAppliedFromRedux]);
 
   // Handle direct job application
   const handleApplyJob = async () => {
@@ -162,6 +148,8 @@ export default function JobDetail({
 
       if (response.status === 200 || response.status === 201) {
         setHasApplied(true);
+        // Update Redux state with new applied job
+        dispatch(addAppliedJob(job.id));
         Swal.fire({
           icon: "success",
           title: "Application Submitted!",

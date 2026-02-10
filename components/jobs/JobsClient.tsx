@@ -6,18 +6,19 @@ import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { getAllJobs } from "@/src/store/slices/jobsSlice";
+import { fetchUserApplications, selectAppliedJobIds } from "@/src/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 
 export default function JobsClient() {
   const dispatch = useAppDispatch();
   const { items: jobs, loading } = useAppSelector((state) => state.jobs);
+  const reduxAppliedJobIds = useAppSelector(selectAppliedJobIds);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedSalary, setSelectedSalary] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [sortByRelevant, setSortByRelevant] = useState(false);
-  const [appliedJobIds, setAppliedJobIds] = useState<Set<string | number>>(new Set());
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isSignedIn } = useUser();
@@ -31,47 +32,19 @@ export default function JobsClient() {
     }
   }, [dispatch, isSignedIn, user]);
 
-  // Fetch applied jobs for current user
+  // Fetch applied jobs from Redux
   useEffect(() => {
-    const fetchAppliedJobs = async () => {
-      if (!isSignedIn || !user?.id) {
-        console.log("[JobsClient] User not signed in, skipping applied jobs fetch");
-        return;
-      }
-      
-      try {
-        console.log("[JobsClient] Fetching applied jobs for user:", user.id);
-        const response = await fetch("/api/applications/user", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        
-        console.log("[JobsClient] Response status:", response.status);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[JobsClient] Applied jobs data:", data);
-          if (data.success && data.data) {
-            // Ensure we handle both string and number IDs
-            const normalizedIds = data.data.map((id: string | number) => String(id));
-            console.log("[JobsClient] Normalized applied job IDs:", normalizedIds);
-            setAppliedJobIds(new Set(normalizedIds));
-          } else {
-            console.log("[JobsClient] No applied jobs found or invalid response");
-          }
-        } else {
-          const errorData = await response.text();
-          console.error("[JobsClient] Failed to fetch applied jobs:", response.status, errorData);
-        }
-      } catch (error) {
-        console.error("[JobsClient] Error fetching applied jobs:", error);
-      }
-    };
-    
-    fetchAppliedJobs();
-  }, [isSignedIn, user?.id]);
+    // Only fetch if we don't have data in Redux yet
+    if (user?.id && reduxAppliedJobIds.length === 0) {
+      console.log("[JobsClient] Fetching user applications - no data in Redux");
+      dispatch(fetchUserApplications({ forceRefresh: false }));
+    } else if (user?.id && reduxAppliedJobIds.length > 0) {
+      console.log(
+        "[JobsClient] Using cached applications from Redux, count:",
+        reduxAppliedJobIds.length
+      );
+    }
+  }, [user?.id, reduxAppliedJobIds.length, dispatch]);
 
   // initialize filters from URL (so JobSearchBar navigation applies filters)
   useEffect(() => {
@@ -340,7 +313,7 @@ export default function JobsClient() {
                     <div key={job.id} className="fade-in" style={{animationDelay: `${200 + idx * 100}ms`}}>
                       <JobCard 
                         job={job} 
-                        isApplied={appliedJobIds.has(String(job.id))}
+                        isApplied={reduxAppliedJobIds.includes(String(job.id))}
                       />
                     </div>
                   ))
