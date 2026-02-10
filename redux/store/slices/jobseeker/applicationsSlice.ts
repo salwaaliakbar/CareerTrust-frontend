@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
-import type { RootState } from "@/src/store/store";
-import type { JobsState } from "@/src/store/slices/jobsSlice";
+import type { RootState } from "@/redux/store/store";
+import type { JobsState } from "@/redux/store/slices/jobsSlice";
 
 export interface ApplicationData {
   id: string | number;

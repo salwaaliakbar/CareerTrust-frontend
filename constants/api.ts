@@ -37,7 +37,7 @@ export const API_ENDPOINTS = {
   JOB_RECOMMENDATION_STATUS: `${BACKEND_API_URL}/jobRecommendation/status`,
   JOB_RECOMMENDATIONS: `${BACKEND_API_URL}/jobRecommendation/recommendations`,
   APPLICATION_SUBMIT: `${BACKEND_API_URL}/applications/submit`,
-  USER_APPLICATIONS_BACKEND: (clerkId: string) => `${BACKEND_API_URL}/jobseeker/${clerkId}/applications`,
+  USER_APPLICATIONS_BACKEND: (clerkId: string) => `${BACKEND_API_URL}/applications/${clerkId}`,
 };
 
 export default API_ENDPOINTS;

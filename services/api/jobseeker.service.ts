@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "@/constants/api";
-import type { FetchedProfileData } from "@/src/store/slices/jobseeker/profileSlice";
+import type { FetchedProfileData } from "@/redux/store/slices/jobseeker/profileSlice";
 
 interface ApiResponse<T> {
   success: boolean;

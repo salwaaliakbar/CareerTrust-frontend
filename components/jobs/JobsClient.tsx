@@ -4,9 +4,9 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getAllJobs } from "@/src/store/slices/jobsSlice";
-import { fetchUserApplications, selectAppliedJobIds } from "@/src/store/slices/jobseeker/applicationsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getAllJobs } from "@/redux/store/slices/jobsSlice";
+import { fetchUserApplications, selectAppliedJobIds } from "@/redux/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 
 export default function JobsClient() {

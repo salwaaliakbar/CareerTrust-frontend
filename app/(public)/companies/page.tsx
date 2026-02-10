@@ -4,8 +4,8 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Search, TrendingUp } from "lucide-react";
 import CompanyCard from "@/components/companies/CompanyCard";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getAllCompanies } from "@/src/store/slices/companiesSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getAllCompanies } from "@/redux/store/slices/companiesSlice";
 
 type Company = {
   id: number;

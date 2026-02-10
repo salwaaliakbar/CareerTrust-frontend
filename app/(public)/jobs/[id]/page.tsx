@@ -18,19 +18,19 @@ import {
   Building2,
   TrendingUp,
 } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getJobById } from "@/src/store/slices/jobsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getJobById } from "@/redux/store/slices/jobsSlice";
 import {
   fetchJobseekerProfile,
   selectJobseekerProfile,
   selectProfileLoading,
-} from "@/src/store/slices/jobseeker/profileSlice";
+} from "@/redux/store/slices/jobseeker/profileSlice";
 import {
   fetchUserApplications,
   addAppliedJob,
   selectHasAppliedToJob,
   selectApplicationsLoading,
-} from "@/src/store/slices/jobseeker/applicationsSlice";
+} from "@/redux/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 import Swal from "sweetalert2";
