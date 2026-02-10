@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -23,8 +24,6 @@ import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
 import { useRef } from "react";
-import Test from "@/app/Test";
-import { useRef, useCallback } from "react";
 import { useNotificationState } from "@/hooks/useNotificationState";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -32,10 +31,10 @@ import {
   selectJobseekerProfile,
   selectProfileLoading,
   FetchedProfileData,
-} from "@/src/store/slices/jobseeker/profileSlice";
-import { updateJobMatches } from "@/src/store/slices/jobsSlice";
+} from "@/redux/store/slices/jobseeker/profileSlice";
+import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
-import type { AppDispatch } from "@/src/store/store";
+import type { AppDispatch } from "@/redux/store/store";
 
 // Type definitions for API responses
 interface JobRecommendation {
@@ -180,7 +179,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useUser();
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -311,8 +309,7 @@ export default function ProfilePage() {
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
-            }"`,
-            }" (will be updated)`,
+            }" (will be updated)`
           );
         }
         if (mismatches.email) {
@@ -321,8 +318,7 @@ export default function ProfilePage() {
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
-            }"`,
-            }" (protected - will not be changed)`,
+            }" (protected - will not be changed)`
           );
         }
 
