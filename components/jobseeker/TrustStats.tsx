@@ -2,7 +2,7 @@ import { TRUST_STATS } from "@/data/jobseeker/trustStats";
 
 const TrustStats = () => {
   return (
-    <section className="py-24 mt-8 bg-linear-to-b from-[#1D546C]/10 via-[#1D546C]/5 to-[#1D546C]/10">
+    <section className="py-24 mt-8 bg-linear-to-b from-[#1D546C]/15 via-[#1D546C]/5 to-[#1D546C]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4">

@@ -6,6 +6,7 @@ import { Briefcase, MapPin, DollarSign, Clock, ArrowRight, Sparkles
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/constants/api";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 interface Job {
   id: number | string;
@@ -98,12 +99,12 @@ function FeaturedJobCard({ job }: { job: Job }) {
       className="group bg-white rounded-2xl border border-gray-200 p-6 shadow-md hover:shadow-2xl hover:border-[#1D546C]/40 transition-all duration-300 hover:-translate-y-2 block relative overflow-hidden hover:glow"
     >
       {/* Hover gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:from-transparent group-hover:to-transparent transition-all duration-300 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-transparent to-transparent group-hover:from-transparent group-hover:to-transparent transition-all duration-300 pointer-events-none" />
       
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start gap-4 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-[#1D546C]/10 to-[#1D546C]/5 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+          <div className="w-12 h-12 bg-linear-to-br from-[#1D546C]/10 to-[#1D546C]/5 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
             <Briefcase className="w-6 h-6 text-[#1D546C]" />
           </div>
           <div className="flex-1 min-w-0">
@@ -174,6 +175,12 @@ export default function FeaturedJobs() {
         }
       } catch (error) {
         // Use sample jobs as fallback
+        Swal.fire({
+          icon: "error",
+          title: "Failed to Load Featured Jobs",
+          text: "We couldn't fetch the latest featured jobs.",
+          confirmButtonText: "OK",
+        });
         console.log("Using sample jobs data");
       } finally {
         setLoading(false);
