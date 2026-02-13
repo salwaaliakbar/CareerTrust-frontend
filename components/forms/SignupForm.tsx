@@ -369,10 +369,10 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         // Redirect based on role
         setTimeout(() => {
           if (state.role === JOBSEEKER) {
-            router.push("/jobseeker");
+            router.push("/jobseeker/dashboard");
             // router.push("/");
           } else {
-            router.push("/employer");
+            router.push("/employer/dashboard");
             // router.push("/");
           }
         }, 2000);

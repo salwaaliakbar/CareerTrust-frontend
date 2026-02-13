@@ -57,7 +57,10 @@ function Header() {
     <header className="bg-[#F4F4F4] border-b border-gray-300 sticky top-0 z-50 shadow-sm transition-all duration-300 hover:shadow-md">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href={isSignedIn ? (userRole === "employer" ? "/employer/dashboard" : "/jobseeker/dashboard") : "/"} 
+          className="flex items-center gap-2"
+        >
           <Image
             src="/assets/images/Logo.png"
             alt="CareerTrust Logo"
@@ -82,7 +85,6 @@ function Header() {
                     userRole === "employer"
                       ? "/employer/dashboard"
                       : "/jobseeker/dashboard",
-                  bold: true,
                 },
                 userRole === "jobseeker" && {
                   href: "/jobs",
@@ -96,26 +98,31 @@ function Header() {
                 { href: "/contact", label: "Contact", match: "/contact" },
               ]
                 .filter(Boolean)
-                .map(({ href, label, match, bold }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className={`relative group transition-all duration-300 ${
-                      pathname.startsWith(match)
-                        ? "text-primary font-bold"
-                        : "text-gray-600 hover:text-primary font-medium"
-                    } ${bold ? "font-bold" : ""} hover:translate-y-0.5`}
-                  >
-                    {label}
-                    <span
-                      className={`absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-300 ${
-                        pathname.startsWith(match)
-                          ? "w-full bg-primary"
-                          : "w-0 bg-primary group-hover:w-full"
-                      }`}
-                    ></span>
-                  </Link>
-                ))}
+                .map(({ href, label, match }) => {
+                  // Use exact match for Jobs, startsWith for others
+                  const isActive = label === "Jobs" ? pathname === match : pathname.startsWith(match);
+                  
+                  return (
+                    <Link
+                      key={label}
+                      href={href}
+                      className={`relative group transition-all duration-300 ${
+                        isActive
+                          ? "text-primary font-bold"
+                          : "text-gray-600 hover:text-primary font-medium"
+                      } hover:translate-y-0.5`}
+                    >
+                      {label}
+                      <span
+                        className={`absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-300 ${
+                          isActive
+                            ? "w-full bg-primary"
+                            : "w-0 bg-primary group-hover:w-full"
+                        }`}
+                      ></span>
+                    </Link>
+                  );
+                })}
             </>
           ) : (
             <>
@@ -218,7 +225,7 @@ function Header() {
                   }}
                 >
                   <User className="w-5 h-5 text-[#0C2B4E] " />
-                  <span className="text-base font-semibold text-[#0C2B4E] group-hover:text-[#1A3D64] transition-all duration-200 truncate max-w-[80px]">
+                  <span className="text-base font-semibold text-[#0C2B4E] group-hover:text-[#1A3D64] transition-all duration-200 truncate max-w-20">
                     {user?.firstName || "User"}
                   </span>
                   <svg

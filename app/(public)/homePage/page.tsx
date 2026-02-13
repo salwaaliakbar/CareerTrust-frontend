@@ -25,7 +25,7 @@ export default async function HomePage() {
   console.log(user);
   const userRole = user?.unsafeMetadata?.role as string;
   if (userRole === JOBSEEKER) {
-    redirect("/jobseeker")
+    redirect("/jobseeker/dashboard")
   } else if (userRole === EMPLOYER) {
     redirect("/employer");
   }
