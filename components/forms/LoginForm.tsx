@@ -31,7 +31,7 @@ export default function LoginForm() {
 
   async function handleSubmit(
     values: FormValues,
-    { setSubmitting, setErrors }: FormikHelpers<FormValues>
+    { setSubmitting, setErrors }: FormikHelpers<FormValues>,
   ) {
     if (!isLoaded) {
       Swal.fire({
@@ -70,7 +70,7 @@ export default function LoginForm() {
           showConfirmButton: true,
         });
 
-      logger.info(`User logged in: ${values.email} as ${userRole}`);
+        logger.info(`User logged in: ${values.email} as ${userRole}`);
 
         // Redirect based on role
         setTimeout(() => {
@@ -78,10 +78,9 @@ export default function LoginForm() {
             router.push("/jobseeker");
             // router.push("/");
           } else if (userRole === EMPLOYER) {
-            router.push("/employer");
-            // router.push("/");
+            router.push("/employer/dashboard");
           } else {
-            console.log("role", userRole)
+            console.log("role", userRole);
             router.push("/");
             // router.push("/dashboard");
           }

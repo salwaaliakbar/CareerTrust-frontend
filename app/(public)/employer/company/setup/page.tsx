@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useForm } from "react-hook-form";
 import {
   Building2,
@@ -45,6 +45,7 @@ const industries = [
 export default function CompanySetupPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [existingCompanyId, setExistingCompanyId] = useState<number | null>(
@@ -80,13 +81,13 @@ export default function CompanySetupPage() {
         setEmployerId(empId);
 
         try {
-          // Check if company already exists
-          const status = await checkCompanyStatus(empId);
+          // Check if company already exists (pass Clerk ID)
+          const status = await checkCompanyStatus(user.id, getToken);
 
           if (status.hasCompany) {
             setIsEditing(true);
             // Load existing company data
-            const company = await getCompanyProfile(empId);
+            const company = await getCompanyProfile(empId, getToken);
             if (company) {
               setExistingCompanyId(company.id);
               setValue("name", company.name);
@@ -95,6 +96,7 @@ export default function CompanySetupPage() {
               setValue("employees", company.employees);
               setValue("description", company.description);
               setValue("logo", company.logo);
+              setValue("linkedinUrl", company.linkedinUrl || "");
             }
           }
         } catch (error) {
@@ -104,7 +106,7 @@ export default function CompanySetupPage() {
     }
 
     checkAccess();
-  }, [isLoaded, user, router, setValue]);
+  }, [isLoaded, user, router, setValue, getToken]);
 
   const onSubmit = async (data: Omit<CreateCompanyRequest, "employerId">) => {
     if (!employerId) {
@@ -132,11 +134,12 @@ export default function CompanySetupPage() {
           existingCompanyId,
           employerId,
           data,
+          getToken,
         );
         logger.info("Company updated successfully:", result);
       } else {
         // Create new company
-        result = await createCompanyProfile(companyData);
+        result = await createCompanyProfile(companyData, getToken);
         logger.info("Company created successfully:", result);
       }
 
@@ -362,6 +365,37 @@ export default function CompanySetupPage() {
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
                   Provide a URL to your company logo image
+                </p>
+              </div>
+
+              {/* Company LinkedIn URL (Optional) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Company LinkedIn Page URL (Optional)
+                </label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="url"
+                    {...register("linkedinUrl", {
+                      pattern: {
+                        value:
+                          /^https:\/\/(www\.)?linkedin\.com\/(company|in)\//,
+                        message:
+                          "Must be a valid LinkedIn company or profile URL",
+                      },
+                    })}
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://www.linkedin.com/company/your-company"
+                  />
+                </div>
+                {errors.linkedinUrl && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.linkedinUrl.message}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-slate-500">
+                  Link to your company's LinkedIn page for verification
                 </p>
               </div>
             </div>
