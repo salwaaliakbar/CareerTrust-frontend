@@ -168,5 +168,6 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
         </div>
       </div>
     </section>
+    
   );
 }

@@ -46,7 +46,7 @@ export default function JobCard({ job, isApplied = false }: JobCardProps) {
   } else {
     matchDisplay = (
       <span className="bg-linear-to-r from-green-100 to-green-50 text-green-800 px-3 py-1 rounded-full text-sm font-semibold transition-all duration-300 group-hover:shadow-md group-hover:scale-105">
-        {job.match}% Match
+        {job.matchPercentage}% Match
       </span>
     );
   }

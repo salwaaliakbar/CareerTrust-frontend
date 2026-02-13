@@ -170,12 +170,12 @@ function Header() {
             <>
               {/* Notification Bell */}
               <button
-                className="relative p-2 rounded-full hover:bg-blue-100 transition-all duration-300 group"
+                className="relative p-2 rounded-full hover:bg-[#0C2B4E]/10 transition-all duration-300 group"
                 aria-label="Notifications"
                 onClick={() => setShowSidebar(true)}
               >
                 <svg
-                  className="w-6 h-6 text-blue-700 group-hover:text-blue-900 transition"
+                  className="w-6 h-6 text-[#0C2B4E] group-hover:text-[#1A3D64]transition"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -217,12 +217,12 @@ function Header() {
                     if (menu) menu.classList.toggle("hidden");
                   }}
                 >
-                  <User className="w-5 h-5 text-blue-700" />
-                  <span className="text-base font-semibold text-blue-900 group-hover:text-blue-800 transition-all duration-200 truncate max-w-[80px]">
+                  <User className="w-5 h-5 text-[#0C2B4E] " />
+                  <span className="text-base font-semibold text-[#0C2B4E] group-hover:text-[#1A3D64] transition-all duration-200 truncate max-w-[80px]">
                     {user?.firstName || "User"}
                   </span>
                   <svg
-                    className="w-4 h-4 ml-1 text-blue-700 group-hover:text-blue-900 transition-transform duration-200"
+                    className="w-4 h-4 ml-1 text-[#0C2B4E] group-hover:text-[#1A3D64] transition-transform duration-200"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -244,7 +244,7 @@ function Header() {
                   <div className="flex flex-col gap-0.5 py-2">
                     <div className="flex items-center gap-2 px-5 py-2 border-b border-blue-50 bg-blue-50 rounded-t-xl">
                       <span
-                        className={`px-2 py-0.5 text-xs rounded-full font-semibold tracking-wide ${userRole === "jobseeker" ? "bg-blue-200 text-blue-900" : "bg-green-200 text-green-900"}`}
+                        className={`px-2 py-0.5 text-xs rounded-full font-semibold tracking-wide ${userRole === "jobseeker" ? "bg-blue-200 text-[#0C2B4E] " : "bg-green-200 text-green-900"}`}
                       >
                         {userRole === "jobseeker" ? "Job Seeker" : "Employer"}
                       </span>

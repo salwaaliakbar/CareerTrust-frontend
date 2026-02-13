@@ -1,30 +1,32 @@
-import { Users, Building2, Shield, TrendingUp } from "lucide-react";
-
-const stats = [
-  { icon: Building2, value: "8,500+", label: "Verified Companies" },
-  { icon: Users, value: "2.1M", label: "Active Job Seekers" },
-  { icon: Shield, value: "98%", label: "Trust Score" },
-  { icon: TrendingUp, value: "45K+", label: "Jobs Posted Monthly" },
-];
+import { TRUST_STATS } from "@/data/jobseeker/trustStats";
 
 const TrustStats = () => {
   return (
-    <section className="py-16 bg-card border-b border-border">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat, i) => (
+    <section className="py-24 mt-8 bg-linear-to-b from-[#1D546C]/10 via-[#1D546C]/5 to-[#1D546C]/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4">
+            Trusted by Thousands
+          </h2>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            CareerTrust connects job seekers with verified employers worldwide
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {TRUST_STATS.map((stat, i) => (
             <div
               key={stat.label}
-              className="text-center animate-count-up"
+              className="bg-white rounded-2xl border border-[#1D546C]/10 px-8 py-2 text-center group"
               style={{ animationDelay: `${i * 0.1}s` }}
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/15 mb-3">
-                <stat.icon className="w-6 h-6 text-secondary" />
+              <div className="inline-flex items-center justify-center rounded-xl bg-[#1D546C]/10 mb-4 group-hover:bg-[#1D546C]/20 transition-colors duration-300">
+                <stat.icon className="w-7 h-7 text-[#0C2B4E]" />
               </div>
-              <div className="font-display text-3xl font-bold text-foreground mb-1">
+              <div className="text-4xl font-bold text-[#0C2B4E] mb-2">
                 {stat.value}
               </div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+              <div className="text-gray-600 font-medium">{stat.label}</div>
             </div>
           ))}
         </div>
