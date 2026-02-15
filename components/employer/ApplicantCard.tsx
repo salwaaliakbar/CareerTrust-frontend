@@ -27,6 +27,7 @@ import Link from "next/link";
 interface ApplicantCardProps {
   application: JobApplication;
   onStatusUpdate: (applicationId: string, newStatus: ApplicationStatus) => void;
+  getToken?: () => Promise<string | null>;
   style?: React.CSSProperties;
 }
 
@@ -55,6 +56,7 @@ const statusColors = {
 export default function ApplicantCard({
   application,
   onStatusUpdate,
+  getToken,
   style,
 }: ApplicantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -78,10 +80,13 @@ export default function ApplicantCard({
 
     if (result.isConfirmed) {
       setIsUpdating(true);
-      const success = await updateApplicationStatus({
-        applicationId: application.id,
-        status: newStatus,
-      });
+      const success = await updateApplicationStatus(
+        {
+          applicationId: application.id,
+          status: newStatus,
+        },
+        getToken,
+      );
       setIsUpdating(false);
 
       if (success) {
