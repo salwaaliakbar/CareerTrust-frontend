@@ -159,11 +159,14 @@ export async function fetchJobById(id: string | number): Promise<Job | null> {
  */
 export async function createJob(
   jobData: Partial<Job> | JobFormData,
+  getToken: () => Promise<string | null>,
 ): Promise<Job> {
   try {
     const url = API_ENDPOINTS.JOBS;
+    const token = await getToken();
 
     console.log("[Job Service] Creating job:", jobData);
+    console.log("[Job Service] Token present:", !!token);
 
     // Convert skills string to array if needed
     const processedData = {
@@ -181,6 +184,7 @@ export async function createJob(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: JSON.stringify(processedData),
     });
@@ -190,7 +194,9 @@ export async function createJob(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.error || `Failed to create job: ${response.statusText}`,
+        errorData.error ||
+          errorData.message ||
+          `Failed to create job: ${response.statusText}`,
       );
     }
 

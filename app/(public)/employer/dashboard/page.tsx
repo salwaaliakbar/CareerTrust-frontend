@@ -178,7 +178,7 @@ const EmployerDashboard = () => {
                 Employer Dashboard
               </h1>
               <p className="text-lg text-slate-600">
-                {"companyName" ? (
+                {companyName ? (
                   <span className="flex items-center gap-2 flex-wrap">
                     <span>Managing jobs for</span>
                     <Link
