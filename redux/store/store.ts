@@ -4,6 +4,7 @@ import jobsReducer from './slices/jobsSlice';
 import companiesReducer from './slices/companiesSlice';
 import jobseekerProfileReducer from './slices/jobseeker/profileSlice';
 import applicationsReducer from './slices/jobseeker/applicationsSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     companies: companiesReducer,
     jobseekerProfile: jobseekerProfileReducer,
     applications: applicationsReducer,
+    dashboard: dashboardReducer,
   },
 });
 

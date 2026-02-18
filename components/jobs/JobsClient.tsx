@@ -19,6 +19,7 @@ export default function JobsClient() {
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [sortByRelevant, setSortByRelevant] = useState(false);
+  const [recommendedOnly, setRecommendedOnly] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isSignedIn } = useUser();
@@ -51,10 +52,16 @@ export default function JobsClient() {
     if (!searchParams) return;
     const q = searchParams.get("q") || "";
     const loc = searchParams.get("location") || "";
+    const filter = searchParams.get("filter") || "";
     // schedule state updates asynchronously to avoid cascading renders warnings
     Promise.resolve().then(() => {
       setSearchTerm(q);
       setSelectedLocation(loc);
+      // Activate recommended filter if coming from dashboard
+      if (filter === "recommended") {
+        setRecommendedOnly(true);
+        setSortByRelevant(true);
+      }
     });
   }, [searchParams]);
 
@@ -64,6 +71,11 @@ export default function JobsClient() {
 
   const filteredJobs = useMemo(() => {
     let filtered = jobs.filter((job) => {
+      // Recommended filter - only show jobs with matchPercentage > 50% if toggle is on
+      if (recommendedOnly) {
+        if ((job?.matchPercentage || 0) <= 50) return false;
+      }
+
       const matchesSearch =
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.company.toLowerCase().includes(searchTerm.toLowerCase());
@@ -114,10 +126,10 @@ export default function JobsClient() {
 
     // Sort by most relevant if enabled and user is logged in
     if (sortByRelevant && isSignedIn) {
-      filtered = [...filtered].sort((a, b) => (b.match || 0) - (a.match || 0));
+      filtered = [...filtered].sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
     }
     return filtered;
-  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, isSignedIn]);
+  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, recommendedOnly, isSignedIn]);
 
   return (
 
@@ -212,21 +224,39 @@ export default function JobsClient() {
 
                 <div className="space-y-6">
                   <div>
+                    {/* Recommended Jobs filter for logged-in users */}
+                    {isSignedIn && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Recommendations</h4>
+                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-emerald-600"
+                            checked={recommendedOnly}
+                            onChange={() => setRecommendedOnly((prev) => !prev)}
+                          />
+                          <span className="text-gray-600 text-sm font-medium">
+                            Show Recommended (50%+)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
                     {/* Most Relevant filter for logged-in users */}
-                  {isSignedIn && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3">Sort</h4>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300 text-sky-700"
-                          checked={sortByRelevant}
-                          onChange={() => setSortByRelevant((prev) => !prev)}
-                        />
-                        <span className="text-gray-600 text-sm">Most Relevant</span>
-                      </label>
-                    </div>
-                  )}
+                    {isSignedIn && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 mt-4">Sort</h4>
+                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                            checked={sortByRelevant}
+                            onChange={() => setSortByRelevant((prev) => !prev)}
+                          />
+                          <span className="text-gray-600 text-sm font-medium">Most Relevant</span>
+                        </label>
+                      </div>
+                    )}
 
                     <h4 className="font-semibold text-gray-900 my-3">Salary</h4>
                     <div className="space-y-2">
