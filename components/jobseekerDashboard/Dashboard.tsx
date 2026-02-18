@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import {
   Briefcase,
   FileText,
@@ -15,124 +16,59 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-
-interface DashboardStats {
-  totalApplications: number;
-  acceptedApplications: number;
-  pendingApplications: number;
-  profileViews: number;
-  jobsRecommended: number;
-  verifiedRecords: number;
-}
-
-interface RecentApplication {
-  id: string;
-  jobTitle: string;
-  company: string;
-  status: string;
-  appliedDate: string;
-}
-
-// Mock data
-const mockStats: DashboardStats = {
-  totalApplications: 24,
-  acceptedApplications: 3,
-  pendingApplications: 8,
-  profileViews: 156,
-  jobsRecommended: 47,
-  verifiedRecords: 5,
-};
-
-const mockRecentApplications: RecentApplication[] = [
-  {
-    id: "1",
-    jobTitle: "Senior Frontend Developer",
-    company: "TechCorp Inc.",
-    status: "reviewing",
-    appliedDate: "2 days ago",
-  },
-  {
-    id: "2",
-    jobTitle: "Product Manager",
-    company: "InnovateTech",
-    status: "interviewed",
-    appliedDate: "5 days ago",
-  },
-  {
-    id: "3",
-    jobTitle: "UX/UI Designer",
-    company: "DesignHub",
-    status: "pending",
-    appliedDate: "1 week ago",
-  },
-  {
-    id: "4",
-    jobTitle: "Backend Engineer",
-    company: "DataFlow Systems",
-    status: "hired",
-    appliedDate: "2 weeks ago",
-  },
-  {
-    id: "5",
-    jobTitle: "DevOps Engineer",
-    company: "CloudFirst",
-    status: "rejected",
-    appliedDate: "3 weeks ago",
-  },
-];
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import StatCard from "@/components/ui/StatCard";
+import { DashboardStats } from "@/types/dashboard.types";
+import {
+  initializeDashboard,
+  selectDashboardStats,
+  selectRecentApplications,
+} from "@/redux/store/slices/dashboardSlice";
 
 const Dashboard = () => {
   const router = useRouter();
-  const [stats] = useState<DashboardStats>(mockStats);
-  const [recentApplications] =
-    useState<RecentApplication[]>(mockRecentApplications);
+  const dispatch = useAppDispatch();
+  const { user } = useUser();
+
+  // Get data from Redux
+  const stats = useAppSelector(selectDashboardStats);
+  const recentApplications = useAppSelector(selectRecentApplications);
+
+  // Fetch dashboard data when component mounts
+  useEffect(() => {
+    if (!user?.id) return;
+    dispatch(initializeDashboard({ clerkId: user.id }));
+  }, [user?.id, dispatch]);
+
+  // Display stats from Redux, fallback to default
+  // jobsRecommended comes from backend (JobRecommendation table where score >= 0.5)
+  const displayStats: DashboardStats = {
+    totalApplications: stats?.totalApplications ?? 0,
+    acceptedApplications: stats?.acceptedApplications ?? 0,
+    pendingApplications: stats?.pendingApplications ?? 0,
+    profileViews: stats?.profileViews ?? 0,
+    jobsRecommended: stats?.jobsRecommended ?? 0,
+  };
 
   const getStatusStyle = (status: string) => {
+    // Status definitions:
+    // pending = Just applied, awaiting company response
+    // reviewing = Company is reviewing your application
+    // shortlisted = You passed initial screening
+    // interviewed = You've had an interview with the company
+    // hired = 🎯 OFFER ACCEPTED - Job is yours!
+    // rejected = Company rejected your application
+    
     const styles = {
-      reviewing: "bg-blue-50 text-blue-700 border border-blue-200",
-      interviewed: "bg-purple-50 text-purple-700 border border-purple-200",
       pending: "bg-amber-50 text-amber-700 border border-amber-200",
+      reviewing: "bg-blue-50 text-blue-700 border border-blue-200",
+      shortlisted: "bg-purple-50 text-purple-700 border border-purple-200",
+      interviewed: "bg-violet-50 text-violet-700 border border-violet-200",
       hired: "bg-emerald-50 text-emerald-700 border border-emerald-200",
       rejected: "bg-red-50 text-red-700 border border-red-200",
     };
     return styles[status as keyof typeof styles] || styles.pending;
   };
-
-  const StatCard = ({
-    icon: Icon,
-    label,
-    value,
-    color,
-    gradient,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    value: number;
-    color: string;
-    gradient: string;
-  }) => (
-    <div className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden">
-      {/* Gradient overlay on hover */}
-      <div className={`absolute inset-0 ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-      
-      <div className="relative flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-2">{label}</p>
-          <p className="text-4xl font-bold bg-linear-to-br from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            {value}
-          </p>
-        </div>
-        <div
-          className={`${color} p-4 rounded-xl shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}
-        >
-          {Icon}
-        </div>
-      </div>
-      
-      {/* Bottom accent line */}
-      <div className={`absolute bottom-0 left-0 right-0 h-1 ${gradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500`} />
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50">
@@ -163,16 +99,29 @@ const Dashboard = () => {
                 </p>
               </div>
 
-              <button
-                onClick={() => router.push("/jobseeker/passport")}
-                className="relative inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-8 py-3.5 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-bold overflow-hidden cursor-pointer group/btn"
-              >
-                <div className="absolute inset-0 bg-linear-to-r from-blue-700 via-indigo-700 to-blue-800 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform duration-500 origin-left" />
-                
-                <BadgeCheck className="w-5 h-5 relative z-10 group-hover/btn:rotate-12 transition-transform duration-300" />
-                <span className="relative z-10">View Employment Passport</span>
-                <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" />
-              </button>
+              <div className="flex flex-row sm:flex-col gap-4">
+                <button
+                  onClick={() => router.push("/jobseeker/passport")}
+                  className="relative inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-4 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-bold overflow-hidden cursor-pointer group/btn"
+                >
+                  <div className="absolute inset-0 bg-linear-to-r from-blue-700 via-indigo-700 to-blue-800 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform duration-500 origin-left" />
+                  
+                  <BadgeCheck className="w-5 h-5 relative z-10 group-hover/btn:rotate-12 transition-transform duration-300" />
+                  <span className="relative z-10">View Employment Passport</span>
+                  <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                </button>
+
+                <button
+                  onClick={() => router.push("/jobs?filter=recommended")}
+                  className="relative inline-flex items-center justify-center gap-2 bg-linear-to-r from-emerald-500 to-teal-600 text-white px-6 py-4 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-bold overflow-hidden cursor-pointer group/btn"
+                >
+                  <div className="absolute inset-0 bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 transform scale-x-0 group-hover/btn:scale-x-100 transition-transform duration-500 origin-left" />
+                  
+                  <Target className="w-5 h-5 relative z-10 group-hover/btn:rotate-12 transition-transform duration-300" />
+                  <span className="relative z-10">View Recommended Jobs</span>
+                  <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -186,43 +135,43 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <StatCard
               icon={<Briefcase className="w-6 h-6 text-white" />}
-              label="Applications Submitted"
-              value={stats.totalApplications}
+              label="Total Applications"
+              value={displayStats.totalApplications}
               color="bg-gradient-to-br from-blue-500 to-blue-600"
               gradient="bg-gradient-to-br from-blue-500 to-blue-600"
             />
             <StatCard
               icon={<CheckCircle className="w-6 h-6 text-white" />}
               label="Accepted Offers"
-              value={stats.acceptedApplications}
+              value={displayStats.acceptedApplications}
               color="bg-gradient-to-br from-emerald-500 to-emerald-600"
               gradient="bg-gradient-to-br from-emerald-500 to-emerald-600"
             />
             <StatCard
               icon={<Clock className="w-6 h-6 text-white" />}
-              label="Pending Applications"
-              value={stats.pendingApplications}
+              label="Applications Under Review"
+              value={displayStats.pendingApplications}
               color="bg-gradient-to-br from-amber-500 to-amber-600"
               gradient="bg-gradient-to-br from-amber-500 to-amber-600"
             />
             <StatCard
               icon={<Eye className="w-6 h-6 text-white" />}
               label="Profile Views"
-              value={stats.profileViews}
+              value={displayStats.profileViews}
               color="bg-gradient-to-br from-purple-500 to-purple-600"
               gradient="bg-gradient-to-br from-purple-500 to-purple-600"
             />
             <StatCard
               icon={<Target className="w-6 h-6 text-white" />}
               label="Job Recommendations"
-              value={stats.jobsRecommended}
+              value={displayStats.jobsRecommended}
               color="bg-gradient-to-br from-indigo-500 to-indigo-600"
               gradient="bg-gradient-to-br from-indigo-500 to-indigo-600"
             />
             <StatCard
-              icon={<BadgeCheck className="w-6 h-6 text-white" />}
-              label="Verified Records"
-              value={stats.verifiedRecords}
+              icon={<Target className="w-6 h-6 text-white" />}
+              label="Profile Strength"
+              value={100}
               color="bg-gradient-to-br from-teal-500 to-teal-600"
               gradient="bg-gradient-to-br from-teal-500 to-teal-600"
             />
