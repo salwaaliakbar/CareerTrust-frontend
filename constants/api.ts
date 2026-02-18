@@ -38,6 +38,12 @@ export const API_ENDPOINTS = {
   JOB_RECOMMENDATIONS: `${BACKEND_API_URL}/jobRecommendation/recommendations`,
   APPLICATION_SUBMIT: `${BACKEND_API_URL}/applications/submit`,
   USER_APPLICATIONS_BACKEND: (clerkId: string) => `${BACKEND_API_URL}/applications/${clerkId}`,
+  BACKEND_DASHBOARD_STATS: `${BACKEND_API_URL}/dashboard/stats`,
+  BACKEND_DASHBOARD_RECENT_APPLICATIONS: `${BACKEND_API_URL}/dashboard/recent-applications`,
+  
+  // Dashboard (Next.js BFF API → Node.js Backend)
+  DASHBOARD_STATS: `${API_BASE_URL}/dashboard/stats`,
+  DASHBOARD_RECENT_APPLICATIONS: `${API_BASE_URL}/dashboard/recent-applications`,
 };
 
 export default API_ENDPOINTS;
