@@ -20,11 +20,13 @@ import {
 } from "lucide-react";
 import { deleteJob, updateJobStatus } from "@/services/api/employer.service";
 import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 
 interface EmployerJobCardProps {
   job: EmployerJob;
   onJobDeleted: (jobId: string | number) => void;
   onJobUpdated: (job: EmployerJob) => void;
+  getToken?: () => Promise<string | null>;
   style?: React.CSSProperties;
 }
 
@@ -32,10 +34,12 @@ export default function EmployerJobCard({
   job,
   onJobDeleted,
   onJobUpdated,
+  getToken,
   style,
 }: EmployerJobCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const router = useRouter();
 
   const statusColors = {
     active: "bg-green-100 text-green-700 border-green-200",
@@ -57,7 +61,7 @@ export default function EmployerJobCard({
     });
 
     if (result.isConfirmed) {
-      const success = await deleteJob(job.id);
+      const success = await deleteJob(job.id, getToken);
       if (success) {
         Swal.fire({
           icon: "success",
@@ -96,7 +100,7 @@ export default function EmployerJobCard({
 
     if (result.isConfirmed) {
       setIsUpdating(true);
-      const success = await updateJobStatus(job.id, newStatus);
+      const success = await updateJobStatus(job.id, newStatus, getToken);
       setIsUpdating(false);
 
       if (success) {
@@ -165,6 +169,16 @@ export default function EmployerJobCard({
                 onClick={() => setShowMenu(false)}
               ></div>
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20">
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    router.push(`/employer/jobs/edit/${job.id}`);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Job
+                </button>
                 <button
                   onClick={handleToggleStatus}
                   className="w-full px-4 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"

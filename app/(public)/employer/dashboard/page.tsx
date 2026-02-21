@@ -382,6 +382,7 @@ const EmployerDashboard = () => {
               jobs={filteredJobs}
               onJobDeleted={handleJobDeleted}
               onJobUpdated={handleJobUpdated}
+              getToken={getToken}
             />
           )}
         </div>

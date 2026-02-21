@@ -213,3 +213,67 @@ export async function createJob(
     throw error;
   }
 }
+
+/**
+ * Update existing job
+ * @param jobId - Job ID to update
+ * @param jobData - Updated job data
+ * @param getToken - Clerk authentication function
+ */
+export async function updateJob(
+  jobId: string | number,
+  jobData: Partial<Job> | JobFormData,
+  getToken: () => Promise<string | null>,
+): Promise<Job> {
+  try {
+    const url = `${API_ENDPOINTS.JOBS}/${jobId}`;
+    const token = await getToken();
+
+    console.log("[Job Service] Updating job:", jobId, jobData);
+    console.log("[Job Service] Token present:", !!token);
+
+    // Convert skills string to array if needed
+    const processedData = {
+      ...jobData,
+      skills:
+        typeof jobData.skills === "string"
+          ? jobData.skills
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : jobData.skills,
+    };
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(processedData),
+    });
+
+    console.log("[Job Service] Response status:", response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error ||
+          errorData.message ||
+          `Failed to update job: ${response.statusText}`,
+      );
+    }
+
+    const data: CreateJobResponse = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Failed to update job");
+    }
+
+    console.log("[Job Service] Job updated successfully:", data.data.id);
+    return data.data;
+  } catch (error) {
+    console.error("[Job Service] Error updating job:", error);
+    throw error;
+  }
+}

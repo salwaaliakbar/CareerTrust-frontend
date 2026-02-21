@@ -202,21 +202,32 @@ export async function updateApplicationStatus(
  * Update job status (active, closed, draft)
  * @param jobId - Job ID
  * @param status - New status
+ * @param getToken - Clerk getToken function for JWT authentication
  */
 export async function updateJobStatus(
   jobId: string | number,
   status: "active" | "closed" | "draft",
+  getToken?: () => Promise<string | null>,
 ): Promise<boolean> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}/status`;
 
     console.log("[Employer Service] Updating job status:", jobId, status);
 
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (getToken) {
+      const token = await getToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+
     const response = await fetch(url, {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ status }),
     });
 
@@ -250,18 +261,31 @@ export async function updateJobStatus(
 /**
  * Delete a job
  * @param jobId - Job ID
+ * @param getToken - Clerk getToken function for JWT authentication
  */
-export async function deleteJob(jobId: string | number): Promise<boolean> {
+export async function deleteJob(
+  jobId: string | number,
+  getToken?: () => Promise<string | null>,
+): Promise<boolean> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}`;
 
     console.log("[Employer Service] Deleting job:", jobId);
 
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (getToken) {
+      const token = await getToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+
     const response = await fetch(url, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     console.log("[Employer Service] Response status:", response.status);

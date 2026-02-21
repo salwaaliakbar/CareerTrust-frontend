@@ -26,7 +26,7 @@ export interface Job {
 
 export interface JobFormData {
   title: string;
-  company: string;
+  company?: string; // Optional when editing (read-only)
   location: string;
   salary?: string;
   jobType: string;

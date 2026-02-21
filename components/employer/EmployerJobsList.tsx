@@ -9,12 +9,14 @@ interface EmployerJobsListProps {
   jobs: EmployerJob[];
   onJobDeleted: (jobId: string | number) => void;
   onJobUpdated: (job: EmployerJob) => void;
+  getToken?: () => Promise<string | null>;
 }
 
 export default function EmployerJobsList({
   jobs,
   onJobDeleted,
   onJobUpdated,
+  getToken,
 }: EmployerJobsListProps) {
   return (
     <div className="space-y-4 animate-smooth-enter">
@@ -24,6 +26,7 @@ export default function EmployerJobsList({
           job={job}
           onJobDeleted={onJobDeleted}
           onJobUpdated={onJobUpdated}
+          getToken={getToken}
           style={{ animationDelay: `${index * 50}ms` }}
         />
       ))}

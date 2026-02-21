@@ -19,6 +19,7 @@ export interface JobseekerPublicProfile {
   highestDegree: string | null;
   profilePicUrl: string | null;
   resumeUrl: string | null;
+  employmentStatus: "employed" | "available" | "notice_period" | null;
   createdAt: string;
   employmentHistory: EmploymentRecord[];
   educationHistory: EducationRecord[];
@@ -36,13 +37,11 @@ export interface EmploymentRecord {
 }
 
 export interface EducationRecord {
-  id: string;
-  institutionName: string;
+  id: number;
+  institution: string;
   degree: string;
-  fieldOfStudy: string | null;
-  startDate: string;
+  startDate: string | null;
   endDate: string | null;
-  currentlyStudying: boolean;
 }
 
 export interface Skill {
@@ -58,19 +57,30 @@ export interface ApiResponse<T> {
 }
 
 /**
- * Get public jobseeker profile by ID
- * @param jobseekerId - The jobseeker ID
+ * Get public jobseeker profile by Clerk ID
+ * @param clerkId - The jobseeker's Clerk ID
+ * @param getToken - Clerk getToken function for JWT authentication
  * @returns Promise with jobseeker profile data
  */
 export const getPublicProfile = async (
-  jobseekerId: string,
+  clerkId: string,
+  getToken?: () => Promise<string | null>,
 ): Promise<JobseekerPublicProfile> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/profile/${jobseekerId}`, {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (getToken) {
+      const token = await getToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    }
+
+    const response = await fetch(`${API_BASE_URL}/profile/${clerkId}`, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       credentials: "include",
     });
 
