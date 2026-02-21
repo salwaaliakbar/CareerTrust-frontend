@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { Users, Search, Filter, Eye, Mail, Phone, Briefcase, GraduationCap, MapPin } from "lucide-react";
 
 interface JobSeekerData {
@@ -18,6 +19,7 @@ interface JobSeekerData {
 }
 
 export default function JobSeekersPage() {
+  const { getToken } = useAuth();
   const [jobseekers, setJobseekers] = useState<JobSeekerData[]>([]);
   const [filteredJobseekers, setFilteredJobseekers] = useState<JobSeekerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export default function JobSeekersPage() {
 
   const fetchJobseekers = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
+      const token = await getToken();
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       
       const response = await fetch(`${apiUrl}/api/admin/jobseekers`, {

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { AdminUser } from "@/types/admin.types";
 
 export default function UsersPage() {
+  const { getToken } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -16,7 +18,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
+      const token = await getToken();
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?page=${page}&limit=10&search=${search}`,
         {

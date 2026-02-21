@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 interface Job {
   id: number;
@@ -14,6 +15,7 @@ interface Job {
 }
 
 export default function JobsPage() {
+  const { getToken } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -26,7 +28,7 @@ export default function JobsPage() {
 
   const fetchJobs = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
+      const token = await getToken();
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/jobs?page=${page}&limit=10&search=${search}`,
         {
@@ -52,7 +54,7 @@ export default function JobsPage() {
     if (!confirm("Are you sure you want to delete this job?")) return;
 
     try {
-      const token = localStorage.getItem("adminAccessToken");
+      const token = await getToken();
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/admin/jobs/${jobId}`,
         {

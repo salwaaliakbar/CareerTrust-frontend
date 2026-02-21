@@ -4,23 +4,15 @@ import { clerkClient } from "@clerk/nextjs/server";
 
 // Define route matchers for each role
 const isJobseekerRoute = createRouteMatcher(["(.*)/jobseeker(.*)"]);
-
 const isEmployerRoute = createRouteMatcher(["(.*)/employer(.*)"]);
-
-// Define shared private routes (accessible by both roles)
-// const isSharedPrivateRoute = createRouteMatcher([
-//   "/dashboard(.*)",
-//   "/profile(.*)",
-//   "/settings(.*)",
-// ]);
+const isAdminRoute = createRouteMatcher(["(.*)/admin/admindashboard(.*)"]);
 
 // All private routes combined
 const isPrivateRoute = createRouteMatcher([
-  // "/jobseeker(.*)",
-  // "/employer(.*)",
   "/dashboard(.*)",
   "/profile(.*)",
   "/settings(.*)",
+  "/admin/admindashboard(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
@@ -55,6 +47,16 @@ export default clerkMiddleware(async (auth, request) => {
         console.log("No role found - redirecting to home");
         const homeUrl = new URL("/", request.url);
         return NextResponse.redirect(homeUrl);
+      }
+
+      // Check admin route access
+      if (isAdminRoute(request)) {
+        if (userRole !== "admin") {
+          console.log("BLOCKING: Non-admin trying to access admin route");
+          const homeUrl = new URL("/", request.url);
+          return NextResponse.redirect(homeUrl);
+        }
+        console.log("Admin access granted");
       }
 
       // Check if jobseeker is trying to access employer routes

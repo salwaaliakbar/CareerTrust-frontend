@@ -2,14 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useAuth, useUser, useClerk } from "@clerk/nextjs";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
-
-interface AdminProfile {
-  adminId: number;
-  email: string;
-  fullName: string;
-}
 
 export default function AdminDashboardLayout({
   children,
@@ -18,45 +13,35 @@ export default function AdminDashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem("adminAccessToken");
-    const profile = localStorage.getItem("adminProfile");
-
-    if (!token || !profile) {
+    // Check Clerk authentication
+    if (isLoaded && !isSignedIn) {
       router.push("/admin/adminlogin");
       return;
     }
 
-    setAdminProfile(JSON.parse(profile));
-  }, [router]);
+    // Check admin role
+    if (isLoaded && isSignedIn && user) {
+      const userRole = user.unsafeMetadata?.role as string | undefined;
+      
+      if (userRole !== "admin") {
+        router.push("/admin/adminlogin");
+        return;
+      }
+    }
+  }, [isLoaded, isSignedIn, user, router]);
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
-
-      if (token) {
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/admin/auth/logout`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
+      await signOut();
+      router.push("/admin/adminlogin");
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
-      // Clear local storage
-      localStorage.removeItem("adminAccessToken");
-      localStorage.removeItem("adminRefreshToken");
-      localStorage.removeItem("adminProfile");
-      router.push("/admin/adminlogin");
     }
   };
 
@@ -133,13 +118,19 @@ export default function AdminDashboardLayout({
     },
   ];
 
-  if (!adminProfile) {
+  // Show loading state while Clerk initializes
+  if (!isLoaded || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
+
+  const adminFullName = user.firstName && user.lastName 
+    ? `${user.firstName} ${user.lastName}` 
+    : user.firstName || user.emailAddresses[0]?.emailAddress || "Admin";
+  const adminEmail = user.emailAddresses[0]?.emailAddress || "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
@@ -198,13 +189,13 @@ export default function AdminDashboardLayout({
           <div className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-sm">
             <div className="flex items-center px-4 py-3 bg-white/10 rounded-xl backdrop-blur-sm border border-white/10">
               <div className="shrink-0 w-10 h-10 bg-gradient-to-br from-[#F97316] to-[#EA580C] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                {adminProfile.fullName.charAt(0)}
+                {adminFullName.charAt(0)}
               </div>
               <div className="ml-3 flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
-                  {adminProfile.fullName}
+                  {adminFullName}
                 </p>
-                <p className="text-xs text-white/70 truncate">{adminProfile.email}</p>
+                <p className="text-xs text-white/70 truncate">{adminEmail}</p>
               </div>
             </div>
             <button
@@ -247,7 +238,7 @@ export default function AdminDashboardLayout({
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-[#0C2B4E]/10 rounded-full border border-[#0C2B4E]/20">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span className="text-sm font-medium text-[#0C2B4E]">
-                  Welcome back, {adminProfile.fullName}
+                  Welcome back, {adminFullName}
                 </span>
               </div>
             </div>

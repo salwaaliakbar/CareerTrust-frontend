@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { DashboardStats } from "@/types/admin.types";
 import { Users, Briefcase, Building2, FileText, TrendingUp, Activity } from "lucide-react";
 
 export default function AdminDashboardPage() {
+  const { getToken } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +16,7 @@ export default function AdminDashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
+      const token = await getToken();
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
       
       const response = await fetch(
