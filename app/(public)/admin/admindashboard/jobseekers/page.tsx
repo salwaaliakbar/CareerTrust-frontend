@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Users, Search, Filter, Eye, Mail, Phone, Briefcase, GraduationCap, MapPin } from "lucide-react";
+import { AdminService } from "@/services/api/admin.service";
 
 interface JobSeekerData {
   jobseekerId: number;
@@ -37,19 +38,9 @@ export default function JobSeekersPage() {
   const fetchJobseekers = async () => {
     try {
       const token = await getToken();
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      
-      const response = await fetch(`${apiUrl}/api/admin/jobseekers`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch jobseekers");
-
-      const data = await response.json();
-      setJobseekers(data.data.jobseekers || []);
-      setFilteredJobseekers(data.data.jobseekers || []);
+      const response = await AdminService.getAllJobseekers(token);
+      setJobseekers(response.data.jobseekers || []);
+      setFilteredJobseekers(response.data.jobseekers || []);
     } catch (error) {
       console.error("Error fetching jobseekers:", error);
       setJobseekers([]);

@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { updateApplicationStatus } from "@/services/api/employer.service";
+import { useAuth } from "@clerk/nextjs";
 import Swal from "sweetalert2";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,6 +60,7 @@ export default function ApplicantCard({
 }: ApplicantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { getToken } = useAuth();
   const { applicant } = application;
 
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
@@ -81,7 +83,7 @@ export default function ApplicantCard({
       const success = await updateApplicationStatus({
         applicationId: application.id,
         status: newStatus,
-      });
+      }, getToken);
       setIsUpdating(false);
 
       if (success) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { AdminService } from "@/services/api/admin.service";
 
 interface Job {
   id: number;
@@ -29,20 +30,13 @@ export default function JobsPage() {
   const fetchJobs = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/jobs?page=${page}&limit=10&search=${search}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch jobs");
-
-      const data = await response.json();
-      setJobs(data.data.jobs);
-      setTotalPages(data.data.pagination.totalPages);
+      const response = await AdminService.getAllJobs(token, { 
+        page, 
+        limit: 10, 
+        search 
+      });
+      setJobs(response.data.jobs);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       console.error("Error fetching jobs:", error);
     } finally {
@@ -55,18 +49,7 @@ export default function JobsPage() {
 
     try {
       const token = await getToken();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/jobs/${jobId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to delete job");
-
+      await AdminService.deleteJob(token, jobId);
       // Refresh jobs list
       fetchJobs();
     } catch (error) {

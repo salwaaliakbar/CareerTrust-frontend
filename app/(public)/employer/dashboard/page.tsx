@@ -100,7 +100,7 @@ const EmployerDashboard = () => {
       console.log("[Dashboard] Fetching jobs for employerId:", employerId);
       setLoading(true);
       try {
-        const employerJobs = await fetchEmployerJobs(employerId.toString());
+        const employerJobs = await fetchEmployerJobs(employerId.toString(), getToken);
         console.log("[Dashboard] Fetched jobs:", employerJobs);
         setJobs(employerJobs);
         setFilteredJobs(employerJobs);

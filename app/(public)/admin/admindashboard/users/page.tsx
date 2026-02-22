@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { AdminUser } from "@/types/admin.types";
+import { AdminService } from "@/services/api/admin.service";
 
 export default function UsersPage() {
   const { getToken } = useAuth();
@@ -19,20 +20,13 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const token = await getToken();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?page=${page}&limit=10&search=${search}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch users");
-
-      const data = await response.json();
-      setUsers(data.data.users);
-      setTotalPages(data.data.pagination.totalPages);
+      const response = await AdminService.getAllUsers(token, { 
+        page, 
+        limit: 10, 
+        search 
+      });
+      setUsers(response.data.users);
+      setTotalPages(response.data.pagination.totalPages);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {

@@ -19,6 +19,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { deleteJob, updateJobStatus } from "@/services/api/employer.service";
+import { useAuth } from "@clerk/nextjs";
 import Swal from "sweetalert2";
 
 interface EmployerJobCardProps {
@@ -36,6 +37,7 @@ export default function EmployerJobCard({
 }: EmployerJobCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { getToken } = useAuth();
 
   const statusColors = {
     active: "bg-green-100 text-green-700 border-green-200",
@@ -57,7 +59,7 @@ export default function EmployerJobCard({
     });
 
     if (result.isConfirmed) {
-      const success = await deleteJob(job.id);
+      const success = await deleteJob(job.id, getToken);
       if (success) {
         Swal.fire({
           icon: "success",
@@ -96,7 +98,7 @@ export default function EmployerJobCard({
 
     if (result.isConfirmed) {
       setIsUpdating(true);
-      const success = await updateJobStatus(job.id, newStatus);
+      const success = await updateJobStatus(job.id, newStatus, getToken);
       setIsUpdating(false);
 
       if (success) {

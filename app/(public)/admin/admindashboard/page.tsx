@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { DashboardStats } from "@/types/admin.types";
-import { Users, Briefcase, Building2, FileText, TrendingUp, Activity } from "lucide-react";
+import { AdminService } from "@/services/api/admin.service";
+import { Users, Briefcase, Building2, FileText, TrendingUp, Activity, CheckCircle, XCircle } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { getToken } = useAuth();
@@ -17,21 +18,8 @@ export default function AdminDashboardPage() {
   const fetchDashboardStats = async () => {
     try {
       const token = await getToken();
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      
-      const response = await fetch(
-        `${apiUrl}/api/admin/dashboard/stats`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch stats");
-
-      const data = await response.json();
-      setStats(data.data.stats);
+      const response = await AdminService.getDashboardStats(token);
+      setStats(response.data.stats);
     } catch (error) {
       console.error("Error fetching stats:", error);
     } finally {
@@ -79,6 +67,7 @@ export default function AdminDashboardPage() {
       gradient: "from-[#0C2B4E] to-[#1A3D64]",
       bgColor: "bg-[#0C2B4E]/10",
       iconColor: "text-[#0C2B4E]",
+      subtitle: `${stats?.activeJobs || 0} active`,
     },
     {
       title: "Companies",
@@ -87,14 +76,32 @@ export default function AdminDashboardPage() {
       gradient: "from-[#F97316] to-[#EA580C]",
       bgColor: "bg-[#F97316]/10",
       iconColor: "text-[#F97316]",
+      subtitle: `${stats?.verifiedCompanies || 0} verified`,
     },
     {
-      title: "Blog Posts",
-      value: stats?.totalBlogs || 0,
+      title: "Applications",
+      value: stats?.totalApplications || 0,
       icon: FileText,
       gradient: "from-[#0C2B4E] to-[#2A4D6E]",
       bgColor: "bg-[#0C2B4E]/10",
       iconColor: "text-[#0C2B4E]",
+    },
+  ];
+
+  const verificationStats = [
+    {
+      title: "Verified Companies",
+      value: stats?.verifiedCompanies || 0,
+      icon: CheckCircle,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Pending Verification",
+      value: stats?.unverifiedCompanies || 0,
+      icon: XCircle,
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
     },
   ];
 
@@ -136,6 +143,9 @@ export default function AdminDashboardPage() {
                   <p className="text-3xl font-bold text-gray-900">
                     {stat.value.toLocaleString()}
                   </p>
+                  {stat.subtitle && (
+                    <p className="text-sm text-gray-500 mt-1">{stat.subtitle}</p>
+                  )}
                 </div>
                 <div className="relative">
                   {/* Background glow */}
@@ -145,6 +155,30 @@ export default function AdminDashboardPage() {
                   <div className={`relative w-14 h-14 rounded-xl ${stat.bgColor} flex items-center justify-center ${stat.iconColor} shadow-sm transition-all duration-300`}>
                     <Icon className="w-7 h-7" />
                   </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Verification Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {verificationStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={index}
+              className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in"
+              style={{animationDelay: `${(statCards.length + index) * 100}ms`}}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`w-16 h-16 rounded-xl ${stat.bgColor} flex items-center justify-center ${stat.color}`}>
+                  <Icon className="w-8 h-8" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
                 </div>
               </div>
             </div>

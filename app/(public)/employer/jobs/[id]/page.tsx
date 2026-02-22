@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ApplicantsList from "@/components/employer/ApplicantsList";
@@ -24,6 +24,7 @@ export default function JobApplicantsPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const jobId = params?.id as string;
 
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -42,7 +43,7 @@ export default function JobApplicantsPage() {
 
       setLoading(true);
       try {
-        const apps = await fetchJobApplications(jobId);
+        const apps = await fetchJobApplications(jobId, getToken);
         setApplications(apps);
         setFilteredApplications(apps);
       } catch (error) {

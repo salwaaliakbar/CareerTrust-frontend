@@ -18,9 +18,11 @@ const EMPLOYER_API_URL = `${BACKEND_BASE_URL}/api/employer`;
  */
 export async function fetchEmployerJobs(
   employerId: string,
+  getToken: () => Promise<string | null>,
 ): Promise<EmployerJob[]> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs?employerId=${employerId}`;
+    const token = await getToken();
 
     console.log("[Employer Service] Fetching employer jobs:", url);
 
@@ -28,6 +30,7 @@ export async function fetchEmployerJobs(
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       cache: "no-store",
     });
@@ -68,9 +71,11 @@ export async function fetchEmployerJobs(
  */
 export async function fetchJobApplications(
   jobId: string | number,
+  getToken: () => Promise<string | null>,
 ): Promise<JobApplication[]> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}/applications`;
+    const token = await getToken();
 
     console.log("[Employer Service] Fetching applications for job:", jobId);
 
@@ -78,6 +83,7 @@ export async function fetchJobApplications(
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       cache: "no-store",
     });
@@ -118,9 +124,11 @@ export async function fetchJobApplications(
  */
 export async function updateApplicationStatus(
   request: UpdateApplicationStatusRequest,
+  getToken: () => Promise<string | null>,
 ): Promise<boolean> {
   try {
     const url = `${EMPLOYER_API_URL}/applications/${request.applicationId}/status`;
+    const token = await getToken();
 
     console.log("[Employer Service] Updating application status:", request);
 
@@ -128,7 +136,9 @@ export async function updateApplicationStatus(
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
+
       body: JSON.stringify({
         status: request.status,
         notes: request.notes,
@@ -173,9 +183,11 @@ export async function updateApplicationStatus(
 export async function updateJobStatus(
   jobId: string | number,
   status: "active" | "closed" | "draft",
+  getToken: () => Promise<string | null>,
 ): Promise<boolean> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}/status`;
+    const token = await getToken();
 
     console.log("[Employer Service] Updating job status:", jobId, status);
 
@@ -183,7 +195,9 @@ export async function updateJobStatus(
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
+
       body: JSON.stringify({ status }),
     });
 
@@ -218,9 +232,13 @@ export async function updateJobStatus(
  * Delete a job
  * @param jobId - Job ID
  */
-export async function deleteJob(jobId: string | number): Promise<boolean> {
+export async function deleteJob(
+  jobId: string | number,
+  getToken: () => Promise<string | null>,
+): Promise<boolean> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}`;
+    const token = await getToken();
 
     console.log("[Employer Service] Deleting job:", jobId);
 
@@ -228,6 +246,7 @@ export async function deleteJob(jobId: string | number): Promise<boolean> {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
     });
 
