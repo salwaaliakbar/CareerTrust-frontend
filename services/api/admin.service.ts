@@ -90,6 +90,35 @@ export class AdminService {
     );
   }
 
+  static async getJobseekerById(token: string | null, jobseekerId: number) {
+    return this.apiCall<{ data: { jobseeker: any } }>(
+      `/api/admin/jobseekers/${jobseekerId}`,
+      token
+    );
+  }
+
+  /**
+   * Employment Verification APIs
+   */
+  static async verifyEmployment(token: string | null, employmentId: string) {
+    return this.apiCall<{ data: { employment: any } }>(
+      `/api/admin/employment/${employmentId}/verify`,
+      token,
+      { method: "POST" }
+    );
+  }
+
+  static async rejectEmployment(token: string | null, employmentId: string, reason?: string) {
+    return this.apiCall<{ data: { employment: any; reason?: string } }>(
+      `/api/admin/employment/${employmentId}/reject`,
+      token,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }
+    );
+  }
+
   /**
    * Employer Management APIs
    */

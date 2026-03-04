@@ -5,87 +5,116 @@ import { EmploymentRecord } from "@/types/jobseeker.types";
 import DigitalEmploymentPassport from "@/components/jobseekerDashboard/DigitalEmploymentPassport";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-
-// Mock employment data
-const mockVerifiedEmployment: EmploymentRecord[] = [
-  {
-    id: "1",
-    company: "TechCore Solutions",
-    position: "Senior Frontend Developer",
-    startDate: "Jan 2022",
-    endDate: "Dec 2023",
-    currentlyWorking: false,
-    description:
-      "Led development of customer-facing React applications, mentored junior developers, and implemented responsive designs using modern frontend technologies. Improved application performance by 40% through optimization techniques.",
-    verified: true,
-    verificationStatus: "verified",
-    documents: [
-      { id: "doc1", name: "Employment Letter", verified: true },
-      { id: "doc2", name: "Performance Review", verified: true },
-      { id: "doc3", name: "Project Certificate", verified: true },
-    ],
-    rejectionReason: null,
-  },
-  {
-    id: "2",
-    company: "Digital Innovations Inc.",
-    position: "Full Stack Developer",
-    startDate: "Jun 2021",
-    endDate: "Dec 2021",
-    currentlyWorking: false,
-    description:
-      "Developed and maintained full-stack web applications using Node.js and React. Collaborated with cross-functional teams to deliver features on schedule. Implemented automated testing and CI/CD pipelines.",
-    verified: true,
-    verificationStatus: "verified",
-    documents: [
-      { id: "doc4", name: "Offer Letter", verified: true },
-      { id: "doc5", name: "Work Certificate", verified: true },
-    ],
-    rejectionReason: null,
-  },
-  {
-    id: "3",
-    company: "StartupHub Technologies",
-    position: "Junior Developer",
-    startDate: "Mar 2020",
-    endDate: "May 2021",
-    currentlyWorking: false,
-    description:
-      "Started as a junior developer working on bug fixes and feature implementations. Graduated to taking ownership of small to medium features. Gained experience in Vue.js, JavaScript, and web standards.",
-    verified: true,
-    verificationStatus: "verified",
-    documents: [
-      { id: "doc6", name: "Joining Letter", verified: true },
-      { id: "doc7", name: "Exit Certificate", verified: true },
-    ],
-    rejectionReason: null,
-  },
-  {
-    id: "4",
-    company: "Enterprise Systems Co.",
-    position: "Software Engineer",
-    startDate: "Aug 2023",
-    endDate: null,
-    currentlyWorking: true,
-    description:
-      "Currently working as a Software Engineer focused on building scalable backend services and microservices architecture. Contributing to product strategy and architectural decisions.",
-    verified: true,
-    verificationStatus: "verified",
-    documents: [
-      { id: "doc8", name: "Current Employment Letter", verified: true },
-      { id: "doc9", name: "Project Documentation", verified: true },
-    ],
-    rejectionReason: null,
-  },
-];
+import { useEffect, useState } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { RefreshCw } from "lucide-react";
+import { API_ENDPOINTS } from "@/constants/api";
 
 const PassportPage = () => {
+  const { getToken } = useAuth();
+  const { user } = useUser();
+  const [verifiedEmployment, setVerifiedEmployment] = useState<EmploymentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchJobseekerProfile();
+    }
+    
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user?.id) {
+        fetchJobseekerProfile();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id]);
+
+  const fetchJobseekerProfile = async (isManualRefresh = false) => {
+    if (isManualRefresh) setRefreshing(true);
+    
+    if (!user?.id) {
+      console.log("Passport - No user ID available yet");
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const token = await getToken();
+      const url = `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`;
+      console.log("Passport - Fetching from URL:", url);
+      
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store', // Prevent caching
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Passport - Full API response:", data);
+        const employment = data.data?.employmentHistory || [];
+        console.log("Passport - Employment history:", employment);
+        
+        // Log each employment with verification details
+        employment.forEach((emp: any, idx: number) => {
+          console.log(`Employment ${idx + 1}:`, {
+            company: emp.company,
+            position: emp.position,
+            verified: emp.verified,
+            verificationStatus: emp.verificationStatus,
+            shouldShow: emp.verificationStatus === "verified"
+          });
+        });
+        
+        // Only show verified employment - check verificationStatus only
+        const verified = employment.filter((emp: any) => 
+          emp.verificationStatus === "verified"
+        );
+        console.log("Passport - Verified employment count:", verified.length);
+        console.log("Passport - Verified employment:", verified);
+        setVerifiedEmployment(verified);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+      if (isManualRefresh) setRefreshing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0C2B4E]"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <Header />
       <main className="flex-grow">
+        {/* Refresh Button */}
+        <div className="container mx-auto px-4 pt-6">
+          <button
+            onClick={() => fetchJobseekerProfile(true)}
+            disabled={refreshing}
+            className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh Verified Employment'}
+          </button>
+        </div>
+        
         <DigitalEmploymentPassport
-          verifiedEmployment={mockVerifiedEmployment}
+          verifiedEmployment={verifiedEmployment}
         />
       </main>
       <Footer />

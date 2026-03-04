@@ -471,7 +471,32 @@ export default function ProfilePage() {
 
       // Only append histories if provided and non-empty
       if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
-        payload.append("employmentHistory", JSON.stringify(employmentHistory));
+        // Append document files to FormData before serializing employment history
+        employmentHistory.forEach((emp) => {
+          if (emp.documents && emp.documents.length > 0) {
+            emp.documents.forEach((doc) => {
+              if (doc.file) {
+                // Append the actual File object with the fieldname backend expects
+                const fieldName = `employmentDoc_${emp.id}_${doc.id}`;
+                payload.append(fieldName, doc.file);
+              }
+            });
+          }
+        });
+        
+        // Serialize employment history (metadata only, files already appended)
+        const employmentForJson = employmentHistory.map((emp) => ({
+          ...emp,
+          documents: emp.documents.map((doc) => ({
+            id: doc.id,
+            name: doc.name,
+            size: doc.size,
+            type: doc.type,
+            uploadedAt: doc.uploadedAt,
+            url: doc.url, // Include URL if already uploaded
+          })),
+        }));
+        payload.append("employmentHistory", JSON.stringify(employmentForJson));
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
         payload.append("educationHistory", JSON.stringify(educationHistory));

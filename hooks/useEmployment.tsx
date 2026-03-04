@@ -64,6 +64,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
       size: file.size,
       type: file.type,
       uploadedAt: new Date().toISOString(),
+      file: file, // Store the actual File object
     }));
 
     setEmploymentHistory((prev) =>

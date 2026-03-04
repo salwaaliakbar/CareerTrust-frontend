@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Users, Search, Filter, Eye, Mail, Phone, Briefcase, GraduationCap, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Users, Search, Filter, Mail, Phone, Briefcase, GraduationCap, MapPin } from "lucide-react";
 import { AdminService } from "@/services/api/admin.service";
 
 interface JobSeekerData {
@@ -21,6 +22,7 @@ interface JobSeekerData {
 
 export default function JobSeekersPage() {
   const { getToken } = useAuth();
+  const router = useRouter();
   const [jobseekers, setJobseekers] = useState<JobSeekerData[]>([]);
   const [filteredJobseekers, setFilteredJobseekers] = useState<JobSeekerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,13 +186,12 @@ export default function JobSeekersPage() {
                 <th className="px-6 py-4 text-left text-sm font-semibold">Education</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Joined</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredJobseekers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p className="text-lg font-medium">No job seekers found</p>
                     <p className="text-sm">Try adjusting your search or filters</p>
@@ -200,7 +201,8 @@ export default function JobSeekersPage() {
                 filteredJobseekers.map((jobseeker, index) => (
                   <tr
                     key={jobseeker.jobseekerId}
-                    className="hover:bg-gray-50 transition-colors duration-200 fade-in"
+                    onClick={() => router.push(`/admin/admindashboard/jobseekers/${jobseeker.jobseekerId}`)}
+                    className="hover:bg-blue-50 transition-colors duration-200 fade-in cursor-pointer"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <td className="px-6 py-4">
@@ -266,13 +268,6 @@ export default function JobSeekersPage() {
                       <span className="text-sm text-gray-600">
                         {new Date(jobseeker.createdAt).toLocaleDateString()}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 rounded-lg bg-[#0C2B4E]/10 text-[#0C2B4E] hover:bg-[#0C2B4E] hover:text-white transition-all duration-200 group">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))

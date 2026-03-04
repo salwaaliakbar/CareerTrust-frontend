@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   CheckCircle2,
   Building2,
@@ -11,6 +11,10 @@ import {
   Shield,
   Download,
   Briefcase,
+  FileText,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
 
@@ -22,6 +26,55 @@ export default function DigitalEmploymentPassport({
   verifiedEmployment,
 }: DigitalEmploymentPassportProps) {
   const passportRef = useRef<HTMLDivElement>(null);
+  const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set());
+
+  const toggleDocuments = (empId: string) => {
+    setExpandedDocuments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(empId)) {
+        newSet.delete(empId);
+      } else {
+        newSet.add(empId);
+      }
+      return newSet;
+    });
+  };
+
+  // Calculate total years of experience from verified employment
+  const calculateTotalExperience = () => {
+    let totalMonths = 0;
+    
+    verifiedEmployment.forEach((emp) => {
+      // Parse MM/YYYY format
+      const parseDate = (dateStr: string) => {
+        if (!dateStr) return null;
+        const parts = dateStr.split('/');
+        if (parts.length === 2) {
+          const month = parseInt(parts[0]) - 1; // 0-indexed
+          const year = parseInt(parts[1]);
+          return new Date(year, month, 1);
+        }
+        return new Date(dateStr);
+      };
+      
+      const startDate = parseDate(emp.startDate);
+      const endDate = emp.currentlyWorking ? new Date() : parseDate(emp.endDate);
+      
+      if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                      (endDate.getMonth() - startDate.getMonth());
+        totalMonths += Math.max(0, months);
+      }
+    });
+    
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+    
+    if (years === 0 && months === 0) return "0 months";
+    if (years === 0) return `${months} month${months !== 1 ? 's' : ''}`;
+    if (months === 0) return `${years} year${years !== 1 ? 's' : ''}`;
+    return `${years} year${years !== 1 ? 's' : ''}, ${months} month${months !== 1 ? 's' : ''}`;
+  };
 
   // const downloadPDF = async () => {
   //   console.log("[PDF] Starting download process...");
@@ -387,7 +440,23 @@ export default function DigitalEmploymentPassport({
                         Verified Records
                       </p>
                       <p className="text-xl font-bold text-white">
-                        {verifiedEmployment.filter((e) => e.verified).length}
+                        {verifiedEmployment.length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl border border-white/20">
+                    <div className="flex -space-x-2">
+                      <div className="w-8 h-8 bg-linear-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white/30">
+                        <Briefcase className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-200 font-semibold">
+                        Total Experience
+                      </p>
+                      <p className="text-lg font-bold text-white">
+                        {calculateTotalExperience()}
                       </p>
                     </div>
                   </div>
@@ -504,8 +573,8 @@ export default function DigitalEmploymentPassport({
                               Documents
                             </p>
                             <p className="font-semibold text-gray-900">
-                              {emp.documents.length}{" "}
-                              <span className="text-emerald-600">Verified</span>
+                              {emp.documents.filter(d => d.url).length}{" "}
+                              <span className="text-emerald-600">Uploaded</span>
                             </p>
                           </div>
                         </div>
@@ -525,13 +594,55 @@ export default function DigitalEmploymentPassport({
                       </div>
 
                       {/* Action Button */}
-                      {emp.verificationStatus === "verified" && (
+                      {emp.verificationStatus === "verified" && emp.documents.filter(d => d.url).length > 0 && (
                         <div className="pt-4 border-t border-gray-100">
-                          <button className="inline-flex items-center gap-2 text-[#1D546C] font-medium hover:text-[#0C2B4E] transition-all group/btn">
-                            <FileCheck className="w-4 h-4" />
-                            View Documents
-                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                          <button 
+                            onClick={() => toggleDocuments(emp.id)}
+                            className="inline-flex items-center gap-2 text-[#1D546C] font-medium hover:text-[#0C2B4E] transition-all group/btn w-full justify-between"
+                          >
+                            <span className="flex items-center gap-2">
+                              <FileCheck className="w-4 h-4" />
+                              View Documents ({emp.documents.filter(d => d.url).length})
+                            </span>
+                            {expandedDocuments.has(emp.id) ? (
+                              <ChevronUp className="w-4 h-4 transition-transform" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 group-hover/btn:translate-y-0.5 transition-transform" />
+                            )}
                           </button>
+
+                          {/* Documents List */}
+                          {expandedDocuments.has(emp.id) && (
+                            <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-300">
+                              {emp.documents.filter(d => d.url).map((doc) => (
+                                <a
+                                  key={doc.id}
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-between p-3 bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-indigo-300 hover:shadow-md transition-all group/doc"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="p-2 bg-linear-to-br from-blue-500 to-indigo-500 rounded-lg shadow-sm">
+                                      <FileText className="w-4 h-4 text-white" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-slate-800 truncate">
+                                        {doc.name}
+                                      </p>
+                                      <p className="text-xs text-slate-500 font-medium">
+                                        {doc.type === "application/pdf" ? "PDF Document" : 
+                                         doc.type.startsWith("image/") ? "Image" : "Document"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <ExternalLink className="w-4 h-4 text-indigo-600 group-hover/doc:scale-110 transition-transform" />
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
