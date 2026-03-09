@@ -1,4 +1,4 @@
-const JOBSEEKER_API_URL = "/api/jobseeker";
+import { API_ENDPOINTS } from "@/constants/api";
 
 /**
  * Submit offer response (accept or decline)
@@ -10,7 +10,7 @@ export async function submitOfferResponse(
   getToken?: () => Promise<string | null>,
 ): Promise<boolean> {
   try {
-    const url = `${JOBSEEKER_API_URL}/applications/${applicationId}/offer-response`;
+    const url = API_ENDPOINTS.APPLICATION_OFFER_RESPONSE(applicationId);
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",

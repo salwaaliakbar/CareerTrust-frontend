@@ -16,8 +16,6 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
-  CheckCircle,
-  XCircle,
 } from "lucide-react";
 import { updateApplicationStatus } from "@/services/api/employer.service";
 import Swal from "sweetalert2";
@@ -43,15 +41,24 @@ const statusOptions: {
   { value: "interviewed", label: "Interviewed", color: "indigo" },
   { value: "hired", label: "Hired", color: "green" },
   { value: "rejected", label: "Rejected", color: "red" },
+  { value: "offer_accepted", label: "Offer Accepted", color: "emerald" },
+  { value: "offer_declined", label: "Offer Declined", color: "orange" },
 ];
 
-const statusColors = {
+const terminalStatuses: ApplicationStatus[] = [
+  "offer_accepted",
+  "offer_declined",
+];
+
+const statusColors: Record<ApplicationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
   reviewing: "bg-blue-100 text-blue-700 border-blue-200",
   shortlisted: "bg-purple-100 text-purple-700 border-purple-200",
   interviewed: "bg-indigo-100 text-indigo-700 border-indigo-200",
   hired: "bg-green-100 text-green-700 border-green-200",
   rejected: "bg-red-100 text-red-700 border-red-200",
+  offer_accepted: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  offer_declined: "bg-orange-100 text-orange-700 border-orange-200",
 };
 
 export default function ApplicantCard({
@@ -175,37 +182,6 @@ export default function ApplicantCard({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Quick Action Buttons */}
-                {application.status !== "hired" &&
-                  application.status !== "rejected" && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange("hired");
-                        }}
-                        disabled={isUpdating}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                        title="Accept Candidate"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Accept
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusChange("rejected");
-                        }}
-                        disabled={isUpdating}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                        title="Reject Candidate"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Reject
-                      </button>
-                    </>
-                  )}
-
                 {/* Status Dropdown */}
                 <select
                   value={application.status}
@@ -214,10 +190,14 @@ export default function ApplicantCard({
                     handleStatusChange(e.target.value as ApplicationStatus);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  disabled={isUpdating}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold border cursor-pointer transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    statusColors[application.status]
-                  }`}
+                  disabled={
+                    isUpdating || terminalStatuses.includes(application.status)
+                  }
+                  className={`px-4 py-2 rounded-lg text-sm font-bold border transition-all duration-200 disabled:opacity-80 disabled:cursor-not-allowed ${
+                    terminalStatuses.includes(application.status)
+                      ? ""
+                      : "cursor-pointer hover:scale-105"
+                  } ${statusColors[application.status] ?? "bg-gray-100 text-gray-700 border-gray-200"}`}
                 >
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>

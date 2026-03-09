@@ -12,6 +12,7 @@ import ProfileHeader from "@/components/jobseekerDashboard/ProfileHeader";
 import PersonalInformation from "@/components/jobseekerDashboard/PersonalInformation";
 import ProfessionalSummary from "@/components/jobseekerDashboard/ProfessionalSummary";
 import WorkExperience from "@/components/jobseekerDashboard/WorkExperience";
+import ExitRequestModal from "@/components/jobseekerDashboard/ExitRequestModal";
 import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
 import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
@@ -19,7 +20,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
 import Test from "@/app/Test";
@@ -39,6 +40,7 @@ import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   // Job Recommendation Polling and Redux update
   const clerkId = user?.id;
   const [startPolling, setStartPolling] = useState(false);
@@ -52,11 +54,20 @@ export default function ProfilePage() {
   const fetchNewRecommendations = async () => {
     if (!clerkId) return;
     try {
-      const res = await axios.get(`/api/jobRecommendation/recommendations?clerkId=${clerkId}`);
+      const res = await axios.get(
+        `/api/jobRecommendation/recommendations?clerkId=${clerkId}`,
+      );
       const recommendations = res.data.recommendations || [];
       console.log("Fetched new job recommendations:", recommendations);
       // Map score (0-1) to match (0-100) percent
-      dispatch(updateJobMatches(recommendations.map((r: any) => ({ id: r.jobId, match: Math.round((r.score ?? 0) * 100) }))));
+      dispatch(
+        updateJobMatches(
+          recommendations.map((r: any) => ({
+            id: r.jobId,
+            match: Math.round((r.score ?? 0) * 100),
+          })),
+        ),
+      );
       // Add notification and show popup
       addNotification({
         type: "job_recommendation",
@@ -78,9 +89,9 @@ export default function ProfilePage() {
       setStartPolling(false); // Stop polling after update
     },
     10000,
-    10 // maxAttempts
+    10, // maxAttempts
   );
-  
+
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
     headline: "",
@@ -90,6 +101,7 @@ export default function ProfilePage() {
     email: "",
     total_experience: "",
     total_experience_years: 0,
+    employmentStatus: "open", // "open" = Open for Opportunities, "not_open" = Not Open
   });
 
   // Redux hooks
@@ -128,7 +140,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const { user } = useUser();
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -254,7 +265,6 @@ export default function ProfilePage() {
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
-            }"`,
             }" (will be updated)`,
           );
         }
@@ -264,7 +274,6 @@ export default function ProfilePage() {
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
-            }"`,
             }" (protected - will not be changed)`,
           );
         }
@@ -395,7 +404,6 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
-
     setSaving(true);
     try {
       const payload = new FormData();
@@ -524,6 +532,22 @@ export default function ProfilePage() {
     }
   }
 
+  // Auto-compute whether applicant is currently employed based on experience records:
+  // Employed = has a record with startDate but no endDate (currently working)
+  const isCurrentlyEmployed = React.useMemo(() => {
+    if (!Array.isArray(employmentHistory) || employmentHistory.length === 0)
+      return false;
+    return employmentHistory.some(
+      (job) => job.startDate && (!job.endDate || job.endDate.trim() === ""),
+    );
+  }, [employmentHistory]);
+
+  // Exit Request Modal state
+  const [exitRequestEmpId, setExitRequestEmpId] = useState<string | null>(null);
+  const exitRequestEmployment = employmentHistory.find(
+    (e) => e.id === exitRequestEmpId,
+  );
+
   function handleReset() {
     setForm({
       fullName: "",
@@ -534,6 +558,7 @@ export default function ProfilePage() {
       email: "",
       total_experience: "",
       total_experience_years: 0,
+      employmentStatus: "open",
     });
     setResumeFile(null);
     setProfileImage(null);
@@ -564,6 +589,15 @@ export default function ProfilePage() {
             onReset={handleReset}
             saving={saving}
             educationHistory={educationHistory}
+            isCurrentlyEmployed={isCurrentlyEmployed}
+            openForOpportunities={form.employmentStatus === "open"}
+            onToggleOpenForOpportunities={() =>
+              setForm((prev) => ({
+                ...prev,
+                employmentStatus:
+                  prev.employmentStatus === "open" ? "not_open" : "open",
+              }))
+            }
           />
 
           {/* Main Content Grid */}
@@ -624,11 +658,98 @@ export default function ProfilePage() {
                   onDocumentRemove={removeDocument}
                   documentInputRefs={documentInputRefs}
                   disabled={!isEditing}
+                  onExitRequest={(empId) => setExitRequestEmpId(empId)}
                 />
               </div>
 
-              {/* Right Column - Resume Upload (sidebar) */}
-              <aside className="lg:col-span-1">
+              {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}
+              <aside className="lg:col-span-1 space-y-6">
+                {/* Open for Opportunities Selector */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    Job Availability
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Let employers know if you&apos;re open to new opportunities.
+                    This is shown publicly on your profile.
+                  </p>
+
+                  {/* Auto-generated employment status info */}
+                  <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      Auto-detected Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          isCurrentlyEmployed ? "bg-orange-500" : "bg-gray-400"
+                        }`}
+                      />
+                      <span className="text-sm font-semibold text-gray-700">
+                        {isCurrentlyEmployed ? "Employed" : "Not Employed"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {isCurrentlyEmployed
+                        ? "Based on your experience — at least one job has no end date."
+                        : "Based on your experience — all jobs have end dates."}
+                    </p>
+                  </div>
+
+                  {/* User-controlled open for opportunities */}
+                  <div className="space-y-3">
+                    {[
+                      {
+                        value: "open" as const,
+                        label: "Open for Opportunities",
+                        desc: "Employers can see you're open to new roles",
+                        colorClass:
+                          "border-green-500 bg-green-50 text-green-800",
+                        dotColor: "bg-green-500",
+                      },
+                      {
+                        value: "not_open" as const,
+                        label: "Not Open for Opportunities",
+                        desc: "You are not currently seeking new roles",
+                        colorClass: "border-red-400 bg-red-50 text-red-800",
+                        dotColor: "bg-red-500",
+                      },
+                    ].map(({ value, label, desc, colorClass, dotColor }) => {
+                      const selected = form.employmentStatus === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              employmentStatus: value,
+                            }))
+                          }
+                          className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
+                            selected
+                              ? colorClass
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full shrink-0 ${
+                                selected ? dotColor : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="font-bold text-sm">{label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                            {desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <ResumeUpload
                   resumeFile={resumeFile}
                   autoFilling={autoFilling}
@@ -651,10 +772,33 @@ export default function ProfilePage() {
         </div>
       </div>
       <Footer />
+      {/* Exit Request Modal */}
+      {exitRequestEmployment && (
+        <ExitRequestModal
+          isOpen={exitRequestEmpId !== null}
+          onClose={() => setExitRequestEmpId(null)}
+          employment={exitRequestEmployment}
+          getToken={getToken}
+          onSuccess={() => {
+            // Optimistically mark as "not currently working" in local state
+            // Real refresh will happen on next profile load
+          }}
+        />
+      )}
       {showPopup && (
         <div className="fixed top-6 right-6 z-[9999] bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          <svg
+            className="w-5 h-5 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
           </svg>
           New notification arrived!
           <button

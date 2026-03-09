@@ -11,6 +11,10 @@ import {
   GraduationCap,
   Edit2,
   Mail,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  UserX,
 } from "lucide-react";
 import { ProfileData, EducationRecord } from "@/types/jobseeker.types";
 
@@ -25,6 +29,12 @@ interface ProfileHeaderProps {
   isEditing?: boolean;
   onToggleEdit?: () => void;
   educationHistory?: EducationRecord[];
+  /** Auto-generated from experience: true if any job has startDate but no endDate */
+  isCurrentlyEmployed?: boolean;
+  /** User-controlled: are they open to new opportunities? */
+  openForOpportunities?: boolean;
+  /** Called when the user clicks the Open for Opportunities toggle (only in edit mode) */
+  onToggleOpenForOpportunities?: () => void;
 }
 
 export default function ProfileHeader({
@@ -38,9 +48,12 @@ export default function ProfileHeader({
   isEditing = false,
   onToggleEdit,
   educationHistory = [],
+  isCurrentlyEmployed = false,
+  openForOpportunities = true,
+  onToggleOpenForOpportunities,
 }: ProfileHeaderProps) {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
- 
+
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
     if (f) {
@@ -66,9 +79,7 @@ export default function ProfileHeader({
         <div className="absolute top-0 right-0 w-72 h-72 bg-linear-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-linear-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-        <div
-          className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"
-        ></div>
+        <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
 
         <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
           {/* Profile Picture Section */}
@@ -76,7 +87,10 @@ export default function ProfileHeader({
             {isEditing ? (
               <div className="absolute -inset-1 bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full blur opacity-75 group-hover/avatar:opacity-100 transition duration-500 animate-pulse"></div>
             ) : (
-              <div className="absolute -inset-1 rounded-full border border-white/10 bg-transparent" aria-hidden="true"></div>
+              <div
+                className="absolute -inset-1 rounded-full border border-white/10 bg-transparent"
+                aria-hidden="true"
+              ></div>
             )}
 
             <div className="relative w-40 h-40 rounded-full bg-linear-to-br from-white/20 to-white/5 backdrop-blur-md border-4 border-white/30 shadow-2xl overflow-hidden">
@@ -101,7 +115,9 @@ export default function ProfileHeader({
               }}
               aria-disabled={!isEditing}
               className={`absolute bottom-2 right-2 bg-linear-to-r from-blue-500 to-indigo-500 text-white p-3 rounded-full shadow-xl transition-all duration-300 border-2 border-white/30 ${
-                !isEditing ? "opacity-70 cursor-not-allowed" : "hover:shadow-2xl hover:scale-110 cursor-pointer"
+                !isEditing
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:shadow-2xl hover:scale-110 cursor-pointer"
               }`}
               aria-label="Upload profile image"
               title="Upload profile image"
@@ -132,7 +148,9 @@ export default function ProfileHeader({
                 }}
                 aria-disabled={!isEditing}
                 className={`absolute top-0 right-0 bg-linear-to-r from-rose-500 to-red-500 text-white p-2 rounded-full shadow-xl transition-all duration-200 border-2 border-white/30 ${
-                  !isEditing ? "opacity-70 cursor-not-allowed" : "hover:scale-110"
+                  !isEditing
+                    ? "opacity-70 cursor-not-allowed"
+                    : "hover:scale-110"
                 }`}
                 aria-label="Remove profile image"
                 title="Remove profile image"
@@ -155,8 +173,53 @@ export default function ProfileHeader({
             </div>
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-blue-200">
-                {form?.email && (
-                <a href={`mailto:${form.email}`} className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+              {/* Auto-generated Employment Tag (based on experience section) */}
+              {isCurrentlyEmployed ? (
+                <span className="flex items-center gap-1.5 bg-orange-500/30 border border-orange-400/50 backdrop-blur-sm px-3 py-1.5 rounded-full text-orange-100 font-semibold">
+                  <Building2 className="w-4 h-4" />
+                  Employed
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-blue-100 font-semibold">
+                  <UserX className="w-4 h-4" />
+                  Not Employed
+                </span>
+              )}
+
+              {/* User-controlled Open for Opportunities Tag */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isEditing && onToggleOpenForOpportunities) {
+                    onToggleOpenForOpportunities();
+                  }
+                }}
+                disabled={!isEditing}
+                title={isEditing ? "Click to toggle" : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold transition-all duration-200 border ${
+                  openForOpportunities
+                    ? "bg-green-500/30 border-green-400/50 text-green-100 hover:bg-green-500/40"
+                    : "bg-red-500/20 border-red-400/40 text-red-200 hover:bg-red-500/30"
+                } ${isEditing ? "cursor-pointer" : "cursor-default"}`}
+              >
+                {openForOpportunities ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Open for Opportunities
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    Not Open for Opportunities
+                  </>
+                )}
+              </button>
+
+              {form?.email && (
+                <a
+                  href={`mailto:${form.email}`}
+                  className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full"
+                >
                   <Mail className="w-4 h-4" />
                   <span className="truncate max-w-48">{form.email}</span>
                 </a>
@@ -168,7 +231,7 @@ export default function ProfileHeader({
                   {form.location}
                 </span>
               )}
-            
+
               {form?.total_experience && (
                 <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <Award className="w-4 h-4" />
@@ -179,7 +242,8 @@ export default function ProfileHeader({
               {educationHistory && educationHistory.length > 0 && (
                 <span className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <GraduationCap className="w-4 h-4" />
-                  {educationHistory[0].degree || educationHistory[0].institution}
+                  {educationHistory[0].degree ||
+                    educationHistory[0].institution}
                 </span>
               )}
             </div>

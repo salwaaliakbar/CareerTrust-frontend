@@ -6,7 +6,10 @@ export type NotificationType =
   | "application_shortlisted"
   | "application_interviewed"
   | "application_rejected"
-  | "application_hired";
+  | "application_hired"
+  | "exit_request_received"
+  | "exit_request_approved"
+  | "exit_request_rejected";
 
 export interface Notification {
   id: string;
@@ -25,8 +28,9 @@ export interface NotificationContextType {
   addNotification: (
     notification: Omit<Notification, "id" | "read" | "createdAt">,
   ) => void;
-  markAllAsRead: () => void;
-  markAsRead: (id: string) => void;
+  markAllAsRead: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
 }
 
 export const NotificationContext = createContext<

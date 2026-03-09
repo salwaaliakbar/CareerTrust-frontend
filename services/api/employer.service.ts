@@ -314,3 +314,105 @@ export async function deleteJob(
     return false;
   }
 }
+
+// ─── Candidates ─────────────────────────────────────────────────────────────
+
+export interface Candidate {
+  id: number;
+  clerkId: string;
+  firstName: string | null;
+  lastName: string | null;
+  profilePhoto: string | null;
+  headline: string | null;
+  bio: string | null;
+  location: string | null;
+  skills: string[];
+  experienceLevel: string | null;
+  isProfileComplete: boolean;
+  updatedAt: string;
+}
+
+export interface CandidatesResponse {
+  success: boolean;
+  data: {
+    candidates: Candidate[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  };
+  error?: string;
+}
+
+/**
+ * Fetch all candidates (jobseeker profiles) for employer browsing
+ */
+export async function fetchAllCandidates(
+  params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    location?: string;
+    skills?: string;
+  },
+  getToken?: () => Promise<string | null>,
+): Promise<CandidatesResponse["data"] | null> {
+  try {
+    const query = new URLSearchParams();
+    if (params.page) query.set("page", String(params.page));
+    if (params.limit) query.set("limit", String(params.limit));
+    if (params.search) query.set("search", params.search);
+    if (params.location) query.set("location", params.location);
+    if (params.skills) query.set("skills", params.skills);
+
+    const url = `${EMPLOYER_API_URL}/candidates?${query.toString()}`;
+
+    console.log("[Employer Service] Fetching candidates:", url);
+
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+
+    if (getToken) {
+      const token = await getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
+
+    console.log(
+      "[Employer Service] Candidates response status:",
+      response.status,
+    );
+
+    if (!response.ok) {
+      console.error(
+        `[Employer Service] Failed to fetch candidates. Status: ${response.status}`,
+      );
+      return null;
+    }
+
+    const data: CandidatesResponse = await response.json();
+
+    if (!data.success) {
+      console.warn(
+        "[Employer Service] Candidates API returned success: false",
+        data.error,
+      );
+      return null;
+    }
+
+    console.log(
+      "[Employer Service] Successfully fetched candidates:",
+      data.data.candidates.length,
+    );
+    return data.data;
+  } catch (error) {
+    console.error("[Employer Service] Error fetching candidates:", error);
+    return null;
+  }
+}

@@ -10,15 +10,23 @@ interface WorkExperienceProps {
   showAddEmployment: boolean;
   newEmployment: Partial<EmploymentRecord>;
   onToggleAddForm: () => void;
-  onNewEmploymentChange: (field: keyof EmploymentRecord, value: Partial<EmploymentRecord>[keyof EmploymentRecord]) => void;
+  onNewEmploymentChange: (
+    field: keyof EmploymentRecord,
+    value: Partial<EmploymentRecord>[keyof EmploymentRecord],
+  ) => void;
   onAddEmployment: () => void;
   onDeleteEmployment: (id: string) => void;
-  onDocumentUpload: (empId: string, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDocumentUpload: (
+    empId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => void;
   onDocumentRemove: (empId: string, docId: string) => void;
   documentInputRefs: React.MutableRefObject<{
     [key: string]: HTMLInputElement | null;
   }>;
   disabled?: boolean;
+  /** Called when jobseeker clicks "Request Exit" on an active employment record */
+  onExitRequest?: (empId: string) => void;
 }
 
 export default function WorkExperience({
@@ -33,6 +41,7 @@ export default function WorkExperience({
   onDocumentRemove,
   documentInputRefs,
   disabled = false,
+  onExitRequest,
 }: WorkExperienceProps) {
   return (
     <div className="group relative">
@@ -48,16 +57,15 @@ export default function WorkExperience({
               Add and verify your employment history
             </p>
           </div>
-            <button
-              type="button"
-              onClick={onToggleAddForm}
-              disabled={disabled}
-              className="inline-flex items-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-5 h-5" />
-              Add Experience
-            </button>
-        
+          <button
+            type="button"
+            onClick={onToggleAddForm}
+            disabled={disabled}
+            className="inline-flex items-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-5 h-5" />
+            Add Experience
+          </button>
         </div>
 
         {/* Add Employment Form */}
@@ -91,6 +99,7 @@ export default function WorkExperience({
                   documentInputRefs.current[emp.id] = el;
                 }}
                 disabled={disabled}
+                onExitRequest={onExitRequest}
               />
             ))
           )}

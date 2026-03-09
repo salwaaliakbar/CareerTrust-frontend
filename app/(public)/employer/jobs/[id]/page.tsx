@@ -110,6 +110,12 @@ export default function JobApplicantsPage() {
       .length,
     rejected: applications.filter((app) => app.status === "rejected").length,
     hired: applications.filter((app) => app.status === "hired").length,
+    offer_accepted: applications.filter(
+      (app) => app.status === "offer_accepted",
+    ).length,
+    offer_declined: applications.filter(
+      (app) => app.status === "offer_declined",
+    ).length,
   };
 
   if (loading) {
@@ -151,7 +157,7 @@ export default function JobApplicantsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-4 mb-8">
           <div className="bg-white rounded-xl p-4 shadow-md border border-slate-200">
             <p className="text-xs font-semibold text-slate-600 mb-1">Total</p>
             <p className="text-2xl font-black text-slate-900">{stats.total}</p>
@@ -192,6 +198,22 @@ export default function JobApplicantsPage() {
             <p className="text-xs font-semibold text-green-700 mb-1">Hired</p>
             <p className="text-2xl font-black text-green-900">{stats.hired}</p>
           </div>
+          <div className="bg-emerald-50 rounded-xl p-4 shadow-md border border-emerald-200">
+            <p className="text-xs font-semibold text-emerald-700 mb-1">
+              Offer Accepted
+            </p>
+            <p className="text-2xl font-black text-emerald-900">
+              {stats.offer_accepted}
+            </p>
+          </div>
+          <div className="bg-orange-50 rounded-xl p-4 shadow-md border border-orange-200">
+            <p className="text-xs font-semibold text-orange-700 mb-1">
+              Offer Declined
+            </p>
+            <p className="text-2xl font-black text-orange-900">
+              {stats.offer_declined}
+            </p>
+          </div>
           <div className="bg-red-50 rounded-xl p-4 shadow-md border border-red-200">
             <p className="text-xs font-semibold text-red-700 mb-1">Rejected</p>
             <p className="text-2xl font-black text-red-900">{stats.rejected}</p>
@@ -230,6 +252,8 @@ export default function JobApplicantsPage() {
                   <option value="shortlisted">Shortlisted</option>
                   <option value="interviewed">Interviewed</option>
                   <option value="hired">Hired</option>
+                  <option value="offer_accepted">Offer Accepted</option>
+                  <option value="offer_declined">Offer Declined</option>
                   <option value="rejected">Rejected</option>
                 </select>
               </div>

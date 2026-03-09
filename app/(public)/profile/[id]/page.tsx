@@ -25,6 +25,8 @@ import {
   TrendingUp,
   Star,
   CheckCircle2,
+  XCircle,
+  UserX,
 } from "lucide-react";
 
 // Helper function to calculate duration between two dates
@@ -68,6 +70,13 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<JobseekerPublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-compute employed status from employment history:
+  // Employed = has at least one job with startDate but no endDate
+  const isCurrentlyEmployed =
+    profile?.employmentHistory?.some(
+      (job) => job.startDate && (!job.endDate || job.endDate.trim() === ""),
+    ) ?? false;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -158,50 +167,63 @@ export default function PublicProfilePage() {
                   </p>
                 )}
 
-                {/* Employment Status Badge */}
-                {profile.employmentStatus && (
-                  <div className="mb-6">
-                    {profile.employmentStatus === "employed" && (
-                      <div className="inline-flex items-center gap-3 px-4 py-3 bg-orange-100 border-2 border-orange-300 rounded-xl shadow-sm">
-                        <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
-                        <div>
-                          <div className="font-black text-sm text-orange-800">
-                            Currently Employed
-                          </div>
-                          <div className="text-xs text-gray-600 mt-0.5">
-                            Currently working - May need notice period
-                          </div>
+                {/* Employment Status Badges — always visible */}
+                <div className="mb-6 flex flex-wrap gap-3">
+                  {/* Auto-generated: Employed / Not Employed based on experience */}
+                  {isCurrentlyEmployed ? (
+                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-orange-100 border-2 border-orange-300 rounded-xl shadow-sm">
+                      <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
+                      <div>
+                        <div className="font-black text-sm text-orange-800">
+                          Employed
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          Currently working — based on experience
                         </div>
                       </div>
-                    )}
-                    {profile.employmentStatus === "available" && (
-                      <div className="inline-flex items-center gap-3 px-4 py-3 bg-green-100 border-2 border-green-300 rounded-xl shadow-sm">
-                        <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                        <div>
-                          <div className="font-black text-sm text-green-800">
-                            Open to Opportunities
-                          </div>
-                          <div className="text-xs text-gray-600 mt-0.5">
-                            Available for immediate hiring
-                          </div>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-xl shadow-sm">
+                      <UserX className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <div className="font-black text-sm text-gray-700">
+                          Not Employed
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          No active employment in experience
                         </div>
                       </div>
-                    )}
-                    {profile.employmentStatus === "notice_period" && (
-                      <div className="inline-flex items-center gap-3 px-4 py-3 bg-blue-100 border-2 border-blue-300 rounded-xl shadow-sm">
-                        <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>
-                        <div>
-                          <div className="font-black text-sm text-blue-800">
-                            Serving Notice Period
-                          </div>
-                          <div className="text-xs text-gray-600 mt-0.5">
-                            Available after notice period completion
-                          </div>
+                    </div>
+                  )}
+
+                  {/* User-controlled: Open / Not Open for Opportunities */}
+                  {profile.employmentStatus === "open" ||
+                  !profile.employmentStatus ? (
+                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-green-100 border-2 border-green-300 rounded-xl shadow-sm">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <div>
+                        <div className="font-black text-sm text-green-800">
+                          Open for Opportunities
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          Actively seeking new roles
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-red-50 border-2 border-red-200 rounded-xl shadow-sm">
+                      <XCircle className="w-4 h-4 text-red-500" />
+                      <div>
+                        <div className="font-black text-sm text-red-700">
+                          Not Open for Opportunities
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">
+                          Not actively seeking new roles
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                   {profile.location && (
@@ -268,62 +290,42 @@ export default function PublicProfilePage() {
                 </div>
 
                 {/* Availability Information for Employers */}
-                {profile.employmentStatus && (
-                  <div className="mt-4">
-                    {profile.employmentStatus === "employed" && (
-                      <div className="bg-orange-50 rounded-xl p-4 border-l-4 border-orange-500">
-                        <div className="flex items-start gap-3">
-                          <TrendingUp className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
-                          <div>
-                            <h4 className="font-bold text-orange-900 text-sm mb-1">
-                              ⚠️ Currently Employed Notice
-                            </h4>
-                            <p className="text-sm text-orange-800">
-                              This candidate is currently employed. They may
-                              require a notice period before joining. Please
-                              discuss availability and joining timeline during
-                              the interview process.
-                            </p>
-                          </div>
+                <div className="mt-4">
+                  {isCurrentlyEmployed && (
+                    <div className="bg-orange-50 rounded-xl p-4 border-l-4 border-orange-500">
+                      <div className="flex items-start gap-3">
+                        <TrendingUp className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-orange-900 text-sm mb-1">
+                            ⚠️ Currently Employed
+                          </h4>
+                          <p className="text-sm text-orange-800">
+                            This candidate is currently employed. They may
+                            require a notice period before joining. Please
+                            discuss availability and joining timeline during the
+                            interview process.
+                          </p>
                         </div>
                       </div>
-                    )}
-                    {profile.employmentStatus === "available" && (
-                      <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
-                          <div>
-                            <h4 className="font-bold text-green-900 text-sm mb-1">
-                              ✓ Available for Immediate Hiring
-                            </h4>
-                            <p className="text-sm text-green-800">
-                              This candidate is currently not employed and is
-                              available to start immediately or with minimal
-                              notice. Perfect for urgent hiring needs.
-                            </p>
-                          </div>
+                    </div>
+                  )}
+                  {!isCurrentlyEmployed && (
+                    <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-green-900 text-sm mb-1">
+                            ✓ Not Currently Employed
+                          </h4>
+                          <p className="text-sm text-green-800">
+                            This candidate is not currently employed based on
+                            their experience section.
+                          </p>
                         </div>
                       </div>
-                    )}
-                    {profile.employmentStatus === "notice_period" && (
-                      <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
-                        <div className="flex items-start gap-3">
-                          <Clock className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-                          <div>
-                            <h4 className="font-bold text-blue-900 text-sm mb-1">
-                              🔄 Serving Notice Period
-                            </h4>
-                            <p className="text-sm text-blue-800">
-                              This candidate is currently serving their notice
-                              period and will be available soon. Please confirm
-                              their availability date during the interview.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Resume Download - Prominent CTA */}

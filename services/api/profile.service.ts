@@ -19,7 +19,8 @@ export interface JobseekerPublicProfile {
   highestDegree: string | null;
   profilePicUrl: string | null;
   resumeUrl: string | null;
-  employmentStatus: "employed" | "available" | "notice_period" | null;
+  /** "open" = Open for Opportunities (user-controlled); "not_open" = Not Open */
+  employmentStatus: "open" | "not_open" | null;
   createdAt: string;
   employmentHistory: EmploymentRecord[];
   educationHistory: EducationRecord[];
