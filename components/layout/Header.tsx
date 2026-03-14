@@ -264,7 +264,7 @@ function Header() {
                         if (userRole === "jobseeker") {
                           router.push("/jobseeker/profile");
                         } else {
-                          router.push("/employer/dashboard");
+                          router.push("/employer/profile");
                         }
                       }}
                     >

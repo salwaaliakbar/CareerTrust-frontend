@@ -320,14 +320,14 @@ export async function deleteJob(
 export interface Candidate {
   id: number;
   clerkId: string;
-  firstName: string | null;
-  lastName: string | null;
-  profilePhoto: string | null;
+  fullName: string | null;
+  profilePicUrl: string | null;
   headline: string | null;
-  bio: string | null;
+  summary: string | null;
   location: string | null;
   skills: string[];
-  experienceLevel: string | null;
+  totalExperience: string | null;
+  totalExperienceYears: number | null;
   isProfileComplete: boolean;
   updatedAt: string;
 }
