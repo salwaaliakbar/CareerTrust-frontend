@@ -34,8 +34,8 @@ import {
   setEducation,
   setEmployment,
   setProfile,
-} from "@/src/store/slices/jobseeker/profileSlice";
-import { updateJobMatches } from "@/src/store/slices/jobsSlice";
+} from "@/redux/store/slices/jobseeker/profileSlice";
+import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
 
 export default function ProfilePage() {

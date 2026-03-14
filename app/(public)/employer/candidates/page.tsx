@@ -14,21 +14,11 @@ import {
   ChevronRight,
   Users,
   Loader2,
-  Star,
 } from "lucide-react";
 import { fetchAllCandidates, Candidate } from "@/services/api/employer.service";
 
-const EXPERIENCE_LABELS: Record<string, string> = {
-  entry: "Entry Level",
-  junior: "Junior",
-  mid: "Mid Level",
-  senior: "Senior",
-  lead: "Lead",
-  executive: "Executive",
-};
-
 const CandidatesPage = () => {
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { isLoaded: isUserLoaded } = useUser();
   const { getToken, isLoaded: isAuthLoaded } = useAuth();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -131,7 +121,7 @@ const CandidatesPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, headline, or bio..."
+                  placeholder="Search by jobseeker name, headline, summary, or skill..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -234,15 +224,22 @@ const CandidatesPage = () => {
 };
 
 const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
-  const fullName =
-    [candidate.firstName, candidate.lastName].filter(Boolean).join(" ") ||
-    "Unnamed Candidate";
+  const fullName = candidate.fullName?.trim() || "Unnamed Candidate";
 
   const initials =
-    [candidate.firstName?.[0], candidate.lastName?.[0]]
+    fullName
+      .split(" ")
       .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
       .join("")
       .toUpperCase() || "?";
+
+  const experienceText =
+    candidate.totalExperience?.trim() ||
+    (typeof candidate.totalExperienceYears === "number"
+      ? `${candidate.totalExperienceYears} year${candidate.totalExperienceYears === 1 ? "" : "s"}`
+      : null);
 
   return (
     <Link
@@ -253,9 +250,9 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
       <div className="p-5 flex flex-col items-center text-center border-b border-slate-100">
         {/* Avatar */}
         <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-3 ring-2 ring-white shadow group-hover:ring-blue-200 transition-all">
-          {candidate.profilePhoto ? (
+          {candidate.profilePicUrl ? (
             <Image
-              src={candidate.profilePhoto}
+              src={candidate.profilePicUrl}
               alt={fullName}
               width={80}
               height={80}
@@ -277,6 +274,12 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
             {candidate.headline}
           </p>
         )}
+
+        {!candidate.headline && candidate.summary && (
+          <p className="text-slate-500 text-sm mt-1 line-clamp-2 leading-snug">
+            {candidate.summary}
+          </p>
+        )}
       </div>
 
       {/* Card Bottom */}
@@ -290,13 +293,10 @@ const CandidateCard = ({ candidate }: { candidate: Candidate }) => {
         )}
 
         {/* Experience Level */}
-        {candidate.experienceLevel && (
+        {experienceText && (
           <div className="flex items-center gap-1.5 text-slate-500 text-sm">
             <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>
-              {EXPERIENCE_LABELS[candidate.experienceLevel] ??
-                candidate.experienceLevel}
-            </span>
+            <span>{experienceText}</span>
           </div>
         )}
 

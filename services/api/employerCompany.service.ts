@@ -14,6 +14,55 @@ export interface CompanyProfile {
   linkedinUrl?: string;
   isVerified: boolean;
   employerId: number;
+  rating?: number;
+  reviews?: number;
+  openJobs?: number;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmployerProfileMeta {
+  employerId: number;
+  userId: number;
+  companyName: string | null;
+  companyURL: string | null;
+  linkedinUrl: string | null;
+  hasCompany: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmployerCompanyProfileDetails {
+  hasCompany: boolean;
+  company: CompanyProfile | null;
+  employerProfile: EmployerProfileMeta | null;
+  currentEmployeesCount: number;
+}
+
+export interface CurrentEmployee {
+  jobseekerId: number;
+  clerkId: string;
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  headline: string | null;
+  location: string | null;
+  profilePicUrl: string | null;
+  totalExperience: string | null;
+  totalExperienceYears: number | null;
+  employmentStatus: "open" | "not_open" | null;
+  skills: string[];
+  currentEmployment: {
+    id: string;
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string | null;
+    currentlyWorking: boolean;
+    verified: boolean;
+    verificationStatus: string;
+  } | null;
 }
 
 export interface CompanyStatus {
@@ -110,6 +159,57 @@ export async function getCompanyProfile(
     console.error("[Company Service] Error getting profile:", error);
     throw error;
   }
+}
+
+export async function getEmployerCompanyProfileDetails(
+  employerIdentifier: string,
+  getToken: () => Promise<string | null>,
+): Promise<EmployerCompanyProfileDetails> {
+  const token = await getToken();
+  const url = `${BACKEND_BASE_URL}/api/employer/company-profile?employerId=${encodeURIComponent(employerIdentifier)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get company profile: ${response.status}`);
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
+export async function getCurrentEmployees(
+  employerIdentifier: string,
+  getToken: () => Promise<string | null>,
+): Promise<{
+  company: { id: number; name: string } | null;
+  employees: CurrentEmployee[];
+}> {
+  const token = await getToken();
+  const url = `${BACKEND_BASE_URL}/api/employer/company-profile/current-employees?employerId=${encodeURIComponent(employerIdentifier)}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get current employees: ${response.status}`);
+  }
+
+  const result = await response.json();
+  return result.data;
 }
 
 /**
