@@ -1,8 +1,9 @@
 // API base URL configuration
 // For Blogs and Jobs, use the backend API URL (Node.js backend on port 4000)
 // For other endpoints, use the Next.js API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const BACKEND_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
 const BACKEND_API_URL = `${BACKEND_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {
@@ -10,24 +11,29 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/auth/login`,
   SIGNUP: `${API_BASE_URL}/auth/signup`,
   LOGOUT: `${API_BASE_URL}/auth/logout`,
-  
+
   // Blogs (Node.js Backend API)
   BLOGS: `${BACKEND_API_URL}/blogs`,
   BLOG_BY_ID: (id: string | number) => `${BACKEND_API_URL}/blogs/${id}`,
-  
+
   // Jobs (Node.js Backend API)
   JOBS: `${BACKEND_API_URL}/jobs`,
   JOB_BY_ID: (id: string | number) => `${BACKEND_API_URL}/jobs/${id}`,
-  
+
   // Companies (Node.js Backend API)
   COMPANIES: `${BACKEND_API_URL}/companies`,
   COMPANY_BY_ID: (id: string | number) => `${BACKEND_API_URL}/companies/${id}`,
-  
-  // Applications (Next.js API)
-  APPLICATIONS: `${API_BASE_URL}/applications`,
-  APPLICATION_BY_ID: (id: string | number) => `${API_BASE_URL}/applications/${id}`,
-  SUBMIT_APPLICATION: `${API_BASE_URL}/applications/submit`,
-  
+
+  // Applications (Node.js Backend API)
+  APPLICATIONS: `${BACKEND_API_URL}/jobseeker/applications`,
+  APPLICATIONS_SUBMIT: `${BACKEND_API_URL}/jobseeker/applications/submit`,
+  APPLICATION_BY_ID: (id: string | number) =>
+    `${BACKEND_API_URL}/jobseeker/applications/details/${id}`,
+  APPLICATIONS_BY_CLERKID: (clerkId: string) =>
+    `${BACKEND_API_URL}/jobseeker/applications/${clerkId}`,
+  APPLICATION_OFFER_RESPONSE: (applicationId: string | number) =>
+    `${BACKEND_API_URL}/jobseeker/applications/${applicationId}/offer-response`,
+
   // Users (Next.js API)
   USERS: `${API_BASE_URL}/users`,
   USER_BY_ID: (id: string | number) => `${API_BASE_URL}/users/${id}`,
@@ -36,14 +42,23 @@ export const API_ENDPOINTS = {
   RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`,
   JOB_RECOMMENDATION_STATUS: `${BACKEND_API_URL}/jobRecommendation/status`,
   JOB_RECOMMENDATIONS: `${BACKEND_API_URL}/jobRecommendation/recommendations`,
-  APPLICATION_SUBMIT: `${BACKEND_API_URL}/applications/submit`,
-  USER_APPLICATIONS_BACKEND: (clerkId: string) => `${BACKEND_API_URL}/applications/${clerkId}`,
-  BACKEND_DASHBOARD_STATS: `${BACKEND_API_URL}/dashboard/stats`,
-  BACKEND_DASHBOARD_RECENT_APPLICATIONS: `${BACKEND_API_URL}/dashboard/recent-applications`,
-  
-  // Dashboard (Next.js BFF API → Node.js Backend)
-  DASHBOARD_STATS: `${API_BASE_URL}/dashboard/stats`,
-  DASHBOARD_RECENT_APPLICATIONS: `${API_BASE_URL}/dashboard/recent-applications`,
+
+  // Employer controls
+  PUBLIC_PROFILE: (clerkId: string) => `${BACKEND_API_URL}/profile/${clerkId}`,
+  EMPLOYER_UPDATE_EMPLOYMENT_STATUS: (clerkId: string) =>
+    `${BACKEND_API_URL}/employer/jobseeker/${clerkId}/employment-status`,
+
+  // Employer candidates
+  EMPLOYER_CANDIDATES: `${BACKEND_API_URL}/employer/candidates`,
+
+  // Exit Requests (Jobseeker)
+  EXIT_REQUESTS_SUBMIT: `${BACKEND_API_URL}/jobseeker/exit-requests`,
+  EXIT_REQUESTS_MY: `${BACKEND_API_URL}/jobseeker/exit-requests`,
+
+  // Exit Requests (Employer)
+  EMPLOYER_EXIT_REQUESTS: `${BACKEND_API_URL}/employer/exit-requests`,
+  EMPLOYER_EXIT_REQUEST_RESPOND: (id: number | string) =>
+    `${BACKEND_API_URL}/employer/exit-requests/${id}/respond`,
 };
 
 export default API_ENDPOINTS;

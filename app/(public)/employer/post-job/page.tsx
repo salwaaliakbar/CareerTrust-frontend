@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import JobPostForm from "@/components/employer/JobPostForm";
@@ -16,6 +16,7 @@ import { EMPLOYER } from "@/constants/constant";
 export default function PostJobPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
   const [employerId, setEmployerId] = useState<number | null>(null);
@@ -95,7 +96,7 @@ export default function PostJobPage() {
       };
 
       // Submit to API
-      const result = await createJob(jobData);
+      const result = await createJob(jobData, getToken);
 
       logger.info("Job created successfully:", result);
 

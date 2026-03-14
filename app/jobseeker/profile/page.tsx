@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -13,6 +12,7 @@ import ProfileHeader from "@/components/jobseekerDashboard/ProfileHeader";
 import PersonalInformation from "@/components/jobseekerDashboard/PersonalInformation";
 import ProfessionalSummary from "@/components/jobseekerDashboard/ProfessionalSummary";
 import WorkExperience from "@/components/jobseekerDashboard/WorkExperience";
+import ExitRequestModal from "@/components/jobseekerDashboard/ExitRequestModal";
 import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
 import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
@@ -20,94 +20,54 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
-import { useRef } from "react";
+import Test from "@/app/Test";
+import { useRef, useCallback } from "react";
 import { useNotificationState } from "@/hooks/useNotificationState";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchJobseekerProfile,
   selectJobseekerProfile,
   selectProfileLoading,
-  FetchedProfileData,
-} from "@/redux/store/slices/jobseeker/profileSlice";
-import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
+  setEducation,
+  setEmployment,
+  setProfile,
+} from "@/src/store/slices/jobseeker/profileSlice";
+import { updateJobMatches } from "@/src/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
-import type { AppDispatch } from "@/redux/store/store";
-
-// Type definitions for API responses
-interface JobRecommendation {
-  jobId: string;
-  score: number;
-}
-
-interface ParsedResumeData {
-  name?: string;
-  fullName?: string;
-  email?: string;
-  headline?: string;
-  location?: string;
-  skills?: string | string[];
-  summary?: string;
-  total_experience?: string;
-  total_experience_years?: number;
-  education?: Array<{
-    institution?: string;
-    degree?: string;
-    start_date?: string;
-    end_date?: string;
-    startDate?: string;
-    endDate?: string;
-  }>;
-  experience?: Array<{
-    company?: string;
-    title?: string;
-    position?: string;
-    start_date?: string;
-    end_date?: string;
-    startDate?: string;
-    endDate?: string;
-    description?: string;
-  }>;
-}
-
-interface ParseResumeResponse {
-  parsed?: ParsedResumeData;
-  mismatches?: {
-    name?: boolean;
-    email?: boolean;
-  };
-}
-
-interface SaveProfileResponse {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  errors?: Array<{ message: string }>;
-  respData?: string | Record<string, unknown>;
-}
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   // Job Recommendation Polling and Redux update
   const clerkId = user?.id;
   const [startPolling, setStartPolling] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useDispatch();
   // Notification state
-  const { addNotification } = useNotificationState();
+  const { notifications, addNotification } = useNotificationState();
   const [showPopup, setShowPopup] = useState(false);
   const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch new recommendations from BFF
-  const fetchNewRecommendations = async (): Promise<void> => {
+  const fetchNewRecommendations = async () => {
     if (!clerkId) return;
     try {
-      const res = await axios.get<{ recommendations: JobRecommendation[] }>(`/api/jobRecommendation/recommendations?clerkId=${clerkId}`);
-      const recommendations: JobRecommendation[] = res.data.recommendations || [];
+      const res = await axios.get(
+        `/api/jobRecommendation/recommendations?clerkId=${clerkId}`,
+      );
+      const recommendations = res.data.recommendations || [];
       console.log("Fetched new job recommendations:", recommendations);
       // Map score (0-1) to match (0-100) percent
-      dispatch(updateJobMatches(recommendations.map((r: JobRecommendation) => ({ id: r.jobId, match: Math.round((r.score ?? 0) * 100) }))));
+      dispatch(
+        updateJobMatches(
+          recommendations.map((r: any) => ({
+            id: r.jobId,
+            match: Math.round((r.score ?? 0) * 100),
+          })),
+        ),
+      );
       // Add notification and show popup
       addNotification({
         type: "job_recommendation",
@@ -129,9 +89,9 @@ export default function ProfilePage() {
       setStartPolling(false); // Stop polling after update
     },
     10000,
-    10 // maxAttempts
+    10, // maxAttempts
   );
-  
+
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
     headline: "",
@@ -141,6 +101,7 @@ export default function ProfilePage() {
     email: "",
     total_experience: "",
     total_experience_years: 0,
+    employmentStatus: "open", // "open" = Open for Opportunities, "not_open" = Not Open
   });
 
   // Redux hooks
@@ -182,7 +143,7 @@ export default function ProfilePage() {
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void {
+  ) {
     const { name, value } = e.target;
     setForm((s) => ({ ...s, [name]: value }));
   }
@@ -191,52 +152,48 @@ export default function ProfilePage() {
   React.useEffect(() => setMounted(true), []);
 
   // Load from Redux or fetch from backend on mount
-  React.useEffect(() => {
-    if (!mounted || !user) return;
+  // React.useEffect(() => {
+  //   if (!mounted || !user) return;
 
-    // Check if we have data in Redux
-    if (reduxProfile.profile?.fullName) {
-      // Data exists in Redux, use it
-      setForm(reduxProfile.profile);
-      setEducationHistory(reduxProfile.education);
-      setEmploymentHistory(reduxProfile.employment);
-      setHasCheckedRedux(true);
-      logger.info("Loaded profile data from Redux");
-    } else if (!hasCheckedRedux && !profileLoading) {
-      // No data in Redux, fetch from backend
-      const clerkId = user.id;
-      if (clerkId) {
-        (dispatch(fetchJobseekerProfile(clerkId)) as unknown as Promise<{ payload?: FetchedProfileData }>)
-          .then((result: { payload?: FetchedProfileData }) => {
-            if (result?.payload && typeof result.payload === "object") {
-              // Data fetched successfully, update local form state
-              const fetchedData = result.payload;
-              setForm({
-                fullName: fetchedData.fullName || "",
-                headline: fetchedData.headline || "",
-                location: fetchedData.location || "",
-                skills: typeof fetchedData.skills === "string"
-                  ? fetchedData.skills
-                  : Array.isArray(fetchedData.skills)
-                    ? fetchedData.skills.join(", ")
-                    : "",
-                summary: fetchedData.summary || "",
-                email: fetchedData.email || "",
-                total_experience: fetchedData.totalExperience || "",
-                total_experience_years: fetchedData.totalExperienceYears || 0,
-              });
-              setEducationHistory(fetchedData.educationHistory || []);
-              setEmploymentHistory(fetchedData.employmentHistory || []);
-              logger.info("Fetched and loaded profile data from backend");
-            }
-            setHasCheckedRedux(true);
-          })
-          .catch(() => {
-            setHasCheckedRedux(true);
-          });
-      }
-    }
-  }, [mounted, user, reduxProfile.profile, reduxProfile.education, reduxProfile.employment, hasCheckedRedux, profileLoading, dispatch, setEducationHistory, setEmploymentHistory])
+  //   // Check if we have data in Redux
+  //   if (reduxProfile.profile?.fullName) {
+  //     // Data exists in Redux, use it
+  //     setForm(reduxProfile.profile);
+  //     setEducationHistory(reduxProfile.education);
+  //     setEmploymentHistory(reduxProfile.employment);
+  //     setHasCheckedRedux(true);
+  //     logger.info("Loaded profile data from Redux");
+  //   } else if (!hasCheckedRedux && !profileLoading) {
+  //     // No data in Redux, fetch from backend
+  //     const clerkId = user.id;
+  //     if (clerkId) {
+  //       dispatch(fetchJobseekerProfile(clerkId) as any).then((action: any) => {
+  //         if (action.payload) {
+  //           // Data fetched successfully, update local form state
+  //           const fetchedData = action.payload;
+  //           setForm({
+  //             fullName: fetchedData.fullName || "",
+  //             headline: fetchedData.headline || "",
+  //             location: fetchedData.location || "",
+  //             skills: typeof fetchedData.skills === "string"
+  //               ? fetchedData.skills
+  //               : Array.isArray(fetchedData.skills)
+  //                 ? fetchedData.skills.join(", ")
+  //                 : "",
+  //             summary: fetchedData.summary || "",
+  //             email: fetchedData.email || "",
+  //             total_experience: fetchedData.total_experience || "",
+  //             total_experience_years: fetchedData.total_experience_years || 0,
+  //           });
+  //           setEducationHistory(fetchedData.educationHistory || []);
+  //           setEmploymentHistory(fetchedData.employmentHistory || []);
+  //           logger.info("Fetched and loaded profile data from backend");
+  //         }
+  //         setHasCheckedRedux(true);
+  //       });
+  //     }
+  //   }
+  // }, [mounted, user, reduxProfile.profile?.email, hasCheckedRedux, profileLoading, dispatch]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
@@ -257,7 +214,7 @@ export default function ProfilePage() {
     }));
   }, [mounted, user, hasCheckedRedux]);
 
-  async function autoFillFromResume(file: File): Promise<void> {
+  async function autoFillFromResume(file: File) {
     setAutoFilling(true);
     try {
       const sendindForm = new FormData();
@@ -267,16 +224,16 @@ export default function ProfilePage() {
       sendindForm.append("fullName", form.fullName || "");
       sendindForm.append("email", form.email || "");
 
-      let parsed: ParsedResumeData | null = null;
-      let mismatches: Partial<Record<string, boolean>> = {};
+      let parsed: any = null;
+      let mismatches: any = {};
       try {
-        const resp = await axios.post<ParseResumeResponse>("/api/resume/parse-resume", sendindForm, {
+        const resp = await axios.post("/api/resume/parse-resume", sendindForm, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        const body: ParseResumeResponse = resp.data;
+        const body = resp.data;
         // API should return { parsed: { ... } } or parsed directly
-        parsed = body.parsed ?? (body as ParsedResumeData);
-        mismatches = body.mismatches ?? {};
+        parsed = body.parsed ?? body;
+        mismatches = body.mismatches;
       } catch (e) {
         if (axios.isAxiosError(e)) {
           const status = e.response?.status;
@@ -289,7 +246,6 @@ export default function ProfilePage() {
       }
       if (!parsed) {
         // no parsed data, nothing to autofill
-        setAutoFilling(false);
         throw new Error("No data extracted from resume");
       }
       logger.info("Parsed resume data:", parsed);
@@ -309,7 +265,7 @@ export default function ProfilePage() {
               parsed.name || "N/A"
             }" but your account shows "${
               form.fullName || user?.fullName || "N/A"
-            }" (will be updated)`
+            }" (will be updated)`,
           );
         }
         if (mismatches.email) {
@@ -318,7 +274,7 @@ export default function ProfilePage() {
               parsed.email || "N/A"
             }" but your account shows "${
               form.email || user?.primaryEmailAddress?.emailAddress || "N/A"
-            }" (protected - will not be changed)`
+            }" (protected - will not be changed)`,
           );
         }
 
@@ -373,8 +329,10 @@ export default function ProfilePage() {
       }));
 
       // Map education to EducationRecord[] if present - REPLACE not append
-      if (parsed && Array.isArray(parsed.education) && parsed.education.length > 0) {
-        const extractedEducation: EducationRecord[] = parsed.education.map((e, i: number) => {
+      if (Array.isArray(parsed.education) && parsed.education.length > 0) {
+        const extractedEducation: EducationRecord[] = (
+          parsed.education as Array<Record<string, unknown>>
+        ).map((e, i: number) => {
           const cryptoWithUuid = crypto as unknown as {
             randomUUID?: () => string;
           };
@@ -386,11 +344,12 @@ export default function ProfilePage() {
 
           return {
             id: id.toString(),
-            institution: (e.institution ?? ""),
-            degree: (e.degree ?? ""),
-            startDate: (e.start_date ?? e.startDate ?? ""),
-            endDate: (e.end_date ?? e.endDate ?? ""),
-          };
+            institution: (e.institution as string) ?? "",
+            degree: (e.degree as string) ?? "",
+            startDate:
+              (e.start_date as string) ?? (e.startDate as string) ?? "",
+            endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+          } as EducationRecord;
         });
 
         setEducationHistory(extractedEducation);
@@ -399,8 +358,10 @@ export default function ProfilePage() {
       }
 
       // Map experiences to EmploymentRecord[] if present - REPLACE not append
-      if (parsed && Array.isArray(parsed.experience) && parsed.experience.length > 0) {
-        const extractedEmployment: EmploymentRecord[] = parsed.experience.map((e, i: number) => {
+      if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
+        const extractedEmployment: EmploymentRecord[] = (
+          parsed.experience as Array<Record<string, unknown>>
+        ).map((e, i: number) => {
           // generate stable client-side id; prefer crypto.randomUUID when available
           const cryptoWithUuid = crypto as unknown as {
             randomUUID?: () => string;
@@ -413,16 +374,18 @@ export default function ProfilePage() {
 
           return {
             id: id.toString(),
-            company: (e.company ?? ""),
-            position: (e.title ?? e.position ?? ""),
-            startDate: (e.start_date ?? e.startDate ?? ""),
-            endDate: (e.end_date ?? e.endDate ?? ""),
-            currentlyWorking: !(e.end_date ?? e.endDate) || false,
-            description: (e.description ?? ""),
+            company: (e.company as string) ?? "",
+            position: (e.title as string) ?? (e.position as string) ?? "",
+            startDate:
+              (e.start_date as string) ?? (e.startDate as string) ?? "",
+            endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+            currentlyWorking:
+              !((e.end_date as string) ?? (e.endDate as string)) || false,
+            description: (e.description as string) ?? "",
             verified: false,
             verificationStatus: "draft",
             documents: [],
-          };
+          } as EmploymentRecord;
         });
 
         setEmploymentHistory(extractedEmployment);
@@ -432,7 +395,7 @@ export default function ProfilePage() {
 
       // Optionally show a success toast
       // Swal.fire({ icon: 'success', title: 'Parsed', text: 'Resume parsed and profile autofilled.' })
-    } catch (err: unknown) {
+    } catch (err) {
       console.error("Failed to parse resume:", err);
       throw err;
     } finally {
@@ -440,17 +403,17 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleSave(): Promise<void> {
+  async function handleSave() {
     setSaving(true);
     try {
       const payload = new FormData();
 
       // Build a partial profile object: include only non-empty, non-null fields
-      const partialProfile: Record<string, string | number> = {};
+      const partialProfile: Record<string, any> = {};
       Object.entries(form).forEach(([key, value]) => {
         if (value === null || value === undefined) return;
         if (typeof value === "string" && value.trim() === "") return;
-        partialProfile[key] = value as string | number;
+        partialProfile[key] = value;
       });
 
       // Ensure email is present for face verification, even if not editing other fields
@@ -471,32 +434,7 @@ export default function ProfilePage() {
 
       // Only append histories if provided and non-empty
       if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
-        // Append document files to FormData before serializing employment history
-        employmentHistory.forEach((emp) => {
-          if (emp.documents && emp.documents.length > 0) {
-            emp.documents.forEach((doc) => {
-              if (doc.file) {
-                // Append the actual File object with the fieldname backend expects
-                const fieldName = `employmentDoc_${emp.id}_${doc.id}`;
-                payload.append(fieldName, doc.file);
-              }
-            });
-          }
-        });
-        
-        // Serialize employment history (metadata only, files already appended)
-        const employmentForJson = employmentHistory.map((emp) => ({
-          ...emp,
-          documents: emp.documents.map((doc) => ({
-            id: doc.id,
-            name: doc.name,
-            size: doc.size,
-            type: doc.type,
-            uploadedAt: doc.uploadedAt,
-            url: doc.url, // Include URL if already uploaded
-          })),
-        }));
-        payload.append("employmentHistory", JSON.stringify(employmentForJson));
+        payload.append("employmentHistory", JSON.stringify(employmentHistory));
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
         payload.append("educationHistory", JSON.stringify(educationHistory));
@@ -511,7 +449,7 @@ export default function ProfilePage() {
         payload.append("profileImage", profileImage);
       }
 
-      const resp = await axios.post<SaveProfileResponse>(
+      const resp = await axios.post(
         `${API_ENDPOINTS.JOBSEEKER_PROFILE_SAVE}`,
         payload,
         {
@@ -519,10 +457,10 @@ export default function ProfilePage() {
         },
       );
 
-      const data: SaveProfileResponse = resp.data ?? { success: false };
+      const data = resp.data ?? {};
 
       // Success path
-      if (data?.success === true) {
+      if (data.success === true) {
         Swal.fire({
           icon: "success",
           title: "Profile Saved",
@@ -535,7 +473,7 @@ export default function ProfilePage() {
       }
 
       // Build a helpful, user-facing error message from the response
-      let userMessage: string =
+      let userMessage =
         "There was an issue saving your profile. Please try again.";
 
       if (typeof data.error === "string" && data.error.trim()) {
@@ -547,44 +485,32 @@ export default function ProfilePage() {
         const rd = data.respData;
         if (typeof rd === "string") {
           userMessage = rd;
-        } else if (rd && typeof rd === "object") {
-          const rdObj = rd as Record<string, unknown>;
-          if (typeof rdObj.error === "string") {
-            userMessage = rdObj.error;
-          } else if (typeof rdObj.similarity === "number") {
-            const pct = Math.round(rdObj.similarity * 100);
-            userMessage = rdObj.error
-              ? `${rdObj.error} (similarity: ${pct}%)`
-              : `Verification failed (similarity: ${pct}%).`;
-          } else if (rdObj.match === false) {
-            userMessage =
-              (typeof rdObj.error === "string" ? rdObj.error : undefined) || "Face embedding does not match our records.";
-          }
+        } else if (rd?.error) {
+          userMessage = String(rd.error);
+        } else if (typeof rd?.similarity === "number") {
+          const pct = Math.round(rd.similarity * 100);
+          userMessage = rd.error
+            ? `${rd.error} (similarity: ${pct}%)`
+            : `Verification failed (similarity: ${pct}%).`;
+        } else if (rd?.match === false) {
+          userMessage =
+            rd.error || "Face embedding does not match our records.";
         }
       } else if (Array.isArray(data.errors) && data.errors.length > 0) {
         userMessage = data.errors
-          .map((e: unknown) => {
-            if (typeof e === "object" && e !== null) {
-              const eObj = e as Record<string, unknown>;
-              return eObj?.message || JSON.stringify(e);
-            }
-            return JSON.stringify(e);
-          })
+          .map((e: any) => e?.message || JSON.stringify(e))
           .join("; ");
       }
 
       Swal.fire({ icon: "error", title: "Save Failed", text: userMessage });
       handleReset();
-    } catch (err: unknown) {
+    } catch (err) {
       // Try to extract a helpful message from axios errors
       if (axios.isAxiosError(err)) {
-        const respData = err.response?.data as Record<string, unknown> | undefined;
-        const serverMsg: string | undefined =
-          (typeof respData?.error === "string" ? respData.error : undefined) ||
-          (typeof respData?.message === "string" ? respData.message : undefined) ||
-          (typeof respData?.respData === "string" ? respData.respData : undefined) ||
-          undefined;
-        const message: string =
+        const respData = err.response?.data;
+        const serverMsg =
+          respData?.error || respData?.message || respData?.respData || null;
+        const message =
           serverMsg || err.message || "Network error while saving profile.";
         Swal.fire({
           icon: "error",
@@ -599,12 +525,30 @@ export default function ProfilePage() {
         });
       }
       logger.error("Profile save error:", err);
+      handleReset();
     } finally {
       setSaving(false);
+      // keep edit mode if save failed; setIsEditing(false) is handled on success above
     }
   }
 
-  function handleReset(): void {
+  // Auto-compute whether applicant is currently employed based on experience records:
+  // Employed = has a record with startDate but no endDate (currently working)
+  const isCurrentlyEmployed = React.useMemo(() => {
+    if (!Array.isArray(employmentHistory) || employmentHistory.length === 0)
+      return false;
+    return employmentHistory.some(
+      (job) => job.startDate && (!job.endDate || job.endDate.trim() === ""),
+    );
+  }, [employmentHistory]);
+
+  // Exit Request Modal state
+  const [exitRequestEmpId, setExitRequestEmpId] = useState<string | null>(null);
+  const exitRequestEmployment = employmentHistory.find(
+    (e) => e.id === exitRequestEmpId,
+  );
+
+  function handleReset() {
     setForm({
       fullName: "",
       headline: "",
@@ -614,6 +558,7 @@ export default function ProfilePage() {
       email: "",
       total_experience: "",
       total_experience_years: 0,
+      employmentStatus: "open",
     });
     setResumeFile(null);
     setProfileImage(null);
@@ -644,6 +589,15 @@ export default function ProfilePage() {
             onReset={handleReset}
             saving={saving}
             educationHistory={educationHistory}
+            isCurrentlyEmployed={isCurrentlyEmployed}
+            openForOpportunities={form.employmentStatus === "open"}
+            onToggleOpenForOpportunities={() =>
+              setForm((prev) => ({
+                ...prev,
+                employmentStatus:
+                  prev.employmentStatus === "open" ? "not_open" : "open",
+              }))
+            }
           />
 
           {/* Main Content Grid */}
@@ -704,14 +658,100 @@ export default function ProfilePage() {
                   onDocumentRemove={removeDocument}
                   documentInputRefs={documentInputRefs}
                   disabled={!isEditing}
+                  onExitRequest={(empId) => setExitRequestEmpId(empId)}
                 />
               </div>
 
-              {/* Right Column - Resume Upload (sidebar) */}
-              <aside className="lg:col-span-1">
+              {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}
+              <aside className="lg:col-span-1 space-y-6">
+                {/* Open for Opportunities Selector */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    Job Availability
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Let employers know if you&apos;re open to new opportunities.
+                    This is shown publicly on your profile.
+                  </p>
+
+                  {/* Auto-generated employment status info */}
+                  <div className="mb-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                      Auto-detected Status
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          isCurrentlyEmployed ? "bg-orange-500" : "bg-gray-400"
+                        }`}
+                      />
+                      <span className="text-sm font-semibold text-gray-700">
+                        {isCurrentlyEmployed ? "Employed" : "Not Employed"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {isCurrentlyEmployed
+                        ? "Based on your experience — at least one job has no end date."
+                        : "Based on your experience — all jobs have end dates."}
+                    </p>
+                  </div>
+
+                  {/* User-controlled open for opportunities */}
+                  <div className="space-y-3">
+                    {[
+                      {
+                        value: "open" as const,
+                        label: "Open for Opportunities",
+                        desc: "Employers can see you're open to new roles",
+                        colorClass:
+                          "border-green-500 bg-green-50 text-green-800",
+                        dotColor: "bg-green-500",
+                      },
+                      {
+                        value: "not_open" as const,
+                        label: "Not Open for Opportunities",
+                        desc: "You are not currently seeking new roles",
+                        colorClass: "border-red-400 bg-red-50 text-red-800",
+                        dotColor: "bg-red-500",
+                      },
+                    ].map(({ value, label, desc, colorClass, dotColor }) => {
+                      const selected = form.employmentStatus === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              employmentStatus: value,
+                            }))
+                          }
+                          className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
+                            selected
+                              ? colorClass
+                              : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full shrink-0 ${
+                                selected ? dotColor : "bg-gray-300"
+                              }`}
+                            />
+                            <span className="font-bold text-sm">{label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5 ml-5">
+                            {desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <ResumeUpload
                   resumeFile={resumeFile}
-                  previousResumeUrl={reduxProfile?.resumeUrl}
                   autoFilling={autoFilling}
                   onFileChange={setResumeFile}
                   onAutoFill={autoFillFromResume}
@@ -732,10 +772,33 @@ export default function ProfilePage() {
         </div>
       </div>
       <Footer />
+      {/* Exit Request Modal */}
+      {exitRequestEmployment && (
+        <ExitRequestModal
+          isOpen={exitRequestEmpId !== null}
+          onClose={() => setExitRequestEmpId(null)}
+          employment={exitRequestEmployment}
+          getToken={getToken}
+          onSuccess={() => {
+            // Optimistically mark as "not currently working" in local state
+            // Real refresh will happen on next profile load
+          }}
+        />
+      )}
       {showPopup && (
-        <div className="fixed top-6 right-6 z-9999 bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        <div className="fixed top-6 right-6 z-[9999] bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
+          <svg
+            className="w-5 h-5 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
           </svg>
           New notification arrived!
           <button

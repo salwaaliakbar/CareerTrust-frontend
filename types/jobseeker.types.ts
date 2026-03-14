@@ -1,3 +1,6 @@
+// User-controlled: whether applicant is open to job opportunities
+export type EmploymentStatusType = "open" | "not_open";
+
 export type ProfileData = {
   fullName: string;
   headline: string;
@@ -7,6 +10,8 @@ export type ProfileData = {
   email?: string;
   total_experience: string;
   total_experience_years: number;
+  // "open" = Open for Opportunities, "not_open" = Not Open (user-controlled)
+  employmentStatus?: EmploymentStatusType;
 };
 
 export type DocumentFile = {

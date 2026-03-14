@@ -12,6 +12,7 @@ import {
   Eye,
   Download,
   X,
+  LogOut,
 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
 import { getVerificationBadge, formatFileSize, calculateDuration } from "@/lib/utils";
@@ -19,10 +20,15 @@ import { getVerificationBadge, formatFileSize, calculateDuration } from "@/lib/u
 interface EmploymentCardProps {
   employment: EmploymentRecord;
   onDelete: (id: string) => void;
-  onDocumentUpload: (empId: string, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDocumentUpload: (
+    empId: string,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => void;
   onDocumentRemove: (empId: string, docId: string) => void;
   documentInputRef: (el: HTMLInputElement | null) => void;
   disabled?: boolean;
+  /** Called when user clicks "Request Exit" for a currently-working record */
+  onExitRequest?: (empId: string) => void;
 }
 
 export default function EmploymentCard({
@@ -32,6 +38,7 @@ export default function EmploymentCard({
   onDocumentRemove,
   documentInputRef,
   disabled = false,
+  onExitRequest,
 }: EmploymentCardProps) {
   return (
     <div className="group/card relative p-6 bg-linear-to-br from-white via-slate-50 to-blue-50/30 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden">
@@ -66,17 +73,30 @@ export default function EmploymentCard({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onDelete(employment.id)}
-          disabled={disabled}
-          className={`p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 hover:scale-110 duration-200 ${
-            disabled ? "opacity-40 pointer-events-none" : ""
-          }`}
-          title="Delete Employment Record"
-        >
-          <Trash className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {employment.currentlyWorking && onExitRequest && (
+            <button
+              type="button"
+              onClick={() => onExitRequest(employment.id)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-400 rounded-lg transition-all hover:scale-105 duration-200"
+              title="Request exit from this job"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Request Exit
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onDelete(employment.id)}
+            disabled={disabled}
+            className={`p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 hover:scale-110 duration-200 ${
+              disabled ? "opacity-40 pointer-events-none" : ""
+            }`}
+            title="Delete Employment Record"
+          >
+            <Trash className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {employment.description && (
@@ -94,7 +114,9 @@ export default function EmploymentCard({
           </h4>
           <button
             type="button"
-            onClick={() => document.getElementById(`file-input-${employment.id}`)?.click()}
+            onClick={() =>
+              document.getElementById(`file-input-${employment.id}`)?.click()
+            }
             disabled={disabled}
             className={`inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold ${
               disabled ? "opacity-40 pointer-events-none" : ""

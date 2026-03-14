@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import EmployerJobsList from "@/components/employer/EmployerJobsList";
+import ExitRequestsPanel from "@/components/employer/ExitRequestsPanel";
 import EmployerStats from "@/components/employer/EmployerStats";
 import {
   Briefcase,
@@ -100,7 +101,10 @@ const EmployerDashboard = () => {
       console.log("[Dashboard] Fetching jobs for employerId:", employerId);
       setLoading(true);
       try {
-        const employerJobs = await fetchEmployerJobs(employerId.toString(), getToken);
+        const employerJobs = await fetchEmployerJobs(
+          employerId.toString(),
+          getToken,
+        );
         console.log("[Dashboard] Fetched jobs:", employerJobs);
         setJobs(employerJobs);
         setFilteredJobs(employerJobs);
@@ -178,7 +182,7 @@ const EmployerDashboard = () => {
                 Employer Dashboard
               </h1>
               <p className="text-lg text-slate-600">
-                {"companyName" ? (
+                {companyName ? (
                   <span className="flex items-center gap-2 flex-wrap">
                     <span>Managing jobs for</span>
                     <Link
@@ -229,6 +233,7 @@ const EmployerDashboard = () => {
                 )}
               </p>
             </div>
+            <div className="flex items-center gap-3 flex-wrap">
             <Link
               href={isVerified ? "/employer/post-job" : "#"}
               onClick={(e) => {
@@ -251,6 +256,14 @@ const EmployerDashboard = () => {
               <Plus className="w-5 h-5" />
               Post New Job
             </Link>
+            <Link
+              href="/employer/candidates"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold shadow-lg border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 hover:shadow-xl hover:scale-105 transform transition-all duration-200"
+            >
+              <Users className="w-5 h-5" />
+              Browse Candidates
+            </Link>
+            </div>
           </div>
         </div>
 
@@ -379,8 +392,14 @@ const EmployerDashboard = () => {
               jobs={filteredJobs}
               onJobDeleted={handleJobDeleted}
               onJobUpdated={handleJobUpdated}
+              getToken={getToken}
             />
           )}
+        </div>
+
+        {/* Exit Requests Section */}
+        <div className="mt-10">
+          <ExitRequestsPanel getToken={getToken} />
         </div>
       </main>
 

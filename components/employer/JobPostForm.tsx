@@ -18,9 +18,11 @@ import {
 import { JobFormData } from "@/types/job.types";
 
 interface JobPostFormProps {
+  initialData?: JobFormData;
   onSubmit: (data: JobFormData) => void;
   onCancel: () => void;
   isSubmitting: boolean;
+  isEditMode?: boolean;
 }
 
 const jobTypes = [
@@ -40,9 +42,11 @@ const experienceLevels = [
 ];
 
 export default function JobPostForm({
+  initialData,
   onSubmit,
   onCancel,
   isSubmitting,
+  isEditMode = false,
 }: JobPostFormProps) {
   const {
     register,
@@ -50,7 +54,7 @@ export default function JobPostForm({
     watch,
     formState: { errors },
   } = useForm<JobFormData>({
-    defaultValues: {
+    defaultValues: initialData || {
       jobType: "Full-time",
       experience: "Mid Level",
       featured: false,
@@ -109,12 +113,22 @@ export default function JobPostForm({
               </span>
               <input
                 {...register("company", {
-                  required: "Company name is required",
+                  required: isEditMode ? false : "Company name is required",
                 })}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+                disabled={isEditMode}
+                className={`w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium ${
+                  isEditMode
+                    ? "bg-slate-50 cursor-not-allowed text-slate-600"
+                    : ""
+                }`}
                 placeholder="e.g., Tech Solutions Inc."
               />
-              {errors.company && (
+              {isEditMode && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Company cannot be changed when editing a job
+                </p>
+              )}
+              {errors.company && !isEditMode && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.company.message}
                 </p>
@@ -368,12 +382,12 @@ export default function JobPostForm({
           {isSubmitting ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              Posting Job...
+              {isEditMode ? "Updating Job..." : "Posting Job..."}
             </>
           ) : (
             <>
               <Briefcase className="w-5 h-5" />
-              Post Job
+              {isEditMode ? "Update Job" : "Post Job"}
             </>
           )}
         </button>

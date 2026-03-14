@@ -1,41 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import {
-  Star,
-  Clock,
-  Share2,
-  Heart,
-  ArrowLeft,
-  Briefcase,
-  MapPin,
-  DollarSign,
-  Calendar,
-  Building2,
-  TrendingUp,
-} from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
-import { getJobById } from "@/redux/store/slices/jobsSlice";
-import {
-  fetchJobseekerProfile,
-  selectJobseekerProfile,
-  selectProfileLoading,
-} from "@/redux/store/slices/jobseeker/profileSlice";
-import {
-  fetchUserApplications,
-  addAppliedJob,
-  selectHasAppliedToJob,
-  selectApplicationsLoading,
-} from "@/redux/store/slices/jobseeker/applicationsSlice";
-import { useUser } from "@clerk/nextjs";
-import axios from "axios";
-import Swal from "sweetalert2";
-
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+import { Star, Clock, Users, Share2, Heart, ArrowLeft } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { getJobById } from "@/src/store/slices/jobsSlice";
+import { submitJobApplication } from "@/services/api/applications.service";
 
 export default function JobDetail({
   params,
@@ -44,184 +19,93 @@ export default function JobDetail({
 }) {
   const { id } = use(params);
   const dispatch = useAppDispatch();
-  const { user } = useUser();
-  const [isSubmittingApplication, setIsSubmittingApplication] =
-    useState(false);
-  const [hasApplied, setHasApplied] = useState(false); // Local state synced with Redux
+  const router = useRouter();
+  const { user, isSignedIn } = useUser();
   const {
     selectedJob: job,
     items: allJobs,
     loading,
     lastFetchTimeById,
   } = useAppSelector((state) => state.jobs);
-  const jobseekerProfile = useAppSelector(selectJobseekerProfile);
-  const isProfileLoading = useAppSelector(selectProfileLoading);
-  const profileFetchRef = useRef<string | null>(null);
+
+  const [isApplying, setIsApplying] = useState(false);
+  const [applicationError, setApplicationError] = useState<string | null>(null);
+  const [applicationSuccess, setApplicationSuccess] = useState(false);
+
+  const jobId = id; // Keep as string for comparison
+  const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  const now = Date.now();
+  const lastFetchTime = lastFetchTimeById?.[jobId];
+  const isCached =
+    lastFetchTime && now - lastFetchTime < CACHE_DURATION && job?.id === jobId;
 
   useEffect(() => {
-    const now = Date.now();
-    const lastFetchTime = lastFetchTimeById?.[id];
-    const isCached =
-      lastFetchTime &&
-      now - lastFetchTime < CACHE_DURATION &&
-      String(job?.id) === String(id);
-
     if (!isCached) {
       dispatch(getJobById(id));
     }
-  }, [id, dispatch, job?.id, lastFetchTimeById]);
+  }, [id, isCached, dispatch]);
 
-  useEffect(() => {
-    if (!user?.id || isProfileLoading) return;
-    if (profileFetchRef.current === user.id) return;
-    if (!jobseekerProfile?.resumeUrl) {
-      profileFetchRef.current = user.id;
-      dispatch(fetchJobseekerProfile(user.id));
-    } else {
-      profileFetchRef.current = user.id;
-    }
-  }, [dispatch, isProfileLoading, jobseekerProfile?.resumeUrl, user?.id]);
+  const handleApply = async () => {
+    // Reset states
+    setApplicationError(null);
+    setApplicationSuccess(false);
 
-  // Fetch user's applied jobs from Redux on mount/user change
-  const hasAppliedFromRedux = useAppSelector(selectHasAppliedToJob(id));
-  const { appliedJobIds: reduxAppliedJobIds } = useAppSelector(
-    (state) => state.applications
-  );
-
-  useEffect(() => {
-    // Only fetch if we don't have data in Redux yet
-    if (user?.id && reduxAppliedJobIds.length === 0) {
-      console.log("[JobDetail] Fetching user applications - no data in Redux");
-      dispatch(fetchUserApplications({ forceRefresh: false }));
-    } else if (user?.id && reduxAppliedJobIds.length > 0) {
-      console.log(
-        "[JobDetail] Using cached applications from Redux, count:",
-        reduxAppliedJobIds.length
-      );
-    }
-  }, [user?.id, reduxAppliedJobIds.length, dispatch]);
-
-  // Sync Redux state with local hasApplied state
-  useEffect(() => {
-    setHasApplied(hasAppliedFromRedux);
-  }, [hasAppliedFromRedux]);
-
-  // Handle direct job application
-  const handleApplyJob = async () => {
-    if (!user?.id || !job?.id) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Unable to process application. Please try again.",
-      });
+    // Check if user is signed in
+    if (!isSignedIn || !user) {
+      setApplicationError("Please sign in to apply for this job");
+      setTimeout(() => {
+        router.push("/sign-in?redirect=/jobs/" + id);
+      }, 2000);
       return;
     }
 
-    // Confirmation dialog
-    const confirmed = await Swal.fire({
-      icon: "question",
-      title: "Confirm Application",
-      html: `<p>Apply for <strong>${job.title}</strong><br/>at <strong>${companyName}</strong>?</p>`,
-      showCancelButton: true,
-      confirmButtonColor: "#0C2B4E",
-      confirmButtonText: "Yes, Apply",
-      cancelButtonText: "Cancel",
-    });
-
-    if (!confirmed.isConfirmed) return;
+    setIsApplying(true);
 
     try {
-      setIsSubmittingApplication(true);
+      const result = await submitJobApplication(user.id, id);
 
-      // Call BFF endpoint (which will handle backend communication)
-      const response = await axios.post(
-        "/api/applications/submit",
-        {
-          jobId: job.id,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200 || response.status === 201) {
-        setHasApplied(true);
-        // Update Redux state with new applied job
-        dispatch(addAppliedJob(job.id));
-        Swal.fire({
-          icon: "success",
-          title: "Application Submitted!",
-          text: "Your job application has been submitted successfully. Track it in your dashboard!",
-          confirmButtonColor: "#0C2B4E",
-        }).then(() => {
-          // Optionally navigate to dashboard
-          window.location.href = "/dashboard";
-        });
-      }
-    } catch (error) {
-      console.error("Error submitting application:", error);
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      const errorMessage = axiosError?.response?.data?.message || "";
-      
-      // Check if error is "already applied"
-      if (errorMessage.toLowerCase().includes("already applied") || errorMessage.toLowerCase().includes("application already exists")) {
-        setHasApplied(true);
-        Swal.fire({
-          icon: "info",
-          title: "Already Applied",
-          text: "You have already applied for this job. Check your applications in the dashboard.",
-          confirmButtonColor: "#0C2B4E",
-        });
+      if (result.success) {
+        setApplicationSuccess(true);
+        setTimeout(() => {
+          router.push("/jobseeker/applications");
+        }, 3000);
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Submission Failed",
-          text: errorMessage || "Failed to submit application. Please try again.",
-          confirmButtonColor: "#0C2B4E",
-        });
+        const errorMsg = result.error || "Failed to submit application";
+        if (
+          errorMsg.includes("profile not found") ||
+          errorMsg.includes("Jobseeker profile not found")
+        ) {
+          setApplicationError(
+            "Please complete your jobseeker profile first to apply for jobs.",
+          );
+          setTimeout(() => {
+            router.push("/jobseeker/profile");
+          }, 3000);
+        } else if (errorMsg.includes("already applied")) {
+          setApplicationError("You have already applied for this job.");
+        } else {
+          setApplicationError(errorMsg);
+        }
       }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An error occurred while submitting the application";
+      setApplicationError(errorMessage);
     } finally {
-      setIsSubmittingApplication(false);
+      setIsApplying(false);
     }
   };
 
-  // Helper to safely extract company name
-  const getCompanyName = (companyData: string | { name?: string; id?: string | number } | null): string => {
-    if (!companyData) return "Company";
-    return typeof companyData === "object"
-      ? companyData.name || "Company"
-      : companyData;
-  };
-
-  const getCompanyId = (companyData: string | { name?: string; id?: string | number } | null): string | number => {
-    if (!companyData) return "unknown";
-    return typeof companyData === "object"
-      ? companyData.id || "unknown"
-      : "unknown";
-  };
-
-  const getDisplayCompany = (companyData: string | { name?: string; id?: string | number } | null): string => {
-    if (!companyData) return "Company";
-    return typeof companyData === "object"
-      ? companyData.name || "Company"
-      : companyData;
-  };
-
-  const companyName = job ? getCompanyName(job.company) : "Company";
-  const companyId = job ? getCompanyId(job.company) : "unknown";
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-330-to-br from-gray-50 via-blue-50/30 to-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex items-center justify-center">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-[#0C2B4E]"></div>
-            <p className="mt-6 text-gray-600 font-medium">
-              Loading job details...
-            </p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="mt-4 text-gray-600">Loading job...</p>
           </div>
         </main>
         <Footer />
@@ -231,27 +115,11 @@ export default function JobDetail({
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-linear-330-to-br from-gray-50 via-blue-50/30 to-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-10 h-10 text-gray-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Job Not Found
-            </h2>
-            <p className="text-gray-600 mb-6">
-              The job you{"'"}re looking for doesn{"'"}t exist or has been
-              removed.
-            </p>
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-2 bg-linear-330-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all duration-300 hover:scale-105"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Jobs
-            </Link>
+            <p className="text-gray-600">Job not found</p>
           </div>
         </main>
         <Footer />
@@ -259,385 +127,196 @@ export default function JobDetail({
     );
   }
 
-  const normalizedCompany = companyName;
-  const currentSkills = Array.isArray(job?.skills)
-    ? job.skills.map((skill: string) => skill.toLowerCase())
-    : [];
-
-  // Rank jobs by similarity to the current job.
   const similarJobs = allJobs
     .filter((j) => String(j.id) !== String(job.id))
-    .map((j) => {
-      const jobCompany = getDisplayCompany(j.company);
-      const jobSkills = Array.isArray(j.skills)
-        ? j.skills.map((skill: string) => skill.toLowerCase())
-        : [];
-      const skillOverlap = currentSkills.length
-        ? jobSkills.filter((skill: string) => currentSkills.includes(skill))
-            .length
-        : 0;
-
-      let score = 0;
-      if (job.jobType && j.jobType === job.jobType) score += 3;
-      if (job.location && j.location === job.location) score += 2;
-      if (normalizedCompany && jobCompany === normalizedCompany) score += 2;
-      if (skillOverlap) score += Math.min(skillOverlap, 3);
-
-      return { job: j, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map((entry) => entry.job)
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-white via-indigo-100 to-sky-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
-        {/* Back Button */}
         <Link
           href="/jobs"
-          className="inline-flex items-center gap-2 text-[#0C2B4E] hover:text-[#1D546C] font-bold mb-8 smooth-enter-left animation-delay-100 transition-all duration-300 hover:-translate-x-1 group"
+          className="inline-flex items-center gap-2 text-primary hover:text-blue-900 font-semibold mb-6 smooth-enter-left animation-delay-100 transition-all duration-300 hover:translate-x-1"
         >
-          <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+          <ArrowLeft className="w-5 h-5" />
           Back to Jobs
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Job Header Card */}
-            <div className="card-base bg-white p-8 rounded-3xl shadow-2xl hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] transition-all duration-500 border-2 border-blue-100 smooth-enter animation-delay-200 relative overflow-hidden group">
-              {/* Animateg-linearbg-linear-330 background with shine effect */}
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-100/30 via-indigo-50/20 to-purple-50/20 group-hover:from-blue-200/50 group-hover:via-indigo-100/40 group-hover:to-purple-100/40 transition-all duration-500 pointer-events-none" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-linear-330-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
-
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Company Logo */}
-                    <div className="w-16 h-16 bg-linear-330-to-br from-blue-100 to-blue-50 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                      <Building2 className="w-8 h-8 text-sky-700" />
-                    </div>
-
-                    <div className="smooth-enter animation-delay-300">
-                      <h1 className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-[#0C2B4E] transition-colors duration-300">
-                        {job.title}
-                      </h1>
-                      <p className="text-xl text-gray-600 font-semibold group-hover:text-[#1D546C] transition-colors duration-300">
-                        {companyName}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 smooth-enter-right animation-delay-400">
-                    <button
-                      type="button"
-                      aria-label="Save job"
-                      title="Save job"
-                      className="p-3 bg-white border-2 border-gray-300 rounded-xl hover:bg-rose-50 hover:border-rose-400 transition-all duration-300 group/btn shadow-sm hover:shadow-lg hover:scale-105"
-                    >
-                      <Heart className="w-5 h-5 text-gray-600 group-hover/btn:text-rose-600 group-hover/btn:fill-rose-500 transition-all duration-300" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Share job"
-                      title="Share job"
-                      className="p-3 bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-[#0C2B4E] transition-all duration-300 group/btn shadow-sm hover:shadow-lg hover:scale-105"
-                    >
-                      <Share2 className="w-5 h-5 text-gray-600 group-hover/btn:text-[#0C2B4E] transition-all duration-300" />
-                    </button>
-                  </div>
+          <div className="lg:col-span-2 smooth-enter animation-delay-200">
+            <div className="card-base p-8 mb-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200">
+              <div className="flex items-start justify-between mb-6">
+                <div className="smooth-enter animation-delay-300">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    {job.title}
+                  </h1>
+                  <p className="text-xl text-gray-600 font-semibold">
+                    {job.company}
+                  </p>
                 </div>
-
-                {/* Key Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pb-6 border-b border-gray-200">
-                  <div className="fade-in animation-delay-400 p-4 rounded-xl bg-linear-330-to-br from-blue-50/50 to-blue-50/30 hover:from-blue-100/50 hover:to-blue-100/30 transition-all duration-300 border border-blue-100/50 group/card">
-                    <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-4 h-4 text-blue-600 group-hover/card:scale-110 transition-transform duration-300" />
-                      <p className="text-xs text-gray-500 font-medium">
-                        Salary
-                      </p>
-                    </div>
-                    <p className="font-bold text-gray-900">
-                      {job.salary || "Not specified"}
-                    </p>
-                  </div>
-
-                  <div className="fade-in animation-delay-500 p-4 rounded-xl  transition-all duration-300 border border-green-100/50 group/card">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="w-4 h-4 text-green-600 group-hover/card:scale-110 transition-transform duration-300" />
-                      <p className="text-xs text-gray-500 font-medium">
-                        Location
-                      </p>
-                    </div>
-                    <p className="font-bold text-gray-900">{job.location}</p>
-                  </div>
-
-                  <div className="fade-in animation-delay-600 p-4 rounded-xl  transition-all duration-300 border border-purple-100/50 group/card">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Briefcase className="w-4 h-4 text-purple-600 group-hover/card:scale-110 transition-transform duration-300" />
-                      <p className="text-xs text-gray-500 font-medium">
-                        Job Type
-                      </p>
-                    </div>
-                    <p className="font-bold text-gray-900">{job.jobType}</p>
-                  </div>
-
-                  <div className="fade-in animation-delay-700 p-4 rounded-xl bg-linear-330-to-br from-orange-50/50 to-orange-50/30 hover:from-orange-100/50 hover:to-orange-100/30 transition-all duration-300 border border-orange-100/50 group/card">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-4 h-4 text-orange-600 group-hover/card:scale-110 transition-transform duration-300" />
-                      <p className="text-xs text-gray-500 font-medium">
-                        Experience
-                      </p>
-                    </div>
-                    <p className="font-bold text-gray-900">{job.experience}</p>
-                  </div>
+                <div className="flex gap-2 smooth-enter-right animation-delay-400">
+                  <button
+                    type="button"
+                    aria-label="Save job"
+                    title="Save job"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all duration-300 group"
+                  >
+                    <Heart className="w-6 h-6 text-gray-600 group-hover:text-red-500 group-hover:fill-red-500 transition-all duration-300" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Share job"
+                    title="Share job"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 group"
+                  >
+                    <Share2 className="w-6 h-6 text-gray-600 group-hover:text-blue-500 transition-all duration-300" />
+                  </button>
                 </div>
+              </div>
 
-                {/* Rating and Posted Time */}
-                <div className="flex flex-wrap gap-6 fade-in animation-delay-800">
-                  <div className="flex items-center gap-2 transition-all duration-300 hover:translate-x-1 group/rating">
-                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400 group-hover/rating:scale-110 transition-transform duration-300" />
-                    <span className="text-gray-900 font-bold">
-                      {job.rating || "4.5"}
-                    </span>
-                    <span className="text-gray-500">
-                      ({job.reviews || 0} reviews)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600 transition-all duration-300 hover:translate-x-1 group/time">
-                    <Clock className="w-5 h-5 text-blue-600 group-hover/time:scale-110 transition-transform duration-300" />
-                    <span className="font-medium">
-                      Posted {job.postedDaysAgo || "recently"}
-                    </span>
-                  </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pb-6 border-b border-gray-200">
+                <div className="fade-in animation-delay-300 p-3 rounded-lg bg-blue-50/50 hover:bg-blue-100/50 transition-colors duration-300">
+                  <p className="text-sm text-gray-500 mb-1">Salary</p>
+                  <p className="font-semibold text-gray-900">
+                    {job.salary || "Not specified"}
+                  </p>
+                </div>
+                <div className="fade-in animation-delay-400 p-3 rounded-lg bg-blue-50/50 hover:bg-blue-100/50 transition-colors duration-300">
+                  <p className="text-sm text-gray-500 mb-1">Location</p>
+                  <p className="font-semibold text-gray-900">{job.location}</p>
+                </div>
+                <div className="fade-in animation-delay-500 p-3 rounded-lg bg-blue-50/50 hover:bg-blue-100/50 transition-colors duration-300">
+                  <p className="text-sm text-gray-500 mb-1">Employment Type</p>
+                  <p className="font-semibold text-gray-900">{job.jobType}</p>
+                </div>
+                <div className="fade-in animation-delay-600 p-3 rounded-lg bg-blue-50/50 hover:bg-blue-100/50 transition-colors duration-300">
+                  <p className="text-sm text-gray-500 mb-1">Experience</p>
+                  <p className="font-semibold text-gray-900">
+                    {job.experience}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-6 fade-in animation-delay-700">
+                <div className="flex items-center gap-2 transition-transform duration-300 hover:translate-x-1">
+                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-gray-900 font-semibold">
+                    {job.rating || "4.5"}
+                  </span>
+                  <span className="text-gray-500">
+                    ({job.reviews || 0} reviews)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 transition-transform duration-300 hover:translate-x-1">
+                  <Clock className="w-5 h-5" />
+                  <span>{job.postedDaysAgo || "Recently posted"}</span>
                 </div>
               </div>
             </div>
 
-            {/* Job Description */}
-            <div className="card-base bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100 fade-in animation-delay-900 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
-
-              <div className="relative z-10 ">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-linear-330-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-sky-700" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    About the Role
-                  </h2>
-                </div>
-                <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed whitespace-pre-line hover:text-gray-700 transition-colors duration-300">
-                  {job.description}
-                </div>
+            <div className="card-base p-8 mb-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 fade-in animation-delay-800">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                About the Role
+              </h2>
+              <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-line hover:text-gray-700 transition-colors duration-300">
+                {job.description}
               </div>
             </div>
 
-            {/* Responsibilities */}
-            {Array.isArray(job.responsibilities) &&
-              job.responsibilities.length > 0 && (
-                <div className="card-base bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100 fade-in animation-delay-950 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
-
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 bg-linear-330-to-br from-indigo-100 to-indigo-50 rounded-lg flex items-center justify-center">
-                        <Briefcase className="w-5 h-5 text-indigo-700" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        Responsibilities
-                      </h2>
-                    </div>
-                    <ul className="space-y-3 text-gray-600">
-                      {job.responsibilities.map((item: string, idx: number) => (
-                        <li
-                          key={`${item}-${idx}`}
-                          className="flex items-start gap-3"
-                        >
-                          <span className="mt-2 h-2 w-2 rounded-full bg-[#0C2B4E]" />
-                          <span className="leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="card-base p-8 mb-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 fade-in animation-delay-900">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Required Skills
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {job.skills.map((skill, idx) => (
+                  <div
+                    key={skill}
+                    className="bg-linear-to-r from-primary/10 to-primary/5 text-primary px-4 py-2 rounded-full font-semibold fade-in transition-all duration-300 hover:shadow-md hover:scale-105 hover:from-primary/20 hover:to-primary/15"
+                    style={{ animationDelay: `${900 + idx * 100}ms` }}
+                  >
+                    {skill}
                   </div>
-                </div>
-              )}
-
-            {/* Required Skills */}
-            <div className="card-base bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100  fade-in animation-delay-1000 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-linear-330-to-br from-green-100 to-green-50 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-green-700" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Required Skills
-                  </h2>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {job.skills.map((skill, idx) => (
-                    <div
-                      key={skill}
-                      className="bg-linear-330-to-r from-[#0C2B4E]/10 to-[#1D546C]/10 text-[#0C2B4E] px-5 py-2.5 rounded-full font-bold border-2 border-[#0C2B4E]/20 fade-in transition-all duration-300 hover:shadow-md hover:scale-105 hover:from-[#0C2B4E]/20 hover:to-[#1D546C]/20 hover:border-[#0C2B4E]/40 cursor-default"
-                      style={{ animationDelay: `${1000 + idx * 50}ms` }}
-                    >
-                      {skill}
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Company Info */}
-            <div className="card-base bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100 fade-in animation-delay-1100 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-linear-330-to-br from-purple-100 to-purple-50 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-purple-700" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    About {companyName}
-                  </h2>
-                </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Learn more about this {job.jobType} position and explore other
-                  opportunities at {companyName}.
-                </p>
-                <Link
-                  href={`/companies/${companyId}`}
-                  className="inline-flex items-center gap-2 text-[#0C2B4E] hover:text-[#1D546C] font-bold transition-all duration-300 hover:translate-x-1 group/link"
-                >
-                  View Company Profile
-                  <ArrowLeft className="w-5 h-5 rotate-180 transition-transform duration-300 group-hover/link:translate-x-1" />
-                </Link>
-              </div>
+            <div className="card-base p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 fade-in animation-delay-1000">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                About this {job.jobType}
+              </h2>
+              <p className="text-gray-600 mb-4">Company: {job.company}</p>
+              <Link
+                href={`/companies/1`}
+                className="text-primary hover:text-blue-900 font-semibold inline-flex items-center gap-2 transition-all duration-300 hover:translate-x-1"
+              >
+                View Company Profile →
+              </Link>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Apply Button */}
-            <div className="smooth-enter-right animation-delay-300">
-              <button
-                type="button"
-                onClick={hasApplied ? undefined : handleApplyJob}
-                disabled={isSubmittingApplication || hasApplied}
-                className={`w-full font-black py-4 rounded-xl transition-all duration-500 shadow-lg relative overflow-hidden group cursor-pointer flex items-center justify-center gap-2 ${
-                  hasApplied
-                    ? "bg-linear-to-r from-green-500 to-emerald-600 text-white hover:shadow-xl disabled:opacity-100 disabled:cursor-not-allowed"
-                    : "bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white hover:shadow-2xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                }`}
-              >
-                <div className={`absolute inset-0 ${hasApplied ? "bg-linear-330-to-r from-green-600 to-emerald-700" : "bg-linear-330-to-r from-[#1A3D64] to-[#0C2B4E]"} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  {hasApplied ? (
-                    <>
-                      <svg
-                        className="w-6 h-6"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {isSubmittingApplication ? "Processing..." : "You've Applied"}
-                    </>
-                  ) : (
-                    <>
-                      <Briefcase className="w-6 h-6 group-hover:animate-bounce" />
-                      {isSubmittingApplication ? "Submitting..." : "Apply for This Job"}
-                    </>
-                  )}
-                </span>
-              </button>
-            </div>
+          <div className="smooth-enter-right animation-delay-300">
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={isApplying || applicationSuccess}
+              className="w-full btn-primary mb-6 bg-linear-to-r from-primary to-primary/80 text-gray-900 font-bold py-3 rounded-lg transition-all duration-500 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isApplying
+                ? "Submitting..."
+                : applicationSuccess
+                  ? "✓ Applied!"
+                  : "Apply for This Job"}
+            </button>
 
-            {/* Quick Facts */}
-            <div className="card-base bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100 fade-in animation-delay-500 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
+            {applicationError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm fade-in">
+                {applicationError}
+              </div>
+            )}
 
-              <div className="relative z-10">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-linear-330-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-4 h-4 text-sky-700" />
-                  </div>
-                  Quick Facts
-                </h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-linear-330-to-br from-gray-50/50 to-gray-50/30 rounded-xl hover:from-gray-100/50 hover:to-gray-100/30 transition-all duration-300 border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1 font-medium">
-                      Job Type
-                    </p>
-                    <p className="font-bold text-gray-900">{job.jobType}</p>
-                  </div>
-                  <div className="p-4 bg-linear-330-to-br from-gray-50/50 to-gray-50/30 rounded-xl hover:from-gray-100/50 hover:to-gray-100/30 transition-all duration-300 border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1 font-medium">
-                      Posted
-                    </p>
-                    <p className="font-bold text-gray-900">
-                      {job.postedDaysAgo || "Recently"}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-linear-330-to-br from-gray-50/50 to-gray-50/30 rounded-xl hover:from-gray-100/50 hover:to-gray-100/30 transition-all duration-300 border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1 font-medium">
-                      Applicants
-                    </p>
-                    <p className="font-bold text-gray-900">
-                      {job.reviews || 0}+ interested
-                    </p>
-                  </div>
+            {applicationSuccess && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm fade-in">
+                ✓ Application submitted successfully! Redirecting...
+              </div>
+            )}
+
+            <div className="card-base p-6 mb-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 fade-in animation-delay-500">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Quick Facts
+              </h3>
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors duration-300">
+                  <p className="text-sm text-gray-500 mb-1">Job Type</p>
+                  <p className="font-semibold text-gray-900">{job.jobType}</p>
                 </div>
               </div>
             </div>
 
-            {/* Similar Jobs */}
-            <div className="card-base bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border-2 border-blue-100 fade-in animation-delay-600 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-linear-330-to-br from-blue-50/0 to-blue-50/0 group-hover:from-blue-50/20 group-hover:to-blue-50/30 transition-all duration-500 pointer-events-none" />
-
-              <div className="relative z-10">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-linear-330-to-br from-green-100 to-green-50 rounded-lg flex items-center justify-center">
-                    <Briefcase className="w-4 h-4 text-green-700" />
-                  </div>
-                  Similar Jobs
-                </h3>
-                <div className="space-y-3">
-                  {similarJobs.map((similarJob, idx) => (
-                    <Link
-                      key={similarJob.id}
-                      href={`/jobs/${similarJob.id}`}
-                      className="block p-4 border-2 border-gray-200 rounded-xl hover:border-[#0C2B4E] hover:bg-linear-330-to-br hover:from-blue-50/30 hover:to-blue-50/50 transition-all duration-300 group/card fade-in relative overflow-hidden"
-                      style={{ animationDelay: `${600 + idx * 100}ms` }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-linear-330-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-300 group-hover/card:scale-110 group-hover/card:rotate-3">
-                          <Briefcase className="w-5 h-5 text-sky-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-gray-900 text-sm mb-1 group-hover/card:text-[#0C2B4E] transition-colors duration-300 truncate">
-                            {similarJob.title}
-                          </h4>
-                          <p className="text-xs text-gray-600 mb-2 font-medium">
-                            {getDisplayCompany(similarJob.company)}
-                          </p>
-                          <p className="text-xs text-[#0C2B4E]/80 font-semibold group-hover/card:text-[#0C2B4E] transition-colors duration-300">
-                            {similarJob.salary}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+            <div className="card-base p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-200 fade-in animation-delay-600">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                Similar Jobs
+              </h3>
+              <div className="space-y-4">
+                {similarJobs.map((similarJob, idx) => (
+                  <Link
+                    key={similarJob.id}
+                    href={`/jobs/${similarJob.id}`}
+                    className="block p-3 border border-gray-200 rounded-lg hover:border-primary hover:bg-blue-50 transition-all duration-300 group fade-in"
+                    style={{ animationDelay: `${600 + idx * 100}ms` }}
+                  >
+                    <h4 className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-primary transition-colors duration-300">
+                      {similarJob.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 mb-2">
+                      {similarJob.company}
+                    </p>
+                    <p className="text-xs text-gray-500 group-hover:text-primary/70 transition-colors duration-300">
+                      {similarJob.salary}
+                    </p>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

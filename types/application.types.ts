@@ -6,7 +6,9 @@ export type ApplicationStatus =
   | "shortlisted"
   | "interviewed"
   | "rejected"
-  | "hired";
+  | "hired"
+  | "offer_accepted"
+  | "offer_declined";
 
 export interface ApplicationData {
   fullName: string;
