@@ -1,23 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Search, Filter, Eye, Mail, Globe, MapPin, Briefcase } from "lucide-react";
-
-interface EmployerData {
-  employerId: number;
-  userId: number;
-  companyName: string | null;
-  companyURL: string | null;
-  user: {
-    email: string;
-    createdAt: string;
-    profile?: {
-      fullName: string | null;
-    };
-  };
-}
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { Building2, Search, Filter, Eye, Mail, Globe, MapPin, Briefcase, CheckCircle, XCircle } from "lucide-react";
+import { EmployerData } from "@/types/admin.types";
+import { AdminService } from "@/services/api/admin.service";
 
 export default function EmployersPage() {
+  const { getToken } = useAuth();
+  const router = useRouter();
   const [employers, setEmployers] = useState<EmployerData[]>([]);
   const [filteredEmployers, setFilteredEmployers] = useState<EmployerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,20 +26,10 @@ export default function EmployersPage() {
 
   const fetchEmployers = async () => {
     try {
-      const token = localStorage.getItem("adminAccessToken");
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      
-      const response = await fetch(`${apiUrl}/api/admin/employers`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch employers");
-
-      const data = await response.json();
-      setEmployers(data.data.employers || []);
-      setFilteredEmployers(data.data.employers || []);
+      const token = await getToken();
+      const response = await AdminService.getAllEmployers(token);
+      setEmployers(response.data.employers || []);
+      setFilteredEmployers(response.data.employers || []);
     } catch (error) {
       console.error("Error fetching employers:", error);
       setEmployers([]);
@@ -66,19 +48,26 @@ export default function EmployersPage() {
         (emp) =>
           emp.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           emp.user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          emp.user.profile?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
+          emp.company?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Company profile filter
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((emp) =>
-        filterStatus === "with-company" ? emp.companyName : !emp.companyName
-      );
+    // Status filter
+    if (filterStatus === "verified") {
+      filtered = filtered.filter((emp) => emp.company?.isVerified === true);
+    } else if (filterStatus === "unverified") {
+      filtered = filtered.filter((emp) => emp.company?.isVerified === false);
+    } else if (filterStatus === "with-company") {
+      filtered = filtered.filter((emp) => emp.company);
+    } else if (filterStatus === "without-company") {
+      filtered = filtered.filter((emp) => !emp.company);
     }
 
     setFilteredEmployers(filtered);
   };
+
+  const getVerifiedCount = () => employers.filter((emp) => emp.company?.isVerified).length;
+  const getUnverifiedCount = () => employers.filter((emp) => emp.company && !emp.company.isVerified).length;
 
   if (loading) {
     return (
@@ -104,7 +93,7 @@ export default function EmployersPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in">
           <div className="flex items-center justify-between">
             <div>
@@ -120,13 +109,23 @@ export default function EmployersPage() {
         <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in animation-delay-100">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">With Company Info</p>
-              <p className="text-3xl font-bold text-green-600">
-                {employers.filter((emp) => emp.companyName).length}
-              </p>
+              <p className="text-sm font-medium text-gray-600 mb-1">Verified Companies</p>
+              <p className="text-3xl font-bold text-green-600">{getVerifiedCount()}</p>
             </div>
             <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <Briefcase className="w-7 h-7 text-green-600" />
+              <CheckCircle className="w-7 h-7 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in animation-delay-150">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Pending Verification</p>
+              <p className="text-3xl font-bold text-orange-600">{getUnverifiedCount()}</p>
+            </div>
+            <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center">
+              <XCircle className="w-7 h-7 text-orange-600" />
             </div>
           </div>
         </div>
@@ -134,13 +133,13 @@ export default function EmployersPage() {
         <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in animation-delay-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Without Company Info</p>
-              <p className="text-3xl font-bold text-orange-600">
-                {employers.filter((emp) => !emp.companyName).length}
+              <p className="text-sm font-medium text-gray-600 mb-1">With Company Info</p>
+              <p className="text-3xl font-bold text-blue-600">
+                {employers.filter((emp) => emp.company).length}
               </p>
             </div>
-            <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center">
-              <MapPin className="w-7 h-7 text-orange-600" />
+            <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Briefcase className="w-7 h-7 text-blue-600" />
             </div>
           </div>
         </div>
@@ -154,7 +153,7 @@ export default function EmployersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by company name, email, or contact person..."
+              placeholder="Search by company name, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-all"
@@ -170,8 +169,10 @@ export default function EmployersPage() {
               className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 focus:border-[#F97316] transition-all bg-white"
             >
               <option value="all">All Employers</option>
-              <option value="with-company">With Company Info</option>
-              <option value="without-company">Without Company Info</option>
+              <option value="verified">Verified Companies</option>
+              <option value="unverified">Pending Verification</option>
+              <option value="with-company">With Company</option>
+              <option value="without-company">Without Company</option>
             </select>
           </div>
         </div>
@@ -187,7 +188,8 @@ export default function EmployersPage() {
                 <th className="px-6 py-4 text-left text-sm font-semibold">Company</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Website</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Verification</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Jobs</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Joined</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Actions</th>
               </tr>
@@ -195,7 +197,7 @@ export default function EmployersPage() {
             <tbody className="divide-y divide-gray-200">
               {filteredEmployers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p className="text-lg font-medium">No employers found</p>
                     <p className="text-sm">Try adjusting your search or filters</p>
@@ -205,29 +207,35 @@ export default function EmployersPage() {
                 filteredEmployers.map((employer, index) => (
                   <tr
                     key={employer.employerId}
-                    className="hover:bg-gray-50 transition-colors duration-200 fade-in"
+                    className="hover:bg-gray-50 transition-colors duration-200 fade-in cursor-pointer"
                     style={{ animationDelay: `${index * 50}ms` }}
+                    onClick={() => router.push(`/admin/admindashboard/employers/${employer.employerId}`)}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-[#EA580C] flex items-center justify-center text-white font-semibold shadow-sm">
-                          {employer.user.profile?.fullName?.charAt(0) || employer.user.email.charAt(0).toUpperCase()}
+                          {employer.user.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">
-                            {employer.user.profile?.fullName || "N/A"}
+                            {employer.companyName || "Unnamed Employer"}
                           </p>
                           <p className="text-xs text-gray-500">ID: {employer.employerId}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">
-                          {employer.companyName || "Not provided"}
-                        </span>
-                      </div>
+                      {employer.company ? (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-gray-400" />
+                          <div>
+                            <p className="font-medium text-gray-900">{employer.company.name}</p>
+                            <p className="text-xs text-gray-500">{employer.company.industry}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">No company</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -238,37 +246,65 @@ export default function EmployersPage() {
                     <td className="px-6 py-4">
                       {employer.companyURL ? (
                         <a
-                          href={employer.companyURL}
+                          href={employer.companyURL.startsWith("http") ? employer.companyURL : `https://${employer.companyURL}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-[#0C2B4E] hover:text-[#F97316] transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-sm text-[#0C2B4E] hover:text-[#F97316] transition-colors font-medium truncate max-w-[160px]"
                         >
-                          <Globe className="w-4 h-4" />
-                          <span className="truncate max-w-[150px]">Visit</span>
+                          <Globe className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {employer.companyURL.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                          </span>
                         </a>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {employer.company ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                            employer.company.isVerified
+                              ? "bg-green-100 text-green-700 border border-green-200"
+                              : "bg-orange-100 text-orange-700 border border-orange-200"
+                          }`}
+                        >
+                          {employer.company.isVerified ? (
+                            <>
+                              <CheckCircle className="w-3 h-3" />
+                              Verified
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3 h-3" />
+                              Pending
+                            </>
+                          )}
+                        </span>
                       ) : (
                         <span className="text-sm text-gray-400">N/A</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          employer.companyName
-                            ? "bg-green-100 text-green-700 border border-green-200"
-                            : "bg-orange-100 text-orange-700 border border-orange-200"
-                        }`}
-                      >
-                        {employer.companyName ? "Complete" : "Incomplete"}
+                      <span className="text-sm font-medium text-gray-700">
+                        {employer.jobs?.length || 0}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-600">
-                        {new Date(employer.user.createdAt).toLocaleDateString()}
+                        {new Date(employer.createdAt).toLocaleDateString()}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 rounded-lg bg-[#F97316]/10 text-[#F97316] hover:bg-[#F97316] hover:text-white transition-all duration-200 group">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/admin/admindashboard/employers/${employer.employerId}`);
+                          }}
+                          className="p-2 rounded-lg bg-[#F97316]/10 text-[#F97316] hover:bg-[#F97316] hover:text-white transition-all duration-200 group"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
                       </div>

@@ -4,19 +4,22 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getAllJobs, type Job } from "@/src/store/slices/jobsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getAllJobs } from "@/redux/store/slices/jobsSlice";
+import { fetchUserApplications, selectAppliedJobIds } from "@/redux/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 
 export default function JobsClient() {
   const dispatch = useAppDispatch();
   const { items: jobs, loading } = useAppSelector((state) => state.jobs);
+  const reduxAppliedJobIds = useAppSelector(selectAppliedJobIds);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedSalary, setSelectedSalary] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [sortByRelevant, setSortByRelevant] = useState(false);
+  const [recommendedOnly, setRecommendedOnly] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isSignedIn } = useUser();
@@ -30,15 +33,35 @@ export default function JobsClient() {
     }
   }, [dispatch, isSignedIn, user]);
 
+  // Fetch applied jobs from Redux
+  useEffect(() => {
+    // Only fetch if we don't have data in Redux yet
+    if (user?.id && reduxAppliedJobIds.length === 0) {
+      console.log("[JobsClient] Fetching user applications - no data in Redux");
+      dispatch(fetchUserApplications({ forceRefresh: false }));
+    } else if (user?.id && reduxAppliedJobIds.length > 0) {
+      console.log(
+        "[JobsClient] Using cached applications from Redux, count:",
+        reduxAppliedJobIds.length
+      );
+    }
+  }, [user?.id, reduxAppliedJobIds.length, dispatch]);
+
   // initialize filters from URL (so JobSearchBar navigation applies filters)
   useEffect(() => {
     if (!searchParams) return;
     const q = searchParams.get("q") || "";
     const loc = searchParams.get("location") || "";
+    const filter = searchParams.get("filter") || "";
     // schedule state updates asynchronously to avoid cascading renders warnings
     Promise.resolve().then(() => {
       setSearchTerm(q);
       setSelectedLocation(loc);
+      // Activate recommended filter if coming from dashboard
+      if (filter === "recommended") {
+        setRecommendedOnly(true);
+        setSortByRelevant(true);
+      }
     });
   }, [searchParams]);
 
@@ -48,6 +71,11 @@ export default function JobsClient() {
 
   const filteredJobs = useMemo(() => {
     let filtered = jobs.filter((job) => {
+      // Recommended filter - only show jobs with matchPercentage > 50% if toggle is on
+      if (recommendedOnly) {
+        if ((job?.matchPercentage || 0) <= 50) return false;
+      }
+
       const matchesSearch =
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.company.toLowerCase().includes(searchTerm.toLowerCase());
@@ -98,10 +126,10 @@ export default function JobsClient() {
 
     // Sort by most relevant if enabled and user is logged in
     if (sortByRelevant && isSignedIn) {
-      filtered = [...filtered].sort((a, b) => (b.match || 0) - (a.match || 0));
+      filtered = [...filtered].sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
     }
     return filtered;
-  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, isSignedIn]);
+  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, recommendedOnly, isSignedIn]);
 
   return (
 
@@ -196,21 +224,39 @@ export default function JobsClient() {
 
                 <div className="space-y-6">
                   <div>
+                    {/* Recommended Jobs filter for logged-in users */}
+                    {isSignedIn && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Recommendations</h4>
+                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-emerald-600"
+                            checked={recommendedOnly}
+                            onChange={() => setRecommendedOnly((prev) => !prev)}
+                          />
+                          <span className="text-gray-600 text-sm font-medium">
+                            Show Recommended (50%+)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
                     {/* Most Relevant filter for logged-in users */}
-                  {isSignedIn && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3">Sort</h4>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 rounded border-gray-300 text-sky-700"
-                          checked={sortByRelevant}
-                          onChange={() => setSortByRelevant((prev) => !prev)}
-                        />
-                        <span className="text-gray-600 text-sm">Most Relevant</span>
-                      </label>
-                    </div>
-                  )}
+                    {isSignedIn && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 mt-4">Sort</h4>
+                        <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                            checked={sortByRelevant}
+                            onChange={() => setSortByRelevant((prev) => !prev)}
+                          />
+                          <span className="text-gray-600 text-sm font-medium">Most Relevant</span>
+                        </label>
+                      </div>
+                    )}
 
                     <h4 className="font-semibold text-gray-900 my-3">Salary</h4>
                     <div className="space-y-2">
@@ -295,7 +341,10 @@ export default function JobsClient() {
                 {filteredJobs.length > 0 ? (
                   filteredJobs.map((job, idx) => (
                     <div key={job.id} className="fade-in" style={{animationDelay: `${200 + idx * 100}ms`}}>
-                      <JobCard job={job} />
+                      <JobCard 
+                        job={job} 
+                        isApplied={reduxAppliedJobIds.includes(String(job.id))}
+                      />
                     </div>
                   ))
                 ) : (

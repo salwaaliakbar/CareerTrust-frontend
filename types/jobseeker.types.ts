@@ -20,6 +20,8 @@ export type DocumentFile = {
   size: number;
   type: string;
   uploadedAt: string;
+  url?: string; // URL for already uploaded documents
+  file?: File; // Actual File object for new uploads
 };
 
 export type VerificationStatus = "draft" | "pending" | "verified" | "rejected";

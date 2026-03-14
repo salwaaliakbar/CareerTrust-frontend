@@ -75,7 +75,7 @@ export default function LoginForm() {
         // Redirect based on role
         setTimeout(() => {
           if (userRole === JOBSEEKER) {
-            router.push("/jobseeker");
+            router.push("/jobseeker/dashboard");
             // router.push("/");
           } else if (userRole === EMPLOYER) {
             router.push("/employer/dashboard");

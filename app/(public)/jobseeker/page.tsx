@@ -2,8 +2,10 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/jobseeker/Herosection";
 import StepsCarousel from "@/components/jobseeker/StepsCarousel";
-// import CTASection from "@/components/home/CTASection";
 import JobseekerCTA from "@/components/jobseeker/JobseekerCTA";
+import TrustStats from "@/components/jobseeker/TrustStats";
+import FeaturedJobs from "@/components/jobseeker/FeaturedJobs";
+import MoveToLoginCTA from "@/components/jobseeker/MoveToLoginCTA";
 
 export default function JobseekerPage() {
   return (
@@ -16,12 +18,17 @@ export default function JobseekerPage() {
       {/* Steps carousel explaining job seeker flow */}
       <StepsCarousel />
 
+      {/* Trust statistics */}
+      <TrustStats />
+
       {/* Jobseeker-specific CTA: quick link to job listings */}
       <JobseekerCTA />
 
-      {/* <CTASection /> */}
+       {/* Featured jobs - show opportunities right after hero */}
+      <FeaturedJobs />
 
-      {/* You can add more jobseeker-specific sections below (features, CTA, etc.) */}
+      {/* Login/Signup CTA */}
+      <MoveToLoginCTA />
 
       <Footer />
     </div>

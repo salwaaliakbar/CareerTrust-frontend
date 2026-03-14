@@ -1,11 +1,21 @@
 import { logger } from "@/lib/logger";
 import { NextResponse } from "next/server";
+import { rateLimit, RateLimitPresets } from "@/lib/middleware/ratelimit";
 
 // Valid runtime values: 'nodejs', 'edge', 'experimental-edge'
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    // 1. Apply rate limiting by IP (no auth required - this is signup flow)
+    const forwarded = req.headers.get("x-forwarded-for");
+    const ip = forwarded ? forwarded.split(",")[0] : "unknown";
+    const rateLimitError = await rateLimit(
+      `face-check:${ip}`,
+      RateLimitPresets.STRICT
+    );
+    if (rateLimitError) return rateLimitError;
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     if (!file) {
@@ -14,15 +24,15 @@ export async function POST(req: Request) {
     }
 
     // Also capture and log any accompanying fields we expect (user_id, save_if_new)
-    const userId = formData.get("user_id") ?? null;
+    const userIdFromForm = formData.get("user_id") ?? null;
     const saveIfNew = formData.get("save_if_new") ?? null;
-    logger.info("/api/auth/face-check received fields:", { hasFile: !!file, user_id: String(userId), save_if_new: String(saveIfNew) });
+    logger.info("/api/auth/face-check received fields:", { hasFile: !!file, user_id: String(userIdFromForm), save_if_new: String(saveIfNew) });
 
     // Rebuild FormData to forward explicitly (ensures node fetch sets boundary correctly
     // and only the intended fields are forwarded to the AI microservice).
     const forwardForm = new FormData();
     forwardForm.append("file", file as File);
-    if (userId) forwardForm.append("user_id", String(userId));
+    if (userIdFromForm) forwardForm.append("user_id", String(userIdFromForm));
     if (saveIfNew) forwardForm.append("save_if_new", String(saveIfNew));
 
     // Forward to your AI microservice (Python FastAPI, MobileFaceNet based)

@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
-import { getVerificationBadge, formatFileSize } from "@/lib/utils";
+import { getVerificationBadge, formatFileSize, calculateDuration } from "@/lib/utils";
 
 interface EmploymentCardProps {
   employment: EmploymentRecord;
@@ -62,6 +62,15 @@ export default function EmploymentCard({
               {employment.startDate} -{" "}
               {employment.currentlyWorking ? "Present" : employment.endDate}
             </span>
+            {employment.startDate && (
+              <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                {calculateDuration(
+                  employment.startDate,
+                  employment.endDate,
+                  employment.currentlyWorking
+                )}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -160,26 +169,36 @@ export default function EmploymentCard({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={`p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all ${
-                      disabled ? "opacity-40 pointer-events-none" : ""
-                    }`}
-                    title="View document"
-                    disabled={disabled}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all ${
-                      disabled ? "opacity-40 pointer-events-none" : ""
-                    }`}
-                    title="Download document"
-                    disabled={disabled}
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
+                  {doc.url && (
+                    <>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-all ${
+                          disabled ? "opacity-40 pointer-events-none" : ""
+                        }`}
+                        title="View document"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
+                      <a
+                        href={doc.url}
+                        download={doc.name}
+                        className={`p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-all ${
+                          disabled ? "opacity-40 pointer-events-none" : ""
+                        }`}
+                        title="Download document"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </>
+                  )}
+                  {!doc.url && (
+                    <span className="text-xs text-amber-600 font-semibold px-2 py-1 bg-amber-50 rounded">
+                      Not uploaded yet
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => onDocumentRemove(employment.id, doc.id)}
@@ -201,10 +220,17 @@ export default function EmploymentCard({
       {/* Status Messages */}
       {employment.verificationStatus === "draft" && (
         <div className="mt-4 pt-4 border-t-2 border-slate-200 relative z-10">
-          <p className="text-xs text-amber-700 font-bold flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-            Upload documents to submit for verification
-          </p>
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+            <p className="text-sm text-amber-700 font-bold flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+              Action Required
+            </p>
+            <p className="text-xs text-amber-600 font-semibold">
+              {employment.documents.length > 0 
+                ? "Don't forget to click 'Save Profile' at the top to upload your documents and submit for verification!"
+                : "Upload supporting documents (offer letter, termination letter, or salary slips), then save your profile to submit for verification."}
+            </p>
+          </div>
         </div>
       )}
 

@@ -8,7 +8,7 @@ import type {
   DocumentFile,
   VerificationStatus,
 } from "@/types/jobseeker.types";
-import type { RootState } from "@/src/store/store";
+import type { RootState } from "@/redux/store/store";
 
 export interface FetchedProfileData {
   id: string;

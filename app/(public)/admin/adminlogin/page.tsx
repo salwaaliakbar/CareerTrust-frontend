@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth, useUser, useSignIn } from "@clerk/nextjs";
 import Swal from "sweetalert2";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -9,74 +10,127 @@ import { ShieldCheck, Lock, Mail } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signIn, setActive } = useSignIn();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+
+  useEffect(() => {
+    // Only check once when component mounts
+    if (isLoaded && !hasCheckedAuth) {
+      setHasCheckedAuth(true);
+      
+      if (isSignedIn && user) {
+        const userRole = user.unsafeMetadata?.role as string | undefined;
+        
+        if (userRole === "admin") {
+          // Already logged in as admin, redirect to dashboard
+          router.replace("/admin/admindashboard");
+        } else if (userRole) {
+          // Logged in but not as admin
+          Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: "You do not have admin privileges.",
+            confirmButtonColor: "#4F46E5",
+          }).then(() => {
+            router.push("/");
+          });
+        }
+      }
+    }
+  }, [isLoaded, isSignedIn, user, router, hasCheckedAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Get API URL from environment variable
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      
-      const response = await fetch(
-        `${apiUrl}/api/admin/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      // Check if response is JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(`Backend server error. Please ensure the backend is running on ${apiUrl}`);
+      if (!signIn) {
+        throw new Error("Sign in not initialized");
       }
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      // Store tokens
-      localStorage.setItem("adminAccessToken", data.data.accessToken);
-      localStorage.setItem("adminRefreshToken", data.data.refreshToken);
-      localStorage.setItem("adminProfile", JSON.stringify(data.data.admin));
-
-      // Show success message
-      await Swal.fire({
-        icon: "success",
-        title: "Login Successful!",
-        text: `Welcome back, ${data.data.admin.fullName}`,
-        timer: 1500,
-        showConfirmButton: false,
+      // Step 1: Attempt to sign in with Clerk
+      const result = await signIn.create({
+        identifier: formData.email,
+        password: formData.password,
       });
 
-      // Redirect to admin dashboard
-      router.push("/admin/admindashboard");
+      // Step 2: If sign-in successful, set the session active
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        
+        // Step 3: Wait a moment for user data to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Step 4: Fetch the user to check role
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${await signIn.createdSessionId}`,
+          },
+        });
+        
+        // For now, we'll rely on the useEffect to check the role
+        // The user object should be updated automatically
+        
+      } else {
+        // Handle MFA or other additional steps
+        throw new Error("Additional authentication steps required");
+      }
     } catch (err: any) {
       console.error("Login error:", err);
+      setLoading(false);
       
       // Show error with SweetAlert2
       await Swal.fire({
         icon: "error",
         title: "Login Failed",
-        text: err.message || "An error occurred during login. Please try again.",
+        text: err.errors?.[0]?.message || err.message || "Invalid email or password. Please try again.",
         confirmButtonColor: "#4F46E5",
         confirmButtonText: "Try Again",
       });
-    } finally {
-      setLoading(false);
     }
   };
+
+  // This will run when user object updates after sign-in
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user && loading && hasCheckedAuth) {
+      const userRole = user.unsafeMetadata?.role as string | undefined;
+      
+      if (userRole === "admin") {
+        // Show success message
+        Swal.fire({
+          icon: "success",
+          title: "Login Successful!",
+          text: `Welcome back, ${user.firstName || 'Admin'}!`,
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          setLoading(false);
+          // Redirect to admin dashboard
+          router.replace("/admin/admindashboard");
+        });
+      } else {
+        // Not an admin
+        Swal.fire({
+          icon: "error",
+          title: "Access Denied",
+          text: "This account does not have admin privileges.",
+          confirmButtonColor: "#4F46E5",
+        }).then(() => {
+          // Sign out and redirect
+          setLoading(false);
+          router.push("/");
+        });
+      }
+    }
+  }, [isLoaded, isSignedIn, user, loading, router, hasCheckedAuth]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -128,6 +182,7 @@ export default function AdminLoginPage() {
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0C2B4E]/20 focus:border-[#0C2B4E] transition-all duration-200 bg-white"
                   placeholder="admin@careertrust.com"
+                  disabled={loading}
                 />
               </div>
 
@@ -149,6 +204,7 @@ export default function AdminLoginPage() {
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0C2B4E]/20 focus:border-[#0C2B4E] transition-all duration-200 bg-white"
                   placeholder="••••••••"
+                  disabled={loading}
                 />
               </div>
 
@@ -202,7 +258,7 @@ export default function AdminLoginPage() {
                     <span className="font-semibold">Email:</span> admin@careertrust.com
                   </p>
                   <p className="text-xs text-gray-700">
-                    <span className="font-semibold">Password:</span> Admin@123
+                    <span className="font-semibold">Note:</span> Use your Clerk password
                   </p>
                 </div>
               </div>
@@ -215,7 +271,7 @@ export default function AdminLoginPage() {
                 <div>
                   <p className="font-medium text-gray-900 mb-1">Secure Access</p>
                   <p className="text-xs leading-relaxed">
-                    This portal is protected with enterprise-grade encryption. 
+                    This portal is protected with Clerk enterprise authentication. 
                     All actions are logged and monitored for security compliance.
                   </p>
                 </div>
