@@ -201,46 +201,59 @@ const Dashboard = () => {
           </div>
 
           <div className="divide-y divide-gray-100">
-            {recentApplications.map((app, index) => (
-              <div
-                key={app.id}
-                className="p-6 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-transparent transition-all duration-300 group cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                        <Briefcase className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                          {app.jobTitle}
-                        </h3>
-                        <p className="text-gray-600 mt-1">{app.company}</p>
-                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span>Applied {app.appliedDate}</span>
+            {recentApplications.length === 0 ? (
+              <div className="px-10 md:px-12 text-center bg-linear-to-b from-sky-50 to-white pt-20 pb-30">
+                <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center">
+                  <Briefcase className="w-7 h-7 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  No Recent Applications Yet
+                </h3>
+                <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto">
+                  Your latest job applications will appear here once you apply. Start exploring roles to build your application history.
+                </p>
+              </div>
+            ) : (
+              recentApplications.map((app) => (
+                <div
+                  key={app.id}
+                  className="p-6 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-transparent transition-all duration-300 group cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                          <Briefcase className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                            {app.jobTitle}
+                          </h3>
+                          <p className="text-gray-600 mt-1">{app.company}</p>
+                          <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                            <Clock className="w-4 h-4" />
+                            <span>Applied {app.appliedDate}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
+                    <span
+                      className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${getStatusStyle(
+                        app.status
+                      )}`}
+                    >
+                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    </span>
                   </div>
-                  <span
-                    className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${getStatusStyle(
-                      app.status
-                    )}`}
-                  >
-                    {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                  </span>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
         <div>
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 my-12">
             <Sparkles className="w-5 h-5 text-blue-600" />
             <h2 className="text-2xl font-bold text-gray-900">Quick Actions</h2>
           </div>
@@ -248,7 +261,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link
               href="/jobs"
-              className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden"
+              className="group relative bg-white rounded-2xl p-6 shadow-2xl hover:shadow-xl transition-all duration-500 border border-gray-200 overflow-hidden"
             >
               <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
               
@@ -271,7 +284,7 @@ const Dashboard = () => {
 
             <Link
               href="/jobseeker/profile"
-              className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden"
+              className="group relative bg-white rounded-2xl p-6 shadow-2xl hover:shadow-xl transition-all duration-500 border border-gray-200 overflow-hidden"
             >
               <div className="absolute inset-0 bg-linear-to-br from-purple-500 to-pink-600 opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
               
@@ -294,7 +307,7 @@ const Dashboard = () => {
 
             <Link
               href="/jobseeker/passport"
-              className="group relative bg-linear-to-r from-[#0A1F44] via-[#1e3a5f] to-[#2d4a6f] rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/10"
+              className="group relative bg-linear-to-r from-[#0A1F44] via-[#1e3a5f] to-[#2d4a6f] rounded-2xl p-6 shadow-2xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/10"
             >
               <div className="absolute inset-0 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 transform scale-0 group-hover:scale-100 transition-transform duration-500 origin-center opacity-20" />
               
