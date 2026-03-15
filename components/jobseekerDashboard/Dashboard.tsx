@@ -37,7 +37,7 @@ const Dashboard = () => {
   // Fetch dashboard data when component mounts
   useEffect(() => {
     if (!user?.id) return;
-    dispatch(initializeDashboard({ clerkId: user.id }));
+    dispatch(initializeDashboard({ clerkId: user.id, forceRefresh: true }));
   }, [user?.id, dispatch]);
 
   // Display stats from Redux, fallback to default
