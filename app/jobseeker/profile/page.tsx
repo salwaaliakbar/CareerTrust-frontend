@@ -34,6 +34,8 @@ import {
   setEducation,
   setEmployment,
   setProfile,
+  setProfilePicUrl,
+  setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
 import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
@@ -42,6 +44,69 @@ type JobRecommendationItem = {
   jobId: number;
   score?: number | null;
 };
+
+type ProfileApiResponseData = {
+  fullName?: string | null;
+  headline?: string | null;
+  location?: string | null;
+  skills?:
+    | string
+    | Array<string | { skillName?: string | null }>
+    | null;
+  summary?: string | null;
+  email?: string | null;
+  total_experience?: string | null;
+  totalExperience?: string | null;
+  total_experience_years?: number | null;
+  totalExperienceYears?: number | null;
+  employmentStatus?: "open" | "not_open" | null;
+  profilePicUrl?: string | null;
+  resumeUrl?: string | null;
+  educationHistory?: EducationRecord[];
+  employmentHistory?: EmploymentRecord[];
+};
+
+function normalizeSkillsToText(skills: unknown): string {
+  if (typeof skills === "string") {
+    return skills;
+  }
+
+  if (Array.isArray(skills)) {
+    return skills
+      .map((skill) => {
+        if (typeof skill === "string") return skill;
+        if (skill && typeof skill === "object" && "skillName" in skill) {
+          return String((skill as { skillName?: unknown }).skillName || "");
+        }
+        return "";
+      })
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return "";
+}
+
+function mapApiProfileToForm(data: ProfileApiResponseData): ProfileData {
+  const totalExperienceYears = Number(
+    data?.total_experience_years ?? data?.totalExperienceYears ?? 0,
+  );
+
+  return {
+    fullName: data?.fullName || "",
+    headline: data?.headline || "",
+    location: data?.location || "",
+    skills: normalizeSkillsToText(data?.skills),
+    summary: data?.summary || "",
+    email: data?.email || "",
+    total_experience: data?.total_experience || data?.totalExperience || "",
+    total_experience_years: Number.isFinite(totalExperienceYears)
+      ? totalExperienceYears
+      : 0,
+    employmentStatus: data?.employmentStatus || "open",
+  };
+}
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -123,6 +188,25 @@ export default function ProfilePage() {
   const reduxProfile = useSelector(selectJobseekerProfile);
   const profileLoading = useSelector(selectProfileLoading);
   const [hasCheckedRedux, setHasCheckedRedux] = useState(false);
+  const hasReduxProfileData = React.useMemo(
+    () =>
+      Boolean(
+        reduxProfile.profile?.fullName ||
+          reduxProfile.profile?.email ||
+          reduxProfile.profilePicUrl ||
+          reduxProfile.resumeUrl ||
+          reduxProfile.education.length > 0 ||
+          reduxProfile.employment.length > 0,
+      ),
+    [
+      reduxProfile.profile?.fullName,
+      reduxProfile.profile?.email,
+      reduxProfile.profilePicUrl,
+      reduxProfile.resumeUrl,
+      reduxProfile.education.length,
+      reduxProfile.employment.length,
+    ],
+  );
 
   const {
     educationHistory,
@@ -156,6 +240,13 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  const updateEmploymentStatus = useCallback(
+    (status: "open" | "not_open") => {
+      setForm((prev) => ({ ...prev, employmentStatus: status }));
+    },
+    [],
+  );
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
@@ -166,53 +257,76 @@ export default function ProfilePage() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  // Load from Redux or fetch from backend on mount
+  // Hydrate local UI state from Redux whenever profile data is available.
+  React.useEffect(() => {
+    if (!mounted || !user || !hasReduxProfileData || isEditing) return;
+
+    setForm({
+      ...reduxProfile.profile,
+      employmentStatus: reduxProfile.profile?.employmentStatus || "open",
+    });
+    setEducationHistory(reduxProfile.education);
+    setEmploymentHistory(reduxProfile.employment);
+    setProfileImage(reduxProfile.profilePicUrl || null);
+    setResumeFile(null);
+    setProfileFile(null);
+    logger.info("Loaded profile data from Redux");
+  }, [
+    mounted,
+    user,
+    hasReduxProfileData,
+    isEditing,
+    reduxProfile.profile,
+    reduxProfile.education,
+    reduxProfile.employment,
+    reduxProfile.profilePicUrl,
+    setEducationHistory,
+    setEmploymentHistory,
+  ]);
+
+  // Always fetch once on page open so persisted backend data refreshes Redux/local state.
   React.useEffect(() => {
     if (!mounted || !user) return;
+    if (hasCheckedRedux || profileLoading) return;
 
-    // Check if we have data in Redux
-    if (reduxProfile.profile?.fullName) {
-      // Data exists in Redux, use it
-      setForm(reduxProfile.profile);
-      setEducationHistory(reduxProfile.education);
-      setEmploymentHistory(reduxProfile.employment);
-      setHasCheckedRedux(true);
-      logger.info("Loaded profile data from Redux");
-    } else if (!hasCheckedRedux && !profileLoading) {
-      // No data in Redux, fetch from backend
-      const clerkId = user.id;
-      if (clerkId) {
-        dispatch(fetchJobseekerProfile(clerkId) as any).then((action: any) => {
-          if (action.payload) {
-            // Data fetched successfully, update local form state
-            const fetchedData = action.payload;
-            setForm({
-              fullName: fetchedData.fullName || "",
-              headline: fetchedData.headline || "",
-              location: fetchedData.location || "",
-              skills: typeof fetchedData.skills === "string"
-                ? fetchedData.skills
-                : Array.isArray(fetchedData.skills)
-                  ? fetchedData.skills.join(", ")
-                  : "",
-              summary: fetchedData.summary || "",
-              email: fetchedData.email || "",
-              total_experience: fetchedData.total_experience || "",
-              total_experience_years: fetchedData.total_experience_years || 0,
-            });
-            setEducationHistory(fetchedData.educationHistory || []);
-            setEmploymentHistory(fetchedData.employmentHistory || []);
-            logger.info("Fetched and loaded profile data from backend");
-          }
-          setHasCheckedRedux(true);
-        });
+    const currentClerkId = user.id;
+    if (!currentClerkId) return;
+
+    setHasCheckedRedux(true);
+    dispatch(fetchJobseekerProfile(currentClerkId) as any).then((action: any) => {
+      if (action.payload) {
+        const fetchedData = action.payload as ProfileApiResponseData;
+        setForm(mapApiProfileToForm(fetchedData));
+        setEducationHistory(
+          Array.isArray(fetchedData.educationHistory)
+            ? fetchedData.educationHistory
+            : [],
+        );
+        setEmploymentHistory(
+          Array.isArray(fetchedData.employmentHistory)
+            ? fetchedData.employmentHistory
+            : [],
+        );
+        setProfileImage(fetchedData.profilePicUrl || null);
+        setResumeFile(null);
+        setProfileFile(null);
+        logger.info("Fetched and loaded profile data from backend");
       }
-    }
-  }, [mounted, user, reduxProfile.profile?.email, hasCheckedRedux, profileLoading, dispatch]);
+    });
+  }, [
+    mounted,
+    user,
+    hasReduxProfileData,
+    hasCheckedRedux,
+    profileLoading,
+    dispatch,
+    setEducationHistory,
+    setEmploymentHistory,
+  ]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
-    if (!mounted || !user || hasCheckedRedux) return;
+    if (!mounted || !user) return;
 
     const name =
       user.fullName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -227,7 +341,7 @@ export default function ProfilePage() {
       fullName: prev.fullName || name,
       email: prev.email || email,
     }));
-  }, [mounted, user, hasCheckedRedux]);
+  }, [mounted, user]);
 
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
@@ -459,8 +573,9 @@ export default function ProfilePage() {
       if (resumeFile) payload.append("resume", resumeFile);
       if (profileFile) {
         payload.append("profileImage", profileFile);
-      } else if (profileImage) {
-        // If no file but we have a data URL string, send it for AI verification
+      } else if (profileImage?.startsWith("data:image/")) {
+        // If no file but we have a fresh data URL string, send it for AI verification.
+        // Do not send existing Cloudinary URLs as `profileImage` payload.
         payload.append("profileImage", profileImage);
       }
 
@@ -476,6 +591,36 @@ export default function ProfilePage() {
 
       // Success path
       if (data.success === true) {
+        const savedProfile = data?.data as ProfileApiResponseData | undefined;
+
+        if (savedProfile) {
+          const normalizedForm = mapApiProfileToForm(savedProfile);
+          const normalizedEducation: EducationRecord[] = Array.isArray(
+            savedProfile.educationHistory,
+          )
+            ? savedProfile.educationHistory
+            : educationHistory;
+          const normalizedEmployment: EmploymentRecord[] = Array.isArray(
+            savedProfile.employmentHistory,
+          )
+            ? savedProfile.employmentHistory
+            : employmentHistory;
+
+          setForm(normalizedForm);
+          setEducationHistory(normalizedEducation);
+          setEmploymentHistory(normalizedEmployment);
+          setProfileImage(savedProfile.profilePicUrl || null);
+          setProfileFile(null);
+          setResumeFile(null);
+
+          // Keep Redux in sync so reopening this page (or other pages) shows latest profile assets/status.
+          dispatch(setProfile(normalizedForm));
+          dispatch(setEducation(normalizedEducation));
+          dispatch(setEmployment(normalizedEmployment));
+          dispatch(setResumeUrl(savedProfile.resumeUrl || null));
+          dispatch(setProfilePicUrl(savedProfile.profilePicUrl || null));
+        }
+
         Swal.fire({
           icon: "success",
           title: "Profile Saved",
@@ -610,19 +755,31 @@ export default function ProfilePage() {
   );
 
   function handleReset() {
-    setForm({
-      fullName: "",
-      headline: "",
-      location: "",
-      skills: "",
-      summary: "",
-      email: "",
-      total_experience: "",
-      total_experience_years: 0,
-      employmentStatus: "open",
-    });
+    if (hasReduxProfileData) {
+      setForm({
+        ...reduxProfile.profile,
+        employmentStatus: reduxProfile.profile?.employmentStatus || "open",
+      });
+      setEducationHistory(reduxProfile.education);
+      setEmploymentHistory(reduxProfile.employment);
+      setProfileImage(reduxProfile.profilePicUrl || null);
+    } else {
+      setForm({
+        fullName: "",
+        headline: "",
+        location: "",
+        skills: "",
+        summary: "",
+        email: "",
+        total_experience: "",
+        total_experience_years: 0,
+        employmentStatus: "open",
+      });
+      setProfileImage(null);
+    }
+
     setResumeFile(null);
-    setProfileImage(null);
+    setProfileFile(null);
   }
 
   return (
@@ -653,11 +810,9 @@ export default function ProfilePage() {
             isCurrentlyEmployed={isCurrentlyEmployed}
             openForOpportunities={form.employmentStatus === "open"}
             onToggleOpenForOpportunities={() =>
-              setForm((prev) => ({
-                ...prev,
-                employmentStatus:
-                  prev.employmentStatus === "open" ? "not_open" : "open",
-              }))
+              updateEmploymentStatus(
+                form.employmentStatus === "open" ? "not_open" : "open",
+              )
             }
           />
 
@@ -728,6 +883,7 @@ export default function ProfilePage() {
                 {/* Open for Opportunities Selector */}
                  <ResumeUpload
                   resumeFile={resumeFile}
+                  previousResumeUrl={reduxProfile.resumeUrl}
                   autoFilling={autoFilling}
                   onFileChange={setResumeFile}
                   onAutoFill={autoFillFromResume}
@@ -791,10 +947,7 @@ export default function ProfilePage() {
                           type="button"
                           disabled={!isEditing}
                           onClick={() =>
-                            setForm((prev) => ({
-                              ...prev,
-                              employmentStatus: value,
-                            }))
+                            updateEmploymentStatus(value)
                           }
                           className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
                             selected

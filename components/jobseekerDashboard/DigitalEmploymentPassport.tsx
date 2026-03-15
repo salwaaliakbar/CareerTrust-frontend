@@ -360,9 +360,9 @@ export default function DigitalEmploymentPassport({
   // };
 
 
-  const downloadPDF = () => {
-    alert("PDF download functionality is currently unavailable. Please check back later."); 
-  }
+  // const downloadPDF = () => {
+  //   alert("PDF download functionality is currently unavailable. Please check back later."); 
+  // }
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -460,7 +460,7 @@ export default function DigitalEmploymentPassport({
                       </p>
                     </div>
                   </div>
-
+{/* 
                   <button
                     id="download-pdf-btn"
                     onClick={downloadPDF}
@@ -468,7 +468,7 @@ export default function DigitalEmploymentPassport({
                   >
                     <Download className="w-5 h-5 group-hover/download:scale-110 transition-transform" />
                     Download PDF
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>

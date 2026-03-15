@@ -185,19 +185,19 @@ export const fetchRecentApplications = createAsyncThunk<
  */
 export const initializeDashboard = createAsyncThunk<
   { stats: DashboardStats; recentApps: RecentApplication[] },
-  { clerkId: string },
+  { clerkId: string; forceRefresh?: boolean },
   { 
     state: RootState;
     rejectValue: string;
   }
 >(
   'dashboard/initialize',
-  async ({ clerkId }, { dispatch, rejectWithValue }) => {
+  async ({ clerkId, forceRefresh = false }, { dispatch, rejectWithValue }) => {
     try {
       // Fetch both in parallel
       const [statsResult, appsResult] = await Promise.all([
-        dispatch(fetchDashboardStats({ clerkId })),
-        dispatch(fetchRecentApplications({ clerkId, limit: 5 }))
+        dispatch(fetchDashboardStats({ clerkId, forceRefresh })),
+        dispatch(fetchRecentApplications({ clerkId, limit: 5, forceRefresh }))
       ]);
 
       if (statsResult.meta.requestStatus === 'rejected' || 
