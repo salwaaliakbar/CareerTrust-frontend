@@ -8,8 +8,8 @@ import { useUser } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Star, Clock, Users, Share2, Heart, ArrowLeft } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { getJobById } from "@/src/store/slices/jobsSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getJobById } from "@/redux/store/slices/jobsSlice";
 import { submitJobApplication } from "@/services/api/applications.service";
 
 export default function JobDetail({

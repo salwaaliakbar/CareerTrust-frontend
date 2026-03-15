@@ -37,6 +37,9 @@ export const API_ENDPOINTS = {
   // Users (Next.js API)
   USERS: `${API_BASE_URL}/users`,
   USER_BY_ID: (id: string | number) => `${API_BASE_URL}/users/${id}`,
+  USERS_PRECHECK: `${BACKEND_API_URL}/users/precheck`,
+  USERS_FACE_CHECK: `${BACKEND_API_URL}/users/face-check`,
+  USERS_REGISTER: `${BACKEND_API_URL}/users/register`,
   JOBSEEKER_PROFILE_GET: `${BACKEND_API_URL}/jobseeker/profile`,
   JOBSEEKER_PROFILE_SAVE: `${BACKEND_API_URL}/jobseeker/update-profile`,
   RESUME_PARSING: `${BACKEND_API_URL}/resume/parse-resume`,

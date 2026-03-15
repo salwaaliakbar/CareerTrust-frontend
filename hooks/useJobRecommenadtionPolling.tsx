@@ -1,57 +1,131 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { API_ENDPOINTS } from "@/constants/api";
 
-export function useJobRecommendationPolling(clerkId: string, onNewRecommendation: () => void, interval = 10000, maxAttempts = 10) {
+type PollingEndReason = "success" | "timeout";
+
+interface UseJobRecommendationPollingOptions {
+  clerkId: string;
+  pollSince?: string | null;
+  onNewRecommendation: () => void | Promise<void>;
+  onPollingEnd?: (reason: PollingEndReason) => void;
+  interval?: number;
+  maxAttempts?: number;
+}
+
+export function useJobRecommendationPolling({
+  clerkId,
+  pollSince = null,
+  onNewRecommendation,
+  onPollingEnd,
+  interval = 10000,
+  maxAttempts = 10,
+}: UseJobRecommendationPollingOptions) {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const lastUpdatedAtRef = useRef<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const attemptsRef = useRef<number>(0);
+  const onNewRecommendationRef = useRef(onNewRecommendation);
+  const onPollingEndRef = useRef(onPollingEnd);
+
+  useEffect(() => {
+    onNewRecommendationRef.current = onNewRecommendation;
+  }, [onNewRecommendation]);
+
+  useEffect(() => {
+    onPollingEndRef.current = onPollingEnd;
+  }, [onPollingEnd]);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (!clerkId) return;
+    if (!clerkId) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+      attemptsRef.current = 0;
+      return;
+    }
+
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+
+    attemptsRef.current = 0;
+    lastUpdatedAtRef.current = null;
+    setLastUpdatedAt(null);
+
+    const pollSinceMs = pollSince ? Date.parse(pollSince) : Number.NaN;
 
     const checkForUpdate = async () => {
       try {
         attemptsRef.current += 1;
-        const res = await axios.get(`${API_ENDPOINTS.JOB_RECOMMENDATION_STATUS}?clerkId=${clerkId}`);
-        console.log("response: ", res)
-        console.log("lastUpdatedAt (ref): ", lastUpdatedAtRef.current)
-        const updatedAt = res.data.lastUpdatedAt;
+        const res = await axios.get(
+          `/api/jobRecommendation/status?clerkId=${clerkId}`,
+        );
+
+        const updatedAt = res.data?.lastUpdatedAt
+          ? String(res.data.lastUpdatedAt)
+          : null;
+
         if (isMounted) {
-          if (lastUpdatedAtRef.current && updatedAt && updatedAt !== lastUpdatedAtRef.current) {
-            onNewRecommendation();
-            // Stop polling immediately
-            if (pollingRef.current) clearInterval(pollingRef.current);
+          const updatedAtMs = updatedAt ? Date.parse(updatedAt) : Number.NaN;
+          const hasNewSincePollStart =
+            updatedAt &&
+            !Number.isNaN(updatedAtMs) &&
+            !Number.isNaN(pollSinceMs) &&
+            updatedAtMs > pollSinceMs;
+
+          const hasChangedSinceLastCheck =
+            !!lastUpdatedAtRef.current &&
+            !!updatedAt &&
+            updatedAt !== lastUpdatedAtRef.current;
+
+          if (hasNewSincePollStart || hasChangedSinceLastCheck) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+
+            try {
+              await Promise.resolve(onNewRecommendationRef.current());
+            } finally {
+              onPollingEndRef.current?.("success");
+            }
             return;
           }
+
           setLastUpdatedAt(updatedAt);
           lastUpdatedAtRef.current = updatedAt;
-          // Stop polling if max attempts reached
+
           if (attemptsRef.current >= maxAttempts && pollingRef.current) {
             clearInterval(pollingRef.current);
+            pollingRef.current = null;
+            onPollingEndRef.current?.("timeout");
           }
         }
       } catch (err) {
-        // Optionally handle error
+        if (attemptsRef.current >= maxAttempts && pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+          onPollingEndRef.current?.("timeout");
+        }
       }
     };
 
-    // Initial check
     checkForUpdate();
-
-    // Start polling
     pollingRef.current = setInterval(checkForUpdate, interval);
 
     return () => {
       isMounted = false;
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
       attemptsRef.current = 0;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clerkId]);
+  }, [clerkId, pollSince, interval, maxAttempts]);
 
   return lastUpdatedAt;
 }

@@ -59,11 +59,11 @@ export default function ResumeUpload({
   }
 
   return (
-    <div className="top-6 group relative" aria-busy={buttonLoading}>
+    <div className=" group relative" aria-busy={buttonLoading}>
       <div className="absolute -inset-0.5 bg-linear-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
       <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300 overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-linear-to-br from-blue-100 to-transparent rounded-full blur-3xl opacity-50"></div>
-
+    
         <div className="flex items-center justify-between mb-6 relative z-10">
           <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
             <FileText className="w-6 h-6 text-blue-600" />
