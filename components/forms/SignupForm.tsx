@@ -43,6 +43,21 @@ export type SignupAction =
 
 export type SignupDispatch = React.Dispatch<SignupAction>;
 
+type SignupErrorShape = {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+      error?: string;
+      details?: string;
+    };
+  };
+  errors?: Array<{
+    longMessage?: string;
+    message?: string;
+  }>;
+};
+
 export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   type State = {
     role: Role;
@@ -108,6 +123,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     null,
   );
   const [capturedImage, setCapturedImage] = useState<File | null>(null);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   // const [verifying, setVerifying] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -117,6 +133,61 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     dispatch({ type: ACTIONS.setRole, payload: selectedRole });
     dispatch({ type: ACTIONS.setStep, payload: 2 });
   };
+
+  function getErrorMessage(err: unknown) {
+    let errorMessage = "An unexpected error occurred.";
+
+    if (typeof err === "object" && err !== null) {
+      const errorObject = err as SignupErrorShape;
+
+      if (errorObject.response?.data?.message) {
+        errorMessage = errorObject.response.data.message;
+      } else if (errorObject.response?.data?.error) {
+        errorMessage = errorObject.response.data.error;
+      } else if (errorObject.response?.data?.details) {
+        errorMessage = errorObject.response.data.details;
+      } else if (
+        Array.isArray(errorObject.errors) &&
+        errorObject.errors.length > 0
+      ) {
+        errorMessage =
+          errorObject.errors[0].longMessage ||
+          errorObject.errors[0].message ||
+          errorMessage;
+      } else if (typeof errorObject.message === "string") {
+        errorMessage = errorObject.message;
+      }
+    } else if (typeof err === "string") {
+      errorMessage = err;
+    }
+
+    return errorMessage;
+  }
+
+  async function precheckSignup(values: FormValues) {
+    const response = await axios.post("/api/auth/signup/precheck", {
+      email: values.email,
+      role: state.role,
+      ...(state.role === JOBSEEKER
+        ? {
+            phone: values.phone,
+            cnic: values.cnic,
+          }
+        : {
+            companyName: values.companyName,
+            companyURL: values.companyURL,
+            linkedinUrl: values.linkedinUrl,
+          }
+      ),
+    });
+
+    const nextRegistrationId = response.data?.data?.registrationId;
+    if (!nextRegistrationId) {
+      throw new Error("Registration precheck did not return a registrationId.");
+    }
+
+    return nextRegistrationId as string;
+  }
 
   useEffect(() => {
     return () => {
@@ -168,7 +239,6 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   const {
     register,
     handleSubmit,
-    reset,
     getValues,
     formState: { errors: rhfErrors },
   } = useForm<FormValues>({
@@ -187,19 +257,43 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
-    if (state.role === JOBSEEKER) {
-      setPendingFormData(values);
-      // await submitSignup(values);
-      dispatch({ type: ACTIONS.setShowFacePopup, payload: true });
-    } else {
-      await submitSignup(values);
+    dispatch({ type: ACTIONS.setIsProcessing, payload: true });
+
+    try {
+      const nextRegistrationId = await precheckSignup(values);
+      setRegistrationId(nextRegistrationId);
+
+      if (state.role === JOBSEEKER) {
+        setPendingFormData(values);
+        dispatch({ type: ACTIONS.setShowFacePopup, payload: true });
+        return;
+      }
+
+      await submitSignup(values, nextRegistrationId);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Signup Failed",
+        text: getErrorMessage(err),
+      });
+    } finally {
+      dispatch({ type: ACTIONS.setIsProcessing, payload: false });
     }
   };
 
-  async function submitSignup(values: FormValues) {
+  async function submitSignup(
+    values: FormValues,
+    activeRegistrationId = registrationId,
+  ) {
     dispatch({ type: ACTIONS.setIsProcessing, payload: true });
-    // all your backend signup endpoint logic here
+
+    if (state.role === JOBSEEKER && !activeRegistrationId) {
+      dispatch({ type: ACTIONS.setIsProcessing, payload: false });
+      throw new Error("Registration precheck is missing. Please submit the form again.");
+    }
+
     if (!isLoaded) {
+      dispatch({ type: ACTIONS.setIsProcessing, payload: false });
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -207,9 +301,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
       return;
     }
-    dispatch({ type: ACTIONS.setIsProcessing, payload: true });
+
     try {
-      // Create user in Clerk
       await signUp.create({
         emailAddress: values.email,
         password: values.password,
@@ -234,28 +327,7 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         strategy: "email_code",
       });
 
-      if (state.role === "jobseeker") {
-        const response = await axios.post(
-          "http://localhost:4000/api/users/check-cnic-phone",
-          {
-            phone: values.phone,
-            cnic: values.cnic,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
-
-        console.log(response.data); // handle the response
-      }
-
-      // Show verification modal
       dispatch({ type: ACTIONS.setVerifying, payload: true });
-      // if (state.role === "jobseeker") {
-      //   dispatch({ type: ACTIONS.setShowFacePopup, payload: true });
-      // }
 
       const { value: code } = await Swal.fire({
         title: "Verify Your Email",
@@ -330,23 +402,12 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       });
 
       if (completeSignUp.status === "complete") {
-        await setActive({ session: completeSignUp.createdSessionId });
-
-        Swal.fire({
-          icon: "success",
-          title: "Account Created!",
-          text: "Your account has been successfully created.",
-          timer: 2000,
-          showConfirmButton: true,
-        });
-
-        // calling our backend to create user record
-
         const clerkUser = completeSignUp?.createdUserId; // Clerk's user ID
 
-        const response = await axios.post(
-          "http://localhost:4000/api/users/register",
+        await axios.post(
+          "/api/auth/signup/finalize",
           {
+            registrationId: activeRegistrationId,
             clerkId: clerkUser, // IMPORTANT
             email: values.email,
             name: values.name,
@@ -364,7 +425,15 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
           },
         );
 
-        console.log(response.data); // handle the response
+        await setActive({ session: completeSignUp.createdSessionId });
+
+        Swal.fire({
+          icon: "success",
+          title: "Account Created!",
+          text: "Your account has been successfully created.",
+          timer: 2000,
+          showConfirmButton: true,
+        });
 
         // Redirect based on role
         setTimeout(() => {
@@ -382,35 +451,10 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     } catch (err: unknown) {
       logger.error("Signup error:", err);
 
-      let errorMessage = "An unexpected error occurred.";
-
-      // If it's an object, try to read server response
-      if (typeof err === "object" && err !== null) {
-        const e = err as any;
-
-        // Check for server response format
-        if (e.response?.data?.message) {
-          errorMessage = e.response.data.message;
-        }
-        // Optional: fallback to structured errors
-        else if (Array.isArray(e.errors) && e.errors.length > 0) {
-          errorMessage =
-            e.errors[0].longMessage || e.errors[0].message || errorMessage;
-        }
-        // Fallback to generic message field
-        else if (typeof e.message === "string") {
-          errorMessage = e.message;
-        }
-      }
-      // If it's a string directly
-      else if (typeof err === "string") {
-        errorMessage = err;
-      }
-
       Swal.fire({
         icon: "error",
         title: "Signup Failed",
-        text: errorMessage,
+        text: getErrorMessage(err),
       });
     } finally {
       dispatch({ type: ACTIONS.setVerifying, payload: false });
@@ -438,19 +482,29 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
       return;
     }
 
+    if (!registrationId) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Registration session is missing. Please submit the form again.",
+      });
+      closeFacePopup();
+      return;
+    }
+
     dispatch({ type: ACTIONS.setIsProcessing, payload: true });
 
     try {
       const formData = new FormData();
       formData.append("file", capturedImage);
-      formData.append("user_id", pendingFormData.email);
-      formData.append("save_if_new", "1");
-      // Use axios to POST multipart form data to our face-check API
+      formData.append("registrationId", registrationId);
+
       let resObj: {
         error?: string;
         details?: string;
         match?: boolean;
-        saved?: boolean;
+        verified?: boolean;
+        devBypass?: boolean;
       } = {};
       try {
         const axiosResp = await axios.post("/api/auth/face-check", formData, {
@@ -459,17 +513,28 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         resObj = axiosResp.data;
       } catch (e) {
         if (axios.isAxiosError(e)) {
-          const data = e.response?.data as any;
+          const data = e.response?.data as
+            | {
+                error?: string;
+                details?: string;
+              }
+            | undefined;
           const message =
             data?.error || data?.details || e.message || "Face check failed";
           throw new Error(message);
         }
         throw e;
       }
+      if (resObj?.error) {
+        throw new Error(resObj.error);
+      }
       if (resObj?.match) {
         throw new Error(
           "This face is already registered. If this is your face, please contact support or use a different verification method.",
         );
+      }
+      if (!resObj?.verified && !resObj?.devBypass) {
+        throw new Error("Face verification could not be completed.");
       }
 
       dispatch({ type: ACTIONS.setFaceVerified, payload: true });
@@ -481,18 +546,13 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         showConfirmButton: true,
       });
       closeFacePopup();
-      await submitSignup(pendingFormData);
+      await submitSignup(pendingFormData, registrationId);
     } catch (err) {
-      const errMsg =
-        err instanceof Error
-          ? err.message
-          : "An error occurred during face verification";
       Swal.fire({
         icon: "error",
         title: "Verification Failed",
-        text: errMsg,
+        text: getErrorMessage(err),
       }).then(() => {
-        resetForm();
         closeFacePopup();
       });
     } finally {
@@ -508,12 +568,6 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
     dispatch({ type: ACTIONS.setShowFacePopup, payload: false });
     dispatch({ type: ACTIONS.setFaceCount, payload: 0 });
     setCapturedImage(null);
-  }
-
-  function resetForm() {
-    reset();
-    setPendingFormData(null);
-    dispatch({ type: ACTIONS.setFaceVerified, payload: false });
   }
 
   function capturePhoto() {
