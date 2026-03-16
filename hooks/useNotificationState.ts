@@ -7,6 +7,7 @@ export type NotificationType =
   | "application_interviewed"
   | "application_rejected"
   | "application_hired"
+  | "offer_response"
   | "exit_request_received"
   | "exit_request_approved"
   | "exit_request_rejected";
@@ -26,11 +27,14 @@ export interface Notification {
 export interface NotificationContextType {
   notifications: Notification[];
   addNotification: (
-    notification: Omit<Notification, "id" | "read" | "createdAt">,
+    notification: Omit<Notification, "id" | "read" | "createdAt"> & {
+      id?: string;
+    },
   ) => void;
   markAllAsRead: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
+  openHiredForm: (notification: Notification) => void;
 }
 
 export const NotificationContext = createContext<

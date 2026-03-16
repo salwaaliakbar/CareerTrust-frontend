@@ -39,7 +39,7 @@ const EmployerDashboard = () => {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
-  const [employerId, setEmployerId] = useState<number | null>(null);
+  const [employerId, setEmployerId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "closed" | "draft"
@@ -70,9 +70,8 @@ const EmployerDashboard = () => {
 
       try {
         setIsRefreshing(true);
-        const empId = (user.unsafeMetadata?.employerId as number) || 1;
-        console.log("[Dashboard] Using employerId:", empId);
-        setEmployerId(empId);
+        // Use Clerk ID — numeric employerId is not stored in unsafeMetadata
+        setEmployerId(user.id);
 
         // Pass Clerk ID to backend (not numeric employerId)
         const status = await checkCompanyStatus(user.id, getToken);
@@ -234,35 +233,35 @@ const EmployerDashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-            <Link
-              href={isVerified ? "/employer/post-job" : "#"}
-              onClick={(e) => {
-                if (!isVerified) {
-                  e.preventDefault();
-                  Swal.fire({
-                    icon: "warning",
-                    title: "Verification Required",
-                    text: "Your company must be verified before you can post jobs. Please wait for admin approval.",
-                  });
-                }
-              }}
-              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold shadow-lg transform transition-all duration-200 ${
-                isVerified
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:scale-105 cursor-pointer"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
-              }`}
-            >
-              {!isVerified && <Lock className="w-5 h-5" />}
-              <Plus className="w-5 h-5" />
-              Post New Job
-            </Link>
-            <Link
-              href="/employer/candidates"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold shadow-lg border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 hover:shadow-xl hover:scale-105 transform transition-all duration-200"
-            >
-              <Users className="w-5 h-5" />
-              Browse Candidates
-            </Link>
+              <Link
+                href={isVerified ? "/employer/post-job" : "#"}
+                onClick={(e) => {
+                  if (!isVerified) {
+                    e.preventDefault();
+                    Swal.fire({
+                      icon: "warning",
+                      title: "Verification Required",
+                      text: "Your company must be verified before you can post jobs. Please wait for admin approval.",
+                    });
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold shadow-lg transform transition-all duration-200 ${
+                  isVerified
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl hover:scale-105 cursor-pointer"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed opacity-60"
+                }`}
+              >
+                {!isVerified && <Lock className="w-5 h-5" />}
+                <Plus className="w-5 h-5" />
+                Post New Job
+              </Link>
+              <Link
+                href="/employer/candidates"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold shadow-lg border-2 border-blue-600 text-blue-600 bg-white hover:bg-blue-50 hover:shadow-xl hover:scale-105 transform transition-all duration-200"
+              >
+                <Users className="w-5 h-5" />
+                Browse Candidates
+              </Link>
             </div>
           </div>
         </div>

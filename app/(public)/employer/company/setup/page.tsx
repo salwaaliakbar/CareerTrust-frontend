@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   ArrowLeft,
+  Globe,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -48,17 +49,21 @@ export default function CompanySetupPage() {
   const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [customIndustry, setCustomIndustry] = useState("");
   const [existingCompanyId, setExistingCompanyId] = useState<number | null>(
     null,
   );
-  const [employerId, setEmployerId] = useState<number | null>(null);
+  const [employerId, setEmployerId] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<Omit<CreateCompanyRequest, "employerId">>();
+
+  const selectedIndustry = watch("industry");
 
   // Check access and load existing company if any
   useEffect(() => {
@@ -76,9 +81,8 @@ export default function CompanySetupPage() {
           return;
         }
 
-        // Get employer ID
-        const empId = (user.unsafeMetadata?.employerId as number) || 1;
-        setEmployerId(empId);
+        // Use Clerk ID as the employer identifier (numeric employerId is never stored in metadata)
+        setEmployerId(user.id);
 
         try {
           // Check if company already exists (pass Clerk ID)
@@ -87,16 +91,23 @@ export default function CompanySetupPage() {
           if (status.hasCompany) {
             setIsEditing(true);
             // Load existing company data
-            const company = await getCompanyProfile(empId, getToken);
+            const company = await getCompanyProfile(user.id, getToken);
             if (company) {
               setExistingCompanyId(company.id);
               setValue("name", company.name);
-              setValue("industry", company.industry);
+              // If the stored industry is not in the standard list, treat as "Other"
+              if (industries.includes(company.industry)) {
+                setValue("industry", company.industry);
+              } else {
+                setValue("industry", "Other");
+                setCustomIndustry(company.industry);
+              }
               setValue("location", company.location);
               setValue("employees", company.employees);
               setValue("description", company.description);
               setValue("logo", company.logo);
               setValue("linkedinUrl", company.linkedinUrl || "");
+              setValue("website", (company as any).website || "");
             }
           }
         } catch (error) {
@@ -109,6 +120,19 @@ export default function CompanySetupPage() {
   }, [isLoaded, user, router, setValue, getToken]);
 
   const onSubmit = async (data: Omit<CreateCompanyRequest, "employerId">) => {
+    // Resolve "Other" industry to the custom typed value
+    if (data.industry === "Other") {
+      if (!customIndustry.trim()) {
+        Swal.fire({
+          icon: "warning",
+          title: "Industry Required",
+          text: "Please type your industry in the field below the dropdown.",
+        });
+        return;
+      }
+      data.industry = customIndustry.trim();
+    }
+
     if (!employerId) {
       Swal.fire({
         icon: "error",
@@ -268,6 +292,15 @@ export default function CompanySetupPage() {
                     ))}
                   </select>
                 </div>
+                {selectedIndustry === "Other" && (
+                  <input
+                    type="text"
+                    value={customIndustry}
+                    onChange={(e) => setCustomIndustry(e.target.value)}
+                    className="mt-2 w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Please specify your industry"
+                  />
+                )}
                 {errors.industry && (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.industry.message}
@@ -288,7 +321,7 @@ export default function CompanySetupPage() {
                       required: "Location is required",
                     })}
                     className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., San Francisco, CA"
+                    placeholder="e.g., Karachi, Lahore, Islamabad"
                   />
                 </div>
                 {errors.location && (
@@ -347,6 +380,25 @@ export default function CompanySetupPage() {
                     {errors.description.message}
                   </p>
                 )}
+              </div>
+
+              {/* Company Website URL (Optional) */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Company Website URL (Optional)
+                </label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="url"
+                    {...register("website")}
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://www.yourcompany.com"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  Your company&apos;s official website
+                </p>
               </div>
 
               {/* Company Logo URL (Optional) */}

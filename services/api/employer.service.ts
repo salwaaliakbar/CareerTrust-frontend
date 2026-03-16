@@ -81,7 +81,7 @@ export async function fetchEmployerJobs(
 export async function fetchJobApplications(
   jobId: string | number,
   getToken?: () => Promise<string | null>,
-): Promise<JobApplication[]> {
+): Promise<{ applications: JobApplication[]; jobTitle: string | null }> {
   try {
     const url = `${EMPLOYER_API_URL}/jobs/${jobId}/applications`;
 
@@ -120,17 +120,20 @@ export async function fetchJobApplications(
         "[Employer Service] API returned success: false",
         data.error,
       );
-      return [];
+      return { applications: [], jobTitle: null };
     }
+
+    const applications = data.data?.applications ?? data.data ?? [];
+    const jobTitle = data.data?.jobTitle ?? null;
 
     console.log(
       "[Employer Service] Successfully fetched applications:",
-      data.data.length,
+      applications.length,
     );
-    return data.data;
+    return { applications, jobTitle };
   } catch (error) {
     console.error("[Employer Service] Error fetching applications:", error);
-    return [];
+    return { applications: [], jobTitle: null };
   }
 }
 

@@ -12,6 +12,7 @@ export interface CompanyProfile {
   description: string;
   logo: string;
   linkedinUrl?: string;
+  website?: string;
   isVerified: boolean;
   employerId: number;
   rating?: number;
@@ -73,7 +74,7 @@ export interface CompanyStatus {
 }
 
 export interface CreateCompanyRequest {
-  employerId: number;
+  employerId: number | string;
   name: string;
   industry: string;
   location: string;
@@ -81,6 +82,7 @@ export interface CreateCompanyRequest {
   description: string;
   logo?: string;
   linkedinUrl?: string;
+  website?: string;
 }
 
 /**
@@ -132,7 +134,7 @@ export async function checkCompanyStatus(
  * Get employer's company profile
  */
 export async function getCompanyProfile(
-  employerId: number,
+  employerId: number | string,
   getToken: () => Promise<string | null>,
 ): Promise<CompanyProfile | null> {
   try {
@@ -250,7 +252,7 @@ export async function createCompanyProfile(
  */
 export async function updateCompanyProfile(
   companyId: number,
-  employerId: number,
+  employerId: number | string,
   updateData: Partial<CreateCompanyRequest>,
   getToken: () => Promise<string | null>,
 ): Promise<CompanyProfile> {

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Briefcase, MapPin, DollarSign, Star } from "lucide-react";
+import { Briefcase, MapPin, Star } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 
 type Job = {
@@ -87,7 +87,7 @@ export default function JobCard({ job, isApplied = false }: JobCardProps) {
               {job.location}
             </div>
             <div className="flex items-center gap-1 transition-all duration-300 group-hover:text-primary">
-              <DollarSign className="w-4 h-4" />
+              <span className="font-bold">₨</span>
               {job.salary}
             </div>
             <div className="flex items-center gap-1 transition-all duration-300 group-hover:text-yellow-600">

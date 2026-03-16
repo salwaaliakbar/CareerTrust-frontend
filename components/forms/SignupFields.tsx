@@ -1,7 +1,16 @@
 "use client";
 
-import React from "react";
-import { Mail, Lock, User, Phone, Building2, ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Mail,
+  Lock,
+  User,
+  Phone,
+  Building2,
+  ArrowRight,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import {
   SubmitHandler,
   UseFormRegister,
@@ -37,6 +46,8 @@ export default function SignupFields({
   getValues,
   dispatch,
 }: Props) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   return (
     <>
       <div className="w-full flex">
@@ -322,7 +333,7 @@ export default function SignupFields({
                       <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                       <input
                         id="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         {...register("password", {
                           required: "Password is required",
                           minLength: {
@@ -337,12 +348,24 @@ export default function SignupFields({
                           },
                         })}
                         placeholder="••••••••"
-                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${
+                        className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${
                           rhfErrors.password
                             ? "border-red-400"
                             : "border-gray-300"
                         }`}
                       />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
                     {rhfErrors.password && (
                       <div className="text-sm text-red-500 mt-1">
@@ -362,7 +385,7 @@ export default function SignupFields({
                       <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                       <input
                         id="confirmPassword"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         {...register("confirmPassword", {
                           required: "Please confirm your password",
                           validate: (v: string) =>
@@ -370,12 +393,24 @@ export default function SignupFields({
                             "Passwords do not match",
                         })}
                         placeholder="••••••••"
-                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${
+                        className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0C2B4E] focus:border-transparent ${
                           rhfErrors.confirmPassword
                             ? "border-red-400"
                             : "border-gray-300"
                         }`}
                       />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                        className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
                     {rhfErrors.confirmPassword && (
                       <div className="text-sm text-red-500 mt-1">

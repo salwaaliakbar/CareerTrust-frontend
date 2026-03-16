@@ -22,7 +22,7 @@ export default function EditJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [initialData, setInitialData] = useState<JobFormData | null>(null);
-  const [employerId, setEmployerId] = useState<number | null>(null);
+  const [employerId, setEmployerId] = useState<string | null>(null);
 
   // Check if user is an employer and fetch job data
   useEffect(() => {
@@ -40,8 +40,8 @@ export default function EditJobPage() {
           return;
         }
 
-        const empId = (user.unsafeMetadata?.employerId as number) || 1;
-        setEmployerId(empId);
+        // Use Clerk ID — numeric employerId is not stored in metadata
+        setEmployerId(user.id);
 
         try {
           setIsLoading(true);
