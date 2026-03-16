@@ -16,7 +16,6 @@ import {
   CheckCircle,
   XCircle,
   FileText,
-  DollarSign,
 } from "lucide-react";
 import { deleteJob, updateJobStatus } from "@/services/api/employer.service";
 import Swal from "sweetalert2";
@@ -229,7 +228,7 @@ export default function EmployerJobCard({
             </div>
             {job.salary && (
               <div className="flex items-center gap-1.5">
-                <DollarSign className="w-4 h-4" />
+                <span className="font-bold">₨</span>
                 <span>{job.salary}</span>
               </div>
             )}

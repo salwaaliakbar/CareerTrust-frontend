@@ -4,9 +4,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import {
   Briefcase,
-  Building2,
   MapPin,
-  DollarSign,
   Clock,
   Users,
   FileText,
@@ -105,36 +103,6 @@ export default function JobPostForm({
               )}
             </label>
 
-            {/* Company Name */}
-            <label className="block group/input">
-              <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                Company Name <span className="text-red-500">*</span>
-              </span>
-              <input
-                {...register("company", {
-                  required: isEditMode ? false : "Company name is required",
-                })}
-                disabled={isEditMode}
-                className={`w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium ${
-                  isEditMode
-                    ? "bg-slate-50 cursor-not-allowed text-slate-600"
-                    : ""
-                }`}
-                placeholder="e.g., Tech Solutions Inc."
-              />
-              {isEditMode && (
-                <p className="text-xs text-slate-500 mt-1">
-                  Company cannot be changed when editing a job
-                </p>
-              )}
-              {errors.company && !isEditMode && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.company.message}
-                </p>
-              )}
-            </label>
-
             {/* Location and Salary Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <label className="block group/input">
@@ -147,7 +115,7 @@ export default function JobPostForm({
                     required: "Location is required",
                   })}
                   className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-                  placeholder="e.g., Remote / New York, NY"
+                  placeholder="e.g., Lahore, Pakistan / Remote"
                 />
                 {errors.location && (
                   <p className="text-red-500 text-sm mt-1">
@@ -158,13 +126,13 @@ export default function JobPostForm({
 
               <label className="block group/input">
                 <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <DollarSign className="w-4 h-4 text-blue-600" />
-                  Salary Range
+                  <span className="text-blue-600 font-bold text-sm">₨</span>
+                  Salary (PKR)
                 </span>
                 <input
                   {...register("salary")}
                   className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-                  placeholder="e.g., $80,000 - $120,000"
+                  placeholder="e.g., Rs. 80,000 - Rs. 150,000 / month"
                 />
               </label>
             </div>

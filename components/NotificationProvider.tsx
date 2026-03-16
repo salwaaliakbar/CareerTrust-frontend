@@ -27,12 +27,21 @@ export function NotificationProvider({
   const [selectedHiredNotification, setSelectedHiredNotification] =
     useState<Notification | null>(null);
 
+  const openHiredForm = useCallback((notification: Notification) => {
+    setSelectedHiredNotification(notification);
+    setShowHiredForm(true);
+  }, []);
+
   // Stable: uses functional update, so never needs notifications in deps
   const addNotification = useCallback(
-    (notification: Omit<Notification, "id" | "read" | "createdAt">) => {
+    (
+      notification: Omit<Notification, "id" | "read" | "createdAt"> & {
+        id?: string;
+      },
+    ) => {
       const newNotification: Notification = {
         ...notification,
-        id: Math.random().toString(36).substr(2, 9),
+        id: notification.id ?? Math.random().toString(36).substr(2, 9),
         read: false,
         createdAt: new Date(),
       };
@@ -201,6 +210,7 @@ export function NotificationProvider({
     const handleApplicationReviewing = (data: any) => {
       console.log("Application reviewing notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "application_reviewing",
         title: "Application Under Review",
         message: data.message,
@@ -212,6 +222,7 @@ export function NotificationProvider({
     const handleApplicationShortlisted = (data: any) => {
       console.log("Application shortlisted notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "application_shortlisted",
         title: "🎉 You've Been Shortlisted!",
         message: data.message,
@@ -223,6 +234,7 @@ export function NotificationProvider({
     const handleApplicationInterviewed = (data: any) => {
       console.log("Application interviewed notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "application_interviewed",
         title: "🎯 Interview Scheduled!",
         message: data.message,
@@ -234,6 +246,7 @@ export function NotificationProvider({
     const handleApplicationRejected = (data: any) => {
       console.log("Application rejected notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "application_rejected",
         title: "Application Update",
         message: data.message,
@@ -245,6 +258,7 @@ export function NotificationProvider({
     const handleApplicationHired = (data: any) => {
       console.log("Application hired notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "application_hired",
         title: "🎊 Job Offer Received!",
         message: data.message,
@@ -258,6 +272,7 @@ export function NotificationProvider({
     const handleExitRequestReceived = (data: any) => {
       console.log("Exit request received notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "exit_request_received",
         title: data.title || "Exit Request Received",
         message: data.message,
@@ -267,6 +282,7 @@ export function NotificationProvider({
     const handleExitRequestApproved = (data: any) => {
       console.log("Exit request approved notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "exit_request_approved",
         title: data.title || "Exit Request Approved",
         message: data.message,
@@ -276,9 +292,23 @@ export function NotificationProvider({
     const handleExitRequestRejected = (data: any) => {
       console.log("Exit request rejected notification:", data);
       addNotification({
+        id: data.id ? String(data.id) : undefined,
         type: "exit_request_rejected",
         title: data.title || "Exit Request Rejected",
         message: data.message,
+      });
+    };
+
+    // Offer response handler (employer receives jobseeker's accept/decline)
+    const handleOfferResponse = (data: any) => {
+      console.log("Offer response notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "offer_response",
+        title: data.title || "Offer Response Received",
+        message: data.notificationMessage || data.message,
+        applicationId: data.applicationId,
+        jobId: data.jobId,
       });
     };
 
@@ -291,6 +321,7 @@ export function NotificationProvider({
     on("exit_request_received", handleExitRequestReceived);
     on("exit_request_approved", handleExitRequestApproved);
     on("exit_request_rejected", handleExitRequestRejected);
+    on("offer_response", handleOfferResponse);
 
     // Cleanup
     return () => {
@@ -302,6 +333,7 @@ export function NotificationProvider({
       off("exit_request_received", handleExitRequestReceived);
       off("exit_request_approved", handleExitRequestApproved);
       off("exit_request_rejected", handleExitRequestRejected);
+      off("offer_response", handleOfferResponse);
     };
     // on/off/addNotification are all stable (useCallback) — only the
     // connection state should gate re-registration of handlers.
@@ -358,6 +390,7 @@ export function NotificationProvider({
         markAllAsRead,
         markAsRead,
         deleteNotification,
+        openHiredForm,
       }}
     >
       {children}

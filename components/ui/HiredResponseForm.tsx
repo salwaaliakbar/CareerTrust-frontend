@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { API_ENDPOINTS } from "@/constants/api";
 
 interface HiredResponseFormProps {
   isOpen: boolean;
@@ -19,9 +22,27 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
   companyName,
   onSubmit,
 }) => {
+  const { user } = useUser();
   const [response, setResponse] = useState<"accept" | "decline" | null>(null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCurrentlyEmployed, setIsCurrentlyEmployed] = useState(false);
+
+  // Fetch employment status when the form opens
+  useEffect(() => {
+    if (!isOpen || !user?.id) return;
+    fetch(
+      `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`,
+    )
+      .then((r) => r.json())
+      .then((body) => {
+        const data = body?.data ?? body;
+        setIsCurrentlyEmployed(!!data?.isCurrentlyEmployed);
+      })
+      .catch(() => {
+        /* silently ignore – default remains false */
+      });
+  }, [isOpen, user?.id]);
 
   if (!isOpen) return null;
 
@@ -81,6 +102,29 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
             <p className="text-gray-700 font-medium mt-1">at {companyName}</p>
           </div>
 
+          {/* Currently-employed warning */}
+          {isCurrentlyEmployed && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold mb-1">You are currently employed</p>
+                <p>
+                  You must leave your current job before accepting a new offer.
+                  Please submit an{" "}
+                  <Link
+                    href="/jobseeker/exit-request"
+                    className="underline font-semibold hover:text-amber-900"
+                    onClick={onClose}
+                  >
+                    Exit Request
+                  </Link>{" "}
+                  first. Once your exit is approved and your employment status
+                  is updated, you can return here to accept this offer.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Response Selection */}
           <div className="space-y-3">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -89,10 +133,12 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
 
             {/* Accept Option */}
             <label
-              className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                response === "accept"
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-200 hover:border-green-300 hover:bg-green-50/30"
+              className={`flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
+                isCurrentlyEmployed
+                  ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
+                  : response === "accept"
+                    ? "border-green-500 bg-green-50 cursor-pointer"
+                    : "border-gray-200 hover:border-green-300 hover:bg-green-50/30 cursor-pointer"
               }`}
             >
               <input
@@ -100,7 +146,8 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
                 name="response"
                 value="accept"
                 checked={response === "accept"}
-                onChange={() => setResponse("accept")}
+                onChange={() => !isCurrentlyEmployed && setResponse("accept")}
+                disabled={isCurrentlyEmployed}
                 className="w-5 h-5 text-green-600"
               />
               <div className="flex items-center gap-3 flex-1">
@@ -110,7 +157,9 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
                 <div>
                   <p className="font-semibold text-gray-900">Accept Offer</p>
                   <p className="text-sm text-gray-600">
-                    I&apos;m excited to join the team!
+                    {isCurrentlyEmployed
+                      ? "Leave your current job first to accept"
+                      : "I'm excited to join the team!"}
                   </p>
                 </div>
               </div>
@@ -201,7 +250,11 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
                     ? "bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                     : "bg-gray-400 cursor-not-allowed"
               }`}
-              disabled={!response || isSubmitting}
+              disabled={
+                !response ||
+                isSubmitting ||
+                (response === "accept" && isCurrentlyEmployed)
+              }
             >
               {isSubmitting ? (
                 <>

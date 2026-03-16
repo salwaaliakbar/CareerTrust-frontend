@@ -41,8 +41,6 @@ const statusOptions: {
   { value: "interviewed", label: "Interviewed", color: "indigo" },
   { value: "hired", label: "Hired", color: "green" },
   { value: "rejected", label: "Rejected", color: "red" },
-  { value: "offer_accepted", label: "Offer Accepted", color: "emerald" },
-  { value: "offer_declined", label: "Offer Declined", color: "orange" },
 ];
 
 const terminalStatuses: ApplicationStatus[] = [
@@ -204,6 +202,12 @@ export default function ApplicantCard({
                       {option.label}
                     </option>
                   ))}
+                  {application.status === "offer_accepted" && (
+                    <option value="offer_accepted">Offer Accepted</option>
+                  )}
+                  {application.status === "offer_declined" && (
+                    <option value="offer_declined">Offer Declined</option>
+                  )}
                 </select>
               </div>
             </div>

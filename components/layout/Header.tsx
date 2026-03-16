@@ -20,8 +20,13 @@ function Header() {
   const { signOut } = useClerk();
   const router = useRouter();
   const pathname = usePathname();
-  const { notifications, markAllAsRead, markAsRead, deleteNotification } =
-    useNotificationState();
+  const {
+    notifications,
+    markAllAsRead,
+    markAsRead,
+    deleteNotification,
+    openHiredForm,
+  } = useNotificationState();
   const [showSidebar, setShowSidebar] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -207,6 +212,10 @@ function Header() {
                   }}
                   onMarkAsRead={markAsRead}
                   onDelete={deleteNotification}
+                  onOpenHiredForm={(notification) => {
+                    setShowSidebar(false);
+                    openHiredForm(notification);
+                  }}
                 />
               )}
 

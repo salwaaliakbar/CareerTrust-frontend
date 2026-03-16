@@ -21,6 +21,8 @@ export interface JobseekerPublicProfile {
   resumeUrl: string | null;
   /** "open" = Open for Opportunities (user-controlled); "not_open" = Not Open */
   employmentStatus: "open" | "not_open" | null;
+  /** Auto-maintained: true if any employment history record has currentlyWorking=true */
+  isCurrentlyEmployed: boolean;
   createdAt: string;
   employmentHistory: EmploymentRecord[];
   educationHistory: EducationRecord[];

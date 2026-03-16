@@ -6,7 +6,10 @@ import JobCard from "@/components/jobs/JobCard";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
 import { getAllJobs } from "@/redux/store/slices/jobsSlice";
-import { fetchUserApplications, selectAppliedJobIds } from "@/redux/store/slices/jobseeker/applicationsSlice";
+import {
+  fetchUserApplications,
+  selectAppliedJobIds,
+} from "@/redux/store/slices/jobseeker/applicationsSlice";
 import { useUser } from "@clerk/nextjs";
 
 export default function JobsClient() {
@@ -22,16 +25,17 @@ export default function JobsClient() {
   const [recommendedOnly, setRecommendedOnly] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
 
-  // Initialize Redux
+  // Initialize Redux — wait for Clerk to finish loading before dispatching
   useEffect(() => {
+    if (!isLoaded) return;
     if (isSignedIn && user?.id) {
       dispatch(getAllJobs({ clerkId: user.id }));
     } else {
       dispatch(getAllJobs({}));
     }
-  }, [dispatch, isSignedIn, user]);
+  }, [dispatch, isSignedIn, user, isLoaded]);
 
   // Fetch applied jobs from Redux
   useEffect(() => {
@@ -42,7 +46,7 @@ export default function JobsClient() {
     } else if (user?.id && reduxAppliedJobIds.length > 0) {
       console.log(
         "[JobsClient] Using cached applications from Redux, count:",
-        reduxAppliedJobIds.length
+        reduxAppliedJobIds.length,
       );
     }
   }, [user?.id, reduxAppliedJobIds.length, dispatch]);
@@ -88,14 +92,16 @@ export default function JobsClient() {
       if (selectedSalary.length > 0) {
         // Parse job.salary as number (remove commas, PKR, etc.)
         let salaryNum = 0;
-        if (typeof job.salary === 'number') {
+        if (typeof job.salary === "number") {
           salaryNum = job.salary;
-        } else if (typeof job.salary === 'string') {
-          salaryNum = parseInt(job.salary.replace(/[^\d]/g, ''), 10);
+        } else if (typeof job.salary === "string") {
+          salaryNum = parseInt(job.salary.replace(/[^\d]/g, ""), 10);
         }
         matchesSalary = selectedSalary.some((range) => {
-          if (range === "PKR 80,000 - 120,000") return salaryNum >= 80000 && salaryNum <= 120000;
-          if (range === "PKR 120,000 - 180,000") return salaryNum > 120000 && salaryNum <= 180000;
+          if (range === "PKR 80,000 - 120,000")
+            return salaryNum >= 80000 && salaryNum <= 120000;
+          if (range === "PKR 120,000 - 180,000")
+            return salaryNum > 120000 && salaryNum <= 180000;
           if (range === "PKR 180,000+") return salaryNum > 180000;
           return false;
         });
@@ -104,7 +110,9 @@ export default function JobsClient() {
       // Company rating filter
       let matchesRating = true;
       if (selectedRatings.length > 0) {
-        matchesRating = selectedRatings.some((rating) => (job.rating || 0) >= rating);
+        matchesRating = selectedRatings.some(
+          (rating) => (job.rating || 0) >= rating,
+        );
       }
 
       // Posted date filter
@@ -114,25 +122,51 @@ export default function JobsClient() {
           if (!job.postedDate) return false;
           const posted = new Date(job.postedDate);
           const now = new Date();
-          if (date === "Last 7 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 7;
-          if (date === "Last 30 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 30;
-          if (date === "Last 90 days") return (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 90;
+          if (date === "Last 7 days")
+            return (
+              (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 7
+            );
+          if (date === "Last 30 days")
+            return (
+              (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 30
+            );
+          if (date === "Last 90 days")
+            return (
+              (now.getTime() - posted.getTime()) / (1000 * 60 * 60 * 24) <= 90
+            );
           return false;
         });
       }
 
-      return matchesSearch && matchesLocation && matchesSalary && matchesRating && matchesDate;
+      return (
+        matchesSearch &&
+        matchesLocation &&
+        matchesSalary &&
+        matchesRating &&
+        matchesDate
+      );
     });
 
     // Sort by most relevant if enabled and user is logged in
     if (sortByRelevant && isSignedIn) {
-      filtered = [...filtered].sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
+      filtered = [...filtered].sort(
+        (a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0),
+      );
     }
     return filtered;
-  }, [jobs, searchTerm, selectedLocation, selectedSalary, selectedRatings, selectedDates, sortByRelevant, recommendedOnly, isSignedIn]);
+  }, [
+    jobs,
+    searchTerm,
+    selectedLocation,
+    selectedSalary,
+    selectedRatings,
+    selectedDates,
+    sortByRelevant,
+    recommendedOnly,
+    isSignedIn,
+  ]);
 
   return (
-
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Hero Section with enhanced styling */}
       <section className="relative overflow-hidden py-12 px-4">
@@ -146,8 +180,12 @@ export default function JobsClient() {
           <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
 
           <div className="relative z-10">
-            <h1 className="text-4xl font-bold mb-3 fade-in text-white">Find Your Next Opportunity</h1>
-            <p className="text-blue-100 text-lg mb-8 fade-in animation-delay-100">Discover verified jobs matched to your skills and experience</p>
+            <h1 className="text-4xl font-bold mb-3 fade-in text-white">
+              Find Your Next Opportunity
+            </h1>
+            <p className="text-blue-100 text-lg mb-8 fade-in animation-delay-100">
+              Discover verified jobs matched to your skills and experience
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl fade-in animation-delay-200">
               <div className="md:col-span-2 relative group">
@@ -180,8 +218,11 @@ export default function JobsClient() {
                   onClick={() => {
                     const params = new URLSearchParams();
                     if (searchTerm) params.set("q", searchTerm);
-                    if (selectedLocation) params.set("location", selectedLocation);
-                    router.push(`/jobs${params.toString() ? `?${params.toString()}` : ""}`);
+                    if (selectedLocation)
+                      params.set("location", selectedLocation);
+                    router.push(
+                      `/jobs${params.toString() ? `?${params.toString()}` : ""}`,
+                    );
                   }}
                   className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
                 >
@@ -227,7 +268,9 @@ export default function JobsClient() {
                     {/* Recommended Jobs filter for logged-in users */}
                     {isSignedIn && (
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Recommendations</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">
+                          Recommendations
+                        </h4>
                         <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
                           <input
                             type="checkbox"
@@ -245,7 +288,9 @@ export default function JobsClient() {
                     {/* Most Relevant filter for logged-in users */}
                     {isSignedIn && (
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 mt-4">Sort</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3 mt-4">
+                          Sort
+                        </h4>
                         <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg hover:bg-sky-50 transition">
                           <input
                             type="checkbox"
@@ -253,15 +298,24 @@ export default function JobsClient() {
                             checked={sortByRelevant}
                             onChange={() => setSortByRelevant((prev) => !prev)}
                           />
-                          <span className="text-gray-600 text-sm font-medium">Most Relevant</span>
+                          <span className="text-gray-600 text-sm font-medium">
+                            Most Relevant
+                          </span>
                         </label>
                       </div>
                     )}
 
                     <h4 className="font-semibold text-gray-900 my-3">Salary</h4>
                     <div className="space-y-2">
-                      {["PKR 80,000 - 120,000", "PKR 120,000 - 180,000", "PKR 180,000+"].map((range) => (
-                        <label key={range} className="flex items-center gap-2 cursor-pointer">
+                      {[
+                        "PKR 80,000 - 120,000",
+                        "PKR 120,000 - 180,000",
+                        "PKR 180,000+",
+                      ].map((range) => (
+                        <label
+                          key={range}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded border-gray-300 text-sky-700"
@@ -270,7 +324,7 @@ export default function JobsClient() {
                               setSelectedSalary((prev) =>
                                 prev.includes(range)
                                   ? prev.filter((r) => r !== range)
-                                  : [...prev, range]
+                                  : [...prev, range],
                               );
                             }}
                           />
@@ -281,10 +335,19 @@ export default function JobsClient() {
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">Company Rating</h4>
+                    <h4 className="font-semibold text-gray-900 mb-3">
+                      Company Rating
+                    </h4>
                     <div className="space-y-2">
-                      {[{ rating: 4.5, label: "4.5+ stars" }, { rating: 4, label: "4+ stars" }, { rating: 3.5, label: "3.5+ stars" }].map((item) => (
-                        <label key={item.rating} className="flex items-center gap-2 cursor-pointer">
+                      {[
+                        { rating: 4.5, label: "4.5+ stars" },
+                        { rating: 4, label: "4+ stars" },
+                        { rating: 3.5, label: "3.5+ stars" },
+                      ].map((item) => (
+                        <label
+                          key={item.rating}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded border-gray-300 text-sky-700"
@@ -293,36 +356,47 @@ export default function JobsClient() {
                               setSelectedRatings((prev) =>
                                 prev.includes(item.rating)
                                   ? prev.filter((r) => r !== item.rating)
-                                  : [...prev, item.rating]
+                                  : [...prev, item.rating],
                               );
                             }}
                           />
-                          <span className="text-gray-600 text-sm">{item.label}</span>
+                          <span className="text-gray-600 text-sm">
+                            {item.label}
+                          </span>
                         </label>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">Posted Date</h4>
+                    <h4 className="font-semibold text-gray-900 mb-3">
+                      Posted Date
+                    </h4>
                     <div className="space-y-2">
-                      {["Last 7 days", "Last 30 days", "Last 90 days"].map((date) => (
-                        <label key={date} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-gray-300 text-sky-700"
-                            checked={selectedDates.includes(date)}
-                            onChange={() => {
-                              setSelectedDates((prev) =>
-                                prev.includes(date)
-                                  ? prev.filter((d) => d !== date)
-                                  : [...prev, date]
-                              );
-                            }}
-                          />
-                          <span className="text-gray-600 text-sm">{date}</span>
-                        </label>
-                      ))}
+                      {["Last 7 days", "Last 30 days", "Last 90 days"].map(
+                        (date) => (
+                          <label
+                            key={date}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-sky-700"
+                              checked={selectedDates.includes(date)}
+                              onChange={() => {
+                                setSelectedDates((prev) =>
+                                  prev.includes(date)
+                                    ? prev.filter((d) => d !== date)
+                                    : [...prev, date],
+                                );
+                              }}
+                            />
+                            <span className="text-gray-600 text-sm">
+                              {date}
+                            </span>
+                          </label>
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
@@ -333,16 +407,21 @@ export default function JobsClient() {
             <div className="flex-1">
               <div className="mb-6 fade-in animation-delay-200">
                 <p className="text-gray-600">
-                  Showing <strong>{filteredJobs.length}</strong> job{filteredJobs.length !== 1 ? "s" : ""}
+                  Showing <strong>{filteredJobs.length}</strong> job
+                  {filteredJobs.length !== 1 ? "s" : ""}
                 </p>
               </div>
 
               <div className="space-y-4">
                 {filteredJobs.length > 0 ? (
                   filteredJobs.map((job, idx) => (
-                    <div key={job.id} className="fade-in" style={{animationDelay: `${200 + idx * 100}ms`}}>
-                      <JobCard 
-                        job={job} 
+                    <div
+                      key={job.id}
+                      className="fade-in"
+                      style={{ animationDelay: `${200 + idx * 100}ms` }}
+                    >
+                      <JobCard
+                        job={job}
                         isApplied={reduxAppliedJobIds.includes(String(job.id))}
                       />
                     </div>
@@ -350,8 +429,12 @@ export default function JobsClient() {
                 ) : (
                   <div className="card-base p-12 text-center fade-in animation-delay-300">
                     <BriefcasePlaceholder />
-                    <p className="text-gray-600 text-lg">No jobs found matching your criteria</p>
-                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search filters</p>
+                    <p className="text-gray-600 text-lg">
+                      No jobs found matching your criteria
+                    </p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      Try adjusting your search filters
+                    </p>
                   </div>
                 )}
               </div>
@@ -366,8 +449,16 @@ export default function JobsClient() {
 function BriefcasePlaceholder() {
   return (
     <div className="mx-auto mb-4">
-      <svg className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M3 7h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" strokeWidth="1.5" />
+      <svg
+        className="w-12 h-12 text-gray-300"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          d="M3 7h18v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
+          strokeWidth="1.5"
+        />
         <path d="M8 7V6a4 4 0 0 1 8 0v1" strokeWidth="1.5" />
       </svg>
     </div>
