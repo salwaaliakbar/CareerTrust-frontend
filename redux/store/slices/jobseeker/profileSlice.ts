@@ -21,6 +21,7 @@ export interface FetchedProfileData {
   skills?: string | string[];
   totalExperience?: string;
   totalExperienceYears?: number;
+  employmentStatus?: ProfileData["employmentStatus"] | null;
   resumeUrl?: string | null;
   profilePicUrl?: string | null;
   employmentHistory: EmploymentRecord[];
@@ -51,6 +52,7 @@ const initialProfile: ProfileData = {
   summary: "",
   total_experience: "",
   total_experience_years: 0,
+  employmentStatus: "open",
 };
 
 export const initialState: JobseekerProfileState = {
@@ -221,13 +223,14 @@ const profileSlice = createSlice({
 
         // Map fetched data to profile
         state.profile = {
-          fullName: fetchedData.fullName,
+          fullName: fetchedData.fullName || "",
           headline: fetchedData.headline || "",
           location: fetchedData.location || "",
           skills: normalizedSkills,
           summary: fetchedData.summary || "",
           total_experience: fetchedData.totalExperience || "",
           total_experience_years: fetchedData.totalExperienceYears || 0,
+          employmentStatus: fetchedData.employmentStatus || "open",
           email: fetchedData.email,
         };
 

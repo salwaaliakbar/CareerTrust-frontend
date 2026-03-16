@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       `${API_ENDPOINTS.BACKEND_DASHBOARD_STATS}?clerkId=${clerkId}`,
       {
         method: "GET",
+        cache: "no-store",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.BACKEND_API_KEY || ""}`,

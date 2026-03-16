@@ -34,9 +34,79 @@ import {
   setEducation,
   setEmployment,
   setProfile,
+  setProfilePicUrl,
+  setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
 import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
 import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
+
+type JobRecommendationItem = {
+  jobId: number;
+  score?: number | null;
+};
+
+type ProfileApiResponseData = {
+  fullName?: string | null;
+  headline?: string | null;
+  location?: string | null;
+  skills?:
+    | string
+    | Array<string | { skillName?: string | null }>
+    | null;
+  summary?: string | null;
+  email?: string | null;
+  total_experience?: string | null;
+  totalExperience?: string | null;
+  total_experience_years?: number | null;
+  totalExperienceYears?: number | null;
+  employmentStatus?: "open" | "not_open" | null;
+  profilePicUrl?: string | null;
+  resumeUrl?: string | null;
+  educationHistory?: EducationRecord[];
+  employmentHistory?: EmploymentRecord[];
+};
+
+function normalizeSkillsToText(skills: unknown): string {
+  if (typeof skills === "string") {
+    return skills;
+  }
+
+  if (Array.isArray(skills)) {
+    return skills
+      .map((skill) => {
+        if (typeof skill === "string") return skill;
+        if (skill && typeof skill === "object" && "skillName" in skill) {
+          return String((skill as { skillName?: unknown }).skillName || "");
+        }
+        return "";
+      })
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return "";
+}
+
+function mapApiProfileToForm(data: ProfileApiResponseData): ProfileData {
+  const totalExperienceYears = Number(
+    data?.total_experience_years ?? data?.totalExperienceYears ?? 0,
+  );
+
+  return {
+    fullName: data?.fullName || "",
+    headline: data?.headline || "",
+    location: data?.location || "",
+    skills: normalizeSkillsToText(data?.skills),
+    summary: data?.summary || "",
+    email: data?.email || "",
+    total_experience: data?.total_experience || data?.totalExperience || "",
+    total_experience_years: Number.isFinite(totalExperienceYears)
+      ? totalExperienceYears
+      : 0,
+    employmentStatus: data?.employmentStatus || "open",
+  };
+}
 
 export default function ProfilePage() {
   const { user } = useUser();
@@ -44,6 +114,7 @@ export default function ProfilePage() {
   // Job Recommendation Polling and Redux update
   const clerkId = user?.id;
   const [startPolling, setStartPolling] = useState(false);
+  const [pollSince, setPollSince] = useState<string | null>(null);
   const dispatch = useDispatch();
   // Notification state
   const { notifications, addNotification } = useNotificationState();
@@ -51,20 +122,27 @@ export default function ProfilePage() {
   const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch new recommendations from BFF
-  const fetchNewRecommendations = async () => {
+  const fetchNewRecommendations = useCallback(async () => {
     if (!clerkId) return;
     try {
       const res = await axios.get(
         `/api/jobRecommendation/recommendations?clerkId=${clerkId}`,
       );
-      const recommendations = res.data.recommendations || [];
+      const recommendations: JobRecommendationItem[] = Array.isArray(
+        res.data?.recommendations,
+      )
+        ? res.data.recommendations
+        : [];
       console.log("Fetched new job recommendations:", recommendations);
-      // Map score (0-1) to match (0-100) percent
+      // Handle both normalized scores (0-1) and percentage scores (0-100).
       dispatch(
         updateJobMatches(
-          recommendations.map((r: any) => ({
+          recommendations.map((r) => ({
             id: r.jobId,
-            match: Math.round((r.score ?? 0) * 100),
+            match:
+              typeof r.score === "number"
+                ? Math.round(r.score <= 1 ? r.score * 100 : r.score)
+                : 0,
           })),
         ),
       );
@@ -80,17 +158,19 @@ export default function ProfilePage() {
     } catch (err) {
       logger.error("Failed to fetch job recommendations", err);
     }
-  };
+  }, [addNotification, clerkId, dispatch]);
+
   // Only start polling after profile update
-  useJobRecommendationPolling(
-    startPolling && clerkId ? clerkId : "",
-    () => {
-      fetchNewRecommendations();
-      setStartPolling(false); // Stop polling after update
+  useJobRecommendationPolling({
+    clerkId: startPolling && clerkId ? clerkId : "",
+    pollSince,
+    onNewRecommendation: fetchNewRecommendations,
+    onPollingEnd: () => {
+      setStartPolling(false);
     },
-    10000,
-    10, // maxAttempts
-  );
+    interval: 10000,
+    maxAttempts: 10,
+  });
 
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
@@ -108,6 +188,25 @@ export default function ProfilePage() {
   const reduxProfile = useSelector(selectJobseekerProfile);
   const profileLoading = useSelector(selectProfileLoading);
   const [hasCheckedRedux, setHasCheckedRedux] = useState(false);
+  const hasReduxProfileData = React.useMemo(
+    () =>
+      Boolean(
+        reduxProfile.profile?.fullName ||
+          reduxProfile.profile?.email ||
+          reduxProfile.profilePicUrl ||
+          reduxProfile.resumeUrl ||
+          reduxProfile.education.length > 0 ||
+          reduxProfile.employment.length > 0,
+      ),
+    [
+      reduxProfile.profile?.fullName,
+      reduxProfile.profile?.email,
+      reduxProfile.profilePicUrl,
+      reduxProfile.resumeUrl,
+      reduxProfile.education.length,
+      reduxProfile.employment.length,
+    ],
+  );
 
   const {
     educationHistory,
@@ -141,6 +240,13 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  const updateEmploymentStatus = useCallback(
+    (status: "open" | "not_open") => {
+      setForm((prev) => ({ ...prev, employmentStatus: status }));
+    },
+    [],
+  );
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
@@ -151,53 +257,76 @@ export default function ProfilePage() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
 
-  // Load from Redux or fetch from backend on mount
-  // React.useEffect(() => {
-  //   if (!mounted || !user) return;
+  // Hydrate local UI state from Redux whenever profile data is available.
+  React.useEffect(() => {
+    if (!mounted || !user || !hasReduxProfileData || isEditing) return;
 
-  //   // Check if we have data in Redux
-  //   if (reduxProfile.profile?.fullName) {
-  //     // Data exists in Redux, use it
-  //     setForm(reduxProfile.profile);
-  //     setEducationHistory(reduxProfile.education);
-  //     setEmploymentHistory(reduxProfile.employment);
-  //     setHasCheckedRedux(true);
-  //     logger.info("Loaded profile data from Redux");
-  //   } else if (!hasCheckedRedux && !profileLoading) {
-  //     // No data in Redux, fetch from backend
-  //     const clerkId = user.id;
-  //     if (clerkId) {
-  //       dispatch(fetchJobseekerProfile(clerkId) as any).then((action: any) => {
-  //         if (action.payload) {
-  //           // Data fetched successfully, update local form state
-  //           const fetchedData = action.payload;
-  //           setForm({
-  //             fullName: fetchedData.fullName || "",
-  //             headline: fetchedData.headline || "",
-  //             location: fetchedData.location || "",
-  //             skills: typeof fetchedData.skills === "string"
-  //               ? fetchedData.skills
-  //               : Array.isArray(fetchedData.skills)
-  //                 ? fetchedData.skills.join(", ")
-  //                 : "",
-  //             summary: fetchedData.summary || "",
-  //             email: fetchedData.email || "",
-  //             total_experience: fetchedData.total_experience || "",
-  //             total_experience_years: fetchedData.total_experience_years || 0,
-  //           });
-  //           setEducationHistory(fetchedData.educationHistory || []);
-  //           setEmploymentHistory(fetchedData.employmentHistory || []);
-  //           logger.info("Fetched and loaded profile data from backend");
-  //         }
-  //         setHasCheckedRedux(true);
-  //       });
-  //     }
-  //   }
-  // }, [mounted, user, reduxProfile.profile?.email, hasCheckedRedux, profileLoading, dispatch]);
+    setForm({
+      ...reduxProfile.profile,
+      employmentStatus: reduxProfile.profile?.employmentStatus || "open",
+    });
+    setEducationHistory(reduxProfile.education);
+    setEmploymentHistory(reduxProfile.employment);
+    setProfileImage(reduxProfile.profilePicUrl || null);
+    setResumeFile(null);
+    setProfileFile(null);
+    logger.info("Loaded profile data from Redux");
+  }, [
+    mounted,
+    user,
+    hasReduxProfileData,
+    isEditing,
+    reduxProfile.profile,
+    reduxProfile.education,
+    reduxProfile.employment,
+    reduxProfile.profilePicUrl,
+    setEducationHistory,
+    setEmploymentHistory,
+  ]);
+
+  // Always fetch once on page open so persisted backend data refreshes Redux/local state.
+  React.useEffect(() => {
+    if (!mounted || !user) return;
+    if (hasCheckedRedux || profileLoading) return;
+
+    const currentClerkId = user.id;
+    if (!currentClerkId) return;
+
+    setHasCheckedRedux(true);
+    dispatch(fetchJobseekerProfile(currentClerkId) as any).then((action: any) => {
+      if (action.payload) {
+        const fetchedData = action.payload as ProfileApiResponseData;
+        setForm(mapApiProfileToForm(fetchedData));
+        setEducationHistory(
+          Array.isArray(fetchedData.educationHistory)
+            ? fetchedData.educationHistory
+            : [],
+        );
+        setEmploymentHistory(
+          Array.isArray(fetchedData.employmentHistory)
+            ? fetchedData.employmentHistory
+            : [],
+        );
+        setProfileImage(fetchedData.profilePicUrl || null);
+        setResumeFile(null);
+        setProfileFile(null);
+        logger.info("Fetched and loaded profile data from backend");
+      }
+    });
+  }, [
+    mounted,
+    user,
+    hasReduxProfileData,
+    hasCheckedRedux,
+    profileLoading,
+    dispatch,
+    setEducationHistory,
+    setEmploymentHistory,
+  ]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
-    if (!mounted || !user || hasCheckedRedux) return;
+    if (!mounted || !user) return;
 
     const name =
       user.fullName || `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -212,7 +341,7 @@ export default function ProfilePage() {
       fullName: prev.fullName || name,
       email: prev.email || email,
     }));
-  }, [mounted, user, hasCheckedRedux]);
+  }, [mounted, user]);
 
   async function autoFillFromResume(file: File) {
     setAutoFilling(true);
@@ -444,8 +573,9 @@ export default function ProfilePage() {
       if (resumeFile) payload.append("resume", resumeFile);
       if (profileFile) {
         payload.append("profileImage", profileFile);
-      } else if (profileImage) {
-        // If no file but we have a data URL string, send it for AI verification
+      } else if (profileImage?.startsWith("data:image/")) {
+        // If no file but we have a fresh data URL string, send it for AI verification.
+        // Do not send existing Cloudinary URLs as `profileImage` payload.
         payload.append("profileImage", profileImage);
       }
 
@@ -461,6 +591,36 @@ export default function ProfilePage() {
 
       // Success path
       if (data.success === true) {
+        const savedProfile = data?.data as ProfileApiResponseData | undefined;
+
+        if (savedProfile) {
+          const normalizedForm = mapApiProfileToForm(savedProfile);
+          const normalizedEducation: EducationRecord[] = Array.isArray(
+            savedProfile.educationHistory,
+          )
+            ? savedProfile.educationHistory
+            : educationHistory;
+          const normalizedEmployment: EmploymentRecord[] = Array.isArray(
+            savedProfile.employmentHistory,
+          )
+            ? savedProfile.employmentHistory
+            : employmentHistory;
+
+          setForm(normalizedForm);
+          setEducationHistory(normalizedEducation);
+          setEmploymentHistory(normalizedEmployment);
+          setProfileImage(savedProfile.profilePicUrl || null);
+          setProfileFile(null);
+          setResumeFile(null);
+
+          // Keep Redux in sync so reopening this page (or other pages) shows latest profile assets/status.
+          dispatch(setProfile(normalizedForm));
+          dispatch(setEducation(normalizedEducation));
+          dispatch(setEmployment(normalizedEmployment));
+          dispatch(setResumeUrl(savedProfile.resumeUrl || null));
+          dispatch(setProfilePicUrl(savedProfile.profilePicUrl || null));
+        }
+
         Swal.fire({
           icon: "success",
           title: "Profile Saved",
@@ -468,6 +628,12 @@ export default function ProfilePage() {
         });
         // only exit edit mode on success
         setIsEditing(false);
+        const profileUpdatedAt = data?.data?.updatedAt;
+        setPollSince(
+          typeof profileUpdatedAt === "string" && profileUpdatedAt
+            ? profileUpdatedAt
+            : new Date().toISOString(),
+        );
         setStartPolling(true);
         return;
       }
@@ -476,13 +642,15 @@ export default function ProfilePage() {
       let userMessage =
         "There was an issue saving your profile. Please try again.";
 
+      const verificationDetails = data.details || data.respData;
+
       if (typeof data.error === "string" && data.error.trim()) {
         userMessage = data.error;
       } else if (typeof data.message === "string" && data.message.trim()) {
         userMessage = data.message;
-      } else if (data.respData) {
+      } else if (verificationDetails) {
         // Some backends wrap service responses inside respData (e.g. face-check results)
-        const rd = data.respData;
+        const rd = verificationDetails;
         if (typeof rd === "string") {
           userMessage = rd;
         } else if (rd?.error) {
@@ -492,6 +660,13 @@ export default function ProfilePage() {
           userMessage = rd.error
             ? `${rd.error} (similarity: ${pct}%)`
             : `Verification failed (similarity: ${pct}%).`;
+          if (typeof rd?.threshold === "number") {
+            const thresholdPct = Math.round(rd.threshold * 100);
+            userMessage += ` Required threshold: ${thresholdPct}%.`;
+          }
+          if (rd?.lookupSource) {
+            userMessage += ` Lookup source: ${rd.lookupSource}.`;
+          }
         } else if (rd?.match === false) {
           userMessage =
             rd.error || "Face embedding does not match our records.";
@@ -508,8 +683,39 @@ export default function ProfilePage() {
       // Try to extract a helpful message from axios errors
       if (axios.isAxiosError(err)) {
         const respData = err.response?.data;
+        const verifyDetails = respData?.details || respData?.respData;
+
+        let detailsMessage: string | null = null;
+        if (verifyDetails) {
+          if (typeof verifyDetails === "string") {
+            detailsMessage = verifyDetails;
+          } else if (verifyDetails?.error) {
+            detailsMessage = String(verifyDetails.error);
+          }
+
+          if (typeof verifyDetails?.similarity === "number") {
+            const pct = Math.round(verifyDetails.similarity * 100);
+            detailsMessage = detailsMessage
+              ? `${detailsMessage} (similarity: ${pct}%)`
+              : `Verification failed (similarity: ${pct}%).`;
+
+            if (typeof verifyDetails?.threshold === "number") {
+              const thresholdPct = Math.round(verifyDetails.threshold * 100);
+              detailsMessage += ` Required threshold: ${thresholdPct}%.`;
+            }
+
+            if (verifyDetails?.lookupSource) {
+              detailsMessage += ` Lookup source: ${verifyDetails.lookupSource}.`;
+            }
+          }
+        }
+
         const serverMsg =
-          respData?.error || respData?.message || respData?.respData || null;
+          detailsMessage ||
+          respData?.error ||
+          respData?.message ||
+          respData?.respData ||
+          null;
         const message =
           serverMsg || err.message || "Network error while saving profile.";
         Swal.fire({
@@ -549,19 +755,31 @@ export default function ProfilePage() {
   );
 
   function handleReset() {
-    setForm({
-      fullName: "",
-      headline: "",
-      location: "",
-      skills: "",
-      summary: "",
-      email: "",
-      total_experience: "",
-      total_experience_years: 0,
-      employmentStatus: "open",
-    });
+    if (hasReduxProfileData) {
+      setForm({
+        ...reduxProfile.profile,
+        employmentStatus: reduxProfile.profile?.employmentStatus || "open",
+      });
+      setEducationHistory(reduxProfile.education);
+      setEmploymentHistory(reduxProfile.employment);
+      setProfileImage(reduxProfile.profilePicUrl || null);
+    } else {
+      setForm({
+        fullName: "",
+        headline: "",
+        location: "",
+        skills: "",
+        summary: "",
+        email: "",
+        total_experience: "",
+        total_experience_years: 0,
+        employmentStatus: "open",
+      });
+      setProfileImage(null);
+    }
+
     setResumeFile(null);
-    setProfileImage(null);
+    setProfileFile(null);
   }
 
   return (
@@ -592,11 +810,9 @@ export default function ProfilePage() {
             isCurrentlyEmployed={isCurrentlyEmployed}
             openForOpportunities={form.employmentStatus === "open"}
             onToggleOpenForOpportunities={() =>
-              setForm((prev) => ({
-                ...prev,
-                employmentStatus:
-                  prev.employmentStatus === "open" ? "not_open" : "open",
-              }))
+              updateEmploymentStatus(
+                form.employmentStatus === "open" ? "not_open" : "open",
+              )
             }
           />
 
@@ -663,9 +879,18 @@ export default function ProfilePage() {
               </div>
 
               {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}
-              <aside className="lg:col-span-1 space-y-6">
+              <aside className="lg:col-span-1 space-y-10">
                 {/* Open for Opportunities Selector */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                 <ResumeUpload
+                  resumeFile={resumeFile}
+                  previousResumeUrl={reduxProfile.resumeUrl}
+                  autoFilling={autoFilling}
+                  onFileChange={setResumeFile}
+                  onAutoFill={autoFillFromResume}
+                  disabled={!isEditing}
+                />
+
+                <div className="bg-white backdrop-blur-xl rounded-2xl p-6 border border-gray-200 shadow-2xl transition-all duration-300 overflow-hidden">
                   <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">
                     Job Availability
                   </h3>
@@ -722,10 +947,7 @@ export default function ProfilePage() {
                           type="button"
                           disabled={!isEditing}
                           onClick={() =>
-                            setForm((prev) => ({
-                              ...prev,
-                              employmentStatus: value,
-                            }))
+                            updateEmploymentStatus(value)
                           }
                           className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all ${
                             selected
@@ -749,14 +971,6 @@ export default function ProfilePage() {
                     })}
                   </div>
                 </div>
-
-                <ResumeUpload
-                  resumeFile={resumeFile}
-                  autoFilling={autoFilling}
-                  onFileChange={setResumeFile}
-                  onAutoFill={autoFillFromResume}
-                  disabled={!isEditing}
-                />
               </aside>
 
               {/* Read-only overlay message shown when not editing. Header edit button remains usable. */}
