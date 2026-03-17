@@ -24,6 +24,8 @@ export interface Job {
   postedDaysAgo?: string;
   createdAt?: string;
   updatedAt?: string;
+  companyId?: number;
+  companyLogo?: string;
 }
 
 export interface JobsState {

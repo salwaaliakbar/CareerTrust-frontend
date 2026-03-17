@@ -68,11 +68,11 @@ export default function JobPostForm({
     >
       {/* Basic Information */}
       <div className="group relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-linear-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
         <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full shadow-lg"></div>
+              <div className="w-1.5 h-8 bg-linear-to-b from-blue-600 to-indigo-600 rounded-full shadow-lg"></div>
               Basic Information
             </h2>
             <Sparkles className="w-6 h-6 text-blue-500 animate-pulse" />
@@ -183,11 +183,11 @@ export default function JobPostForm({
 
       {/* Job Description */}
       <div className="group relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-linear-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
         <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full shadow-lg"></div>
+              <div className="w-1.5 h-8 bg-linear-to-b from-purple-600 to-pink-600 rounded-full shadow-lg"></div>
               Job Description
             </h2>
             <FileText className="w-6 h-6 text-purple-500 animate-pulse" />
@@ -222,11 +222,11 @@ export default function JobPostForm({
 
       {/* Skills & Requirements */}
       <div className="group relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-linear-to-r from-green-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
         <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-green-600 to-teal-600 rounded-full shadow-lg"></div>
+              <div className="w-1.5 h-8 bg-linear-to-b from-green-600 to-teal-600 rounded-full shadow-lg"></div>
               Skills & Requirements
             </h2>
             <Tag className="w-6 h-6 text-green-500 animate-pulse" />
@@ -263,7 +263,7 @@ export default function JobPostForm({
                   return (
                     <span
                       key={index}
-                      className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg text-sm font-semibold shadow-md"
+                      className="px-3 py-1.5 bg-linear-to-r from-green-500 to-teal-500 text-white rounded-lg text-sm font-semibold shadow-md"
                     >
                       {trimmedSkill}
                     </span>
@@ -277,42 +277,29 @@ export default function JobPostForm({
 
       {/* Additional Details */}
       <div className="group relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-linear-to-r from-orange-500 to-red-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
         <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-gradient-to-b from-orange-600 to-red-600 rounded-full shadow-lg"></div>
+              <div className="w-1.5 h-8 bg-linear-to-b from-orange-600 to-red-600 rounded-full shadow-lg"></div>
               Additional Details
             </h2>
             <Calendar className="w-6 h-6 text-orange-500 animate-pulse" />
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <label className="block group/input">
-                <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  <Calendar className="w-4 h-4 text-orange-600" />
-                  Application Deadline
-                </span>
-                <input
-                  type="date"
-                  {...register("deadline")}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-                />
-              </label>
-
-              <label className="block group/input">
-                <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                  Company Logo URL
-                </span>
-                <input
-                  {...register("image")}
-                  className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
-                  placeholder="https://example.com/logo.png"
-                />
-              </label>
-            </div>
+            <label className="block group/input">
+              <span className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
+                <Calendar className="w-4 h-4 text-orange-600" />
+                Application Deadline
+              </span>
+              <input
+                type="date"
+                {...register("deadline")}
+                min={new Date().toISOString().split("T")[0]}
+                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3.5 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 group-hover/input:border-slate-300 font-medium"
+              />
+            </label>
 
             {/* Featured Job Toggle */}
             <label className="flex items-center gap-3 cursor-pointer group/check p-4 rounded-xl hover:bg-orange-50 transition-all duration-200">
@@ -345,7 +332,7 @@ export default function JobPostForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+          className="px-8 py-4 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

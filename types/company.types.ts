@@ -14,9 +14,12 @@ export interface Company {
   description: string;
   logo: string;
   featured: boolean;
+  isVerified?: boolean;
+  linkedinUrl?: string;
+  website?: string;
   createdAt?: string;
   updatedAt?: string;
-  website?: string;
+  // Legacy optional fields (not in DB schema)
   foundedYear?: number;
   companySize?: string;
   benefits?: string[];

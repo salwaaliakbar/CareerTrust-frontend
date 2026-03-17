@@ -247,12 +247,14 @@ export default function JobDetail({
                 About this {job.jobType}
               </h2>
               <p className="text-gray-600 mb-4">Company: {job.company}</p>
-              <Link
-                href={`/companies/1`}
-                className="text-primary hover:text-blue-900 font-semibold inline-flex items-center gap-2 transition-all duration-300 hover:translate-x-1"
-              >
-                View Company Profile →
-              </Link>
+              {job.companyId && (
+                <Link
+                  href={`/companies/${job.companyId}`}
+                  className="text-primary hover:text-blue-900 font-semibold inline-flex items-center gap-2 transition-all duration-300 hover:translate-x-1"
+                >
+                  View Company Profile →
+                </Link>
+              )}
             </div>
           </div>
 

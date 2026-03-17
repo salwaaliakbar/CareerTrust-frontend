@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useForm } from "react-hook-form";
@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   ArrowLeft,
   Globe,
+  Upload,
+  X,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -55,6 +57,12 @@ export default function CompanySetupPage() {
   );
   const [employerId, setEmployerId] = useState<string | null>(null);
 
+  // Logo image picker state
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const {
     register,
     handleSubmit,
@@ -64,6 +72,66 @@ export default function CompanySetupPage() {
   } = useForm<Omit<CreateCompanyRequest, "employerId">>();
 
   const selectedIndustry = watch("industry");
+
+  const uploadLogoToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload/cloudinary", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = (await response.json()) as { url?: string; error?: string };
+
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || "Failed to upload image");
+    }
+
+    return data.url;
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setLogoUploadError("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoUploadError("Image must be smaller than 5 MB.");
+      return;
+    }
+
+    setLogoUploadError(null);
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      setLogoUploading(true);
+      const url = await uploadLogoToCloudinary(file);
+      setValue("logo", url);
+      setLogoPreview(url);
+    } catch (err) {
+      setLogoUploadError(
+        err instanceof Error ? err.message : "Upload failed. Try again.",
+      );
+      setLogoPreview(null);
+      setValue("logo", "");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setValue("logo", "");
+    setLogoUploadError(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  };
 
   // Check access and load existing company if any
   useEffect(() => {
@@ -106,6 +174,7 @@ export default function CompanySetupPage() {
               setValue("employees", company.employees);
               setValue("description", company.description);
               setValue("logo", company.logo);
+              if (company.logo) setLogoPreview(company.logo);
               setValue("linkedinUrl", company.linkedinUrl || "");
               setValue("website", (company as any).website || "");
             }
@@ -401,23 +470,86 @@ export default function CompanySetupPage() {
                 </p>
               </div>
 
-              {/* Company Logo URL (Optional) */}
+              {/* Company Logo – Image Picker */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Company Logo URL (Optional)
+                  Company Logo (Optional)
                 </label>
-                <div className="relative">
-                  <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="url"
-                    {...register("logo")}
-                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/logo.png"
-                  />
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  Provide a URL to your company logo image
-                </p>
+
+                {/* hidden file input */}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+                {/* hidden form field that holds the Cloudinary URL */}
+                <input type="hidden" {...register("logo")} />
+
+                {logoPreview ? (
+                  <div className="relative inline-block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoPreview}
+                      alt="Company logo preview"
+                      className="h-28 w-28 rounded-2xl object-cover border border-slate-200 shadow-sm"
+                    />
+                    {logoUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      </div>
+                    )}
+                    {!logoUploading && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition-colors"
+                        title="Remove logo"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={logoUploading}
+                    className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-8 text-slate-500 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50"
+                  >
+                    {logoUploading ? (
+                      <>
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                        <span className="text-sm font-medium">Uploading…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-7 w-7" />
+                        <span className="text-sm font-medium">
+                          Click to upload logo
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          PNG, JPG, WEBP – max 5 MB
+                        </span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {logoUploadError && (
+                  <p className="mt-2 text-sm text-red-600">{logoUploadError}</p>
+                )}
+
+                {logoPreview && !logoUploading && (
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Change image
+                  </button>
+                )}
               </div>
 
               {/* Company LinkedIn URL (Optional) */}
