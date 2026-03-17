@@ -196,7 +196,7 @@ const Dashboard = () => {
                 </h2>
               </div>
               <Link
-                href="/jobs"
+                href="/jobseeker/applications"
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium group transition-colors"
               >
                 View All
