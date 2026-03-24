@@ -49,11 +49,13 @@ export default function CompanyPage({
   } = useAppSelector((state) => state.companies);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCompany, setEditedCompany] = useState<Company | null>(null);
+  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [companyJobs, setCompanyJobs] = useState<CompanyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
 
   const companyId = Number(id);
   const CACHE_DURATION = 10 * 60 * 1000;
+  const now = Date.now();
   const lastFetchTime = lastFetchTimeById?.[companyId];
 
   const userRole = user?.unsafeMetadata?.role as string | undefined;
@@ -100,6 +102,19 @@ export default function CompanyPage({
     return () => {
       isCancelled = true;
     };
+  }, [companyId]);
+
+  // Fetch real jobs for this company
+  useEffect(() => {
+    if (!companyId) return;
+    setJobsLoading(true);
+    fetch(`${API_ENDPOINTS.JOBS}?companyId=${companyId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setCompanyJobs(data.data ?? []);
+      })
+      .catch(() => {})
+      .finally(() => setJobsLoading(false));
   }, [companyId]);
 
   const handleEditSuccess = (updatedCompany: Company) => {
@@ -175,7 +190,6 @@ export default function CompanyPage({
     (currentCompany as { website?: string }).website ?? "";
   const companyLinkedinUrl =
     (currentCompany as { linkedinUrl?: string }).linkedinUrl ?? "";
-
   return (
     <div className="min-h-screen bg-[#F4F6FB] flex flex-col">
       <Header />

@@ -156,6 +156,7 @@ export default function JobsClient() {
     if (sortByRelevant && isSignedIn) {
       filtered = [...filtered].sort(
         (a, b) => getMatchPercentage(b) - getMatchPercentage(a),
+
       );
     }
     return filtered;
@@ -217,6 +218,31 @@ export default function JobsClient() {
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                   className="px-4 py-3 bg-white/95 text-slate-900 rounded-xl border border-blue-100/70 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-[0_8px_18px_-12px_rgba(15,23,42,0.5)] transition-all duration-300"
+
+<!--               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (searchTerm) params.set("q", searchTerm);
+                    if (selectedLocation)
+                      params.set("location", selectedLocation);
+                    router.push(
+                      `/jobs${params.toString() ? `?${params.toString()}` : ""}`,
+                    );
+                  }}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg font-medium shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedLocation("");
+                    router.push(`/jobs`);
+                  }}
+                  className="px-3 py-2 bg-white text-gray-700 rounded-lg border transition-all duration-300 hover:shadow-md active:scale-95" -->
                 >
                   <option value="">All locations</option>
                   {locations.map((loc) => (
@@ -429,8 +455,16 @@ export default function JobsClient() {
 
               <div className="space-y-4">
                 {filteredJobs.length > 0 ? (
+
                   filteredJobs.map((job) => (
                     <div key={job.id} className="fade-in">
+
+<!--                   filteredJobs.map((job, idx) => (
+                    <div
+                      key={job.id}
+                      className="fade-in"
+                      style={{ animationDelay: `${200 + idx * 100}ms` }}
+                    > -->
                       <JobCard
                         job={job}
                         isApplied={reduxAppliedJobIds.includes(String(job.id))}
