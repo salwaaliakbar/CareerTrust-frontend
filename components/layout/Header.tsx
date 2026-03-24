@@ -4,13 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, DoorOpen, MessageSquare } from "lucide-react";
 import { useNotificationState } from "@/hooks/useNotificationState";
 import NotificationSidebar from "@/components/ui/NotificationSidebar";
 import HomeDropdown from "../ui/HomeDropdown";
 import Swal from "sweetalert2";
 // import { LogOut } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LOGIN = "/login";
 const SIGNUP = "/signup";
@@ -28,7 +28,34 @@ function Header() {
     openHiredForm,
   } = useNotificationState();
   const [showSidebar, setShowSidebar] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const handleSignOutWithConfirm = async () => {
     const result = await Swal.fire({
@@ -58,10 +85,12 @@ function Header() {
   };
 
   const userRole = user?.unsafeMetadata?.role as string;
+  const isActiveRoute = (match: string) =>
+    pathname === match || pathname.startsWith(`${match}/`);
 
   return (
-    <header className="bg-[#F4F4F4] border-b border-gray-300 sticky top-0 z-50 shadow-sm transition-all duration-300 hover:shadow-md">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-blue-100 bg-white/95 backdrop-blur-md shadow-[0_8px_22px_-18px_rgba(37,99,235,0.35)] transition-all duration-300">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[70px] flex items-center justify-between">
         {/* Logo */}
         <Link
           href="/"
@@ -77,7 +106,7 @@ function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-7">
           {isSignedIn ? (
             <>
               {[
@@ -109,18 +138,18 @@ function Header() {
                   <Link
                     key={label}
                     href={href}
-                    className={`relative group transition-all duration-300 ${
-                      pathname.startsWith(match)
-                        ? "text-primary font-bold"
-                        : "text-gray-600 hover:text-primary font-medium"
-                    } ${bold ? "font-bold" : ""} hover:translate-y-0.5`}
+                    className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                      isActiveRoute(match)
+                        ? "text-[#0A1F44] font-bold"
+                        : "text-slate-600 hover:text-blue-600 font-semibold"
+                    } ${bold ? "font-bold" : ""}`}
                   >
                     {label}
                     <span
-                      className={`absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-300 ${
-                        pathname.startsWith(match)
-                          ? "w-full bg-primary"
-                          : "w-0 bg-primary group-hover:w-full"
+                      className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                        isActiveRoute(match)
+                          ? "w-full bg-[#123560]"
+                          : "w-0 bg-transparent"
                       }`}
                     ></span>
                   </Link>
@@ -131,38 +160,88 @@ function Header() {
               <HomeDropdown />
               <Link
                 href="/about"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
+                className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                  isActiveRoute("/about")
+                    ? "text-[#0A1F44] font-bold"
+                    : "text-slate-600 hover:text-blue-600 font-semibold"
+                }`}
               >
                 About
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                    isActiveRoute("/about")
+                      ? "w-full bg-[#123560]"
+                      : "w-0 bg-transparent"
+                  }`}
+                ></span>
               </Link>
               <Link
                 href="/features"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
+                className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                  isActiveRoute("/features")
+                    ? "text-[#0A1F44] font-bold"
+                    : "text-slate-600 hover:text-blue-600 font-semibold"
+                }`}
               >
                 Features
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                    isActiveRoute("/features")
+                      ? "w-full bg-[#123560]"
+                      : "w-0 bg-transparent"
+                  }`}
+                ></span>
               </Link>
               <Link
                 href="/services"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
+                className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                  isActiveRoute("/services")
+                    ? "text-[#0A1F44] font-bold"
+                    : "text-slate-600 hover:text-blue-600 font-semibold"
+                }`}
               >
                 Services
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                    isActiveRoute("/services")
+                      ? "w-full bg-[#123560]"
+                      : "w-0 bg-transparent"
+                  }`}
+                ></span>
               </Link>
               <Link
                 href="/blogs"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
+                className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                  isActiveRoute("/blogs")
+                    ? "text-[#0A1F44] font-bold"
+                    : "text-slate-600 hover:text-blue-600 font-semibold"
+                }`}
               >
                 Blogs
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                    isActiveRoute("/blogs")
+                      ? "w-full bg-[#123560]"
+                      : "w-0 bg-transparent"
+                  }`}
+                ></span>
               </Link>
               <Link
                 href="/contact"
-                className="text-gray-600 hover:text-primary font-medium transition-all duration-300 relative group hover:translate-y-0.5"
+                className={`relative py-1 text-[15px] transition-colors duration-200 ${
+                  isActiveRoute("/contact")
+                    ? "text-[#0A1F44] font-bold"
+                    : "text-slate-600 hover:text-blue-600 font-semibold"
+                }`}
               >
                 Contact
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full rounded-full"></span>
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
+                    isActiveRoute("/contact")
+                      ? "w-full bg-[#123560]"
+                      : "w-0 bg-transparent"
+                  }`}
+                ></span>
               </Link>
             </>
           )}
@@ -220,24 +299,21 @@ function Header() {
               )}
 
               {/* User Dropdown Menu */}
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
-                  className="flex items-center gap-2 bg-linear-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-full px-4 py-2 shadow-sm hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300 group min-w-[120px]"
+                  className="flex items-center gap-2 bg-linear-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 group min-w-[120px]"
                   id="user-menu-button"
                   aria-haspopup="true"
-                  aria-expanded="false"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const menu = document.getElementById("user-dropdown-menu");
-                    if (menu) menu.classList.toggle("hidden");
-                  }}
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
                 >
                   <User className="w-5 h-5 text-blue-700" />
-                  <span className="text-base font-semibold text-blue-900 group-hover:text-blue-800 transition-all duration-200 truncate max-w-[80px]">
+                  <span className="text-sm font-semibold text-blue-900 group-hover:text-blue-800 transition-all duration-200 truncate max-w-20">
                     {user?.firstName || "User"}
                   </span>
                   <svg
-                    className="w-4 h-4 ml-1 text-blue-700 group-hover:text-blue-900 transition-transform duration-200"
+                    className={`w-4 h-4 ml-1 text-blue-700 group-hover:text-blue-900 transition-transform duration-200 ${
+                      userMenuOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -250,12 +326,12 @@ function Header() {
                     />
                   </svg>
                 </button>
-                <div
-                  id="user-dropdown-menu"
-                  className="hidden absolute right-0 mt-2 w-56 bg-white border border-blue-100 rounded-xl shadow-2xl z-50 min-w-max animate-fade-in"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ minWidth: "200px" }}
-                >
+                {userMenuOpen && (
+                  <div
+                    id="user-dropdown-menu"
+                    className="absolute right-0 mt-2 w-56 min-w-56 bg-white border border-blue-100 rounded-xl shadow-[0_16px_40px_-18px_rgba(15,23,42,0.45)] z-50 animate-fade-in overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                   <div className="flex flex-col gap-0.5 py-2">
                     <div className="flex items-center gap-2 px-5 py-2 border-b border-blue-50 bg-blue-50 rounded-t-xl">
                       <span
@@ -265,11 +341,9 @@ function Header() {
                       </span>
                     </div>
                     <button
-                      className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 text-base font-medium transition-all duration-200"
+                      className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
                       onClick={() => {
-                        document
-                          .getElementById("user-dropdown-menu")
-                          ?.classList.add("hidden");
+                        setUserMenuOpen(false);
                         if (userRole === "jobseeker") {
                           router.push("/jobseeker/profile");
                         } else {
@@ -295,7 +369,27 @@ function Header() {
                     {userRole === "jobseeker" && (
                       <>
                         <button
-                          className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 text-base font-medium transition-all duration-200"
+
+                          className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            router.push("/jobseeker/reviews");
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4 text-blue-700" />
+                          <span>Leave a Review</span>
+                        </button>
+                        <button
+                          className="flex items-center gap-2 px-5 py-2.5 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-sm font-semibold transition-all duration-200"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            router.push("/jobseeker/exit-request");
+                          }}
+                        >
+                          <DoorOpen className="w-4 h-4" />
+                          <span>Request Job Exit</span>
+
+<!--                           className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 text-base font-medium transition-all duration-200"
                           onClick={() => {
                             document
                               .getElementById("user-dropdown-menu")
@@ -328,16 +422,14 @@ function Header() {
                           }}
                         >
                           <LogOut className="w-4 h-4" />
-                          Submit Exit Request
+                          Submit Exit Request -->
                         </button>
                       </>
                     )}
                     <button
-                      className="flex items-center gap-2 px-5 py-2 text-red-600 hover:bg-red-50 hover:text-red-700 text-base font-medium border-t border-blue-50 transition-all duration-200 rounded-b-xl"
+                      className="flex items-center gap-2 px-5 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm font-semibold border-t border-blue-50 transition-all duration-200 rounded-b-xl"
                       onClick={() => {
-                        document
-                          .getElementById("user-dropdown-menu")
-                          ?.classList.add("hidden");
+                        setUserMenuOpen(false);
                         handleSignOutWithConfirm();
                       }}
                     >
@@ -345,33 +437,21 @@ function Header() {
                       Logout
                     </button>
                   </div>
-                </div>
+                  </div>
+                )}
               </div>
-              {/* Dropdown close on outside click */}
-              <script
-                dangerouslySetInnerHTML={{
-                  __html: `
-                  document.addEventListener('click', function(e) {
-                    const menu = document.getElementById('user-dropdown-menu');
-                    if (menu && !menu.classList.contains('hidden')) {
-                      menu.classList.add('hidden');
-                    }
-                  });
-                `,
-                }}
-              />
             </>
           ) : (
             <>
               <Link
                 href={LOGIN}
-                className="px-3 py-1.5 border border-[#0C2B4E] text-[#1D546C] rounded-md text-sm hover:bg-blue-50 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                className="px-3.5 py-2 border border-[#0A1F44] text-[#123560] rounded-lg text-sm font-semibold hover:bg-blue-50 transition-all duration-200 hover:shadow-sm"
               >
                 Login
               </Link>
               <Link
                 href={SIGNUP}
-                className="px-3 py-1.5 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white rounded-md text-sm hover:from-[#1D546C] hover:to-[#0C2B4E] transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                className="px-3.5 py-2 bg-linear-to-r from-[#0A1F44] via-[#123560] to-[#1A4779] text-white rounded-lg text-sm font-semibold transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
               >
                 Get Started
               </Link>

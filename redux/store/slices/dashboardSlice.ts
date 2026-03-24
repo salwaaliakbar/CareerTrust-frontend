@@ -2,30 +2,12 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import type { RootState } from '../store';
 import API_ENDPOINTS from '@/constants/api';
+import type { DashboardStats, RecentApplication } from '@/types/dashboard.types';
 
 /**
  * Dashboard Redux Slice
  * Manages dashboard-specific state: stats, recent applications, recommendations
  */
-
-export interface DashboardStats {
-  totalApplications: number;
-  acceptedApplications: number;
-  pendingApplications: number;
-  jobsRecommended: number;
-  profileViews: number;
-}
-
-export interface RecentApplication {
-  id: string;
-  jobId: number;
-  jobTitle: string;
-  company: string;
-  location?: string;
-  salary?: string;
-  status: 'pending' | 'reviewing' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected';
-  appliedDate: string;
-}
 
 export interface DashboardState {
   stats: DashboardStats | null;

@@ -7,42 +7,44 @@ import { useUser } from "@clerk/nextjs";
 import {
   Briefcase,
   FileText,
-  Eye,
-  CheckCircle,
   ArrowRight,
   BadgeCheck,
   TrendingUp,
   Clock,
   Sparkles,
   Target,
-  MessageSquareText,
+  LayoutDashboard,
+
+<!--   MessageSquareText, -->
+
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
-import StatCard from "@/components/ui/StatCard";
 import { DashboardStats } from "@/types/dashboard.types";
+import {
+  DASHBOARD_QUICK_ACTIONS,
+  DASHBOARD_STAT_ITEMS,
+  DASHBOARD_STATUS_CONFIGS,
+} from "@/data/jobseeker/dashboardUi";
 import {
   initializeDashboard,
   selectDashboardStats,
   selectRecentApplications,
 } from "@/redux/store/slices/dashboardSlice";
+import Footer from "../layout/Footer";
 
 const Dashboard = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user } = useUser();
 
-  // Get data from Redux
   const stats = useAppSelector(selectDashboardStats);
   const recentApplications = useAppSelector(selectRecentApplications);
 
-  // Fetch dashboard data when component mounts
   useEffect(() => {
     if (!user?.id) return;
     dispatch(initializeDashboard({ clerkId: user.id, forceRefresh: true }));
   }, [user?.id, dispatch]);
 
-  // Display stats from Redux, fallback to default
-  // jobsRecommended comes from backend (JobRecommendation table where score >= 0.5)
   const displayStats: DashboardStats = {
     totalApplications: stats?.totalApplications ?? 0,
     acceptedApplications: stats?.acceptedApplications ?? 0,
@@ -51,7 +53,13 @@ const Dashboard = () => {
     jobsRecommended: stats?.jobsRecommended ?? 0,
   };
 
-  const getStatusStyle = (status: string) => {
+
+  return (
+    <div className="min-h-screen bg-[#F4F6FB]">
+      {/* Top nav bar accent */}
+      <div className="h-1 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500" />
+
+<!--   const getStatusStyle = (status: string) => {
     // Status definitions:
     // pending = Just applied, awaiting company response
     // reviewing = Company is reviewing your application
@@ -85,22 +93,46 @@ const Dashboard = () => {
             <div className="absolute top-0 right-0 w-72 h-72 bg-linear-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-linear-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
             <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-            <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
+            <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div> -->
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10 my-8">
-              <div className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-blue-300" />
-                  <h1 className="text-4xl md:text-5xl font-black bg-linear-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-                    Welcome Back!
-                  </h1>
-                </div>
-                <p className="text-blue-100 text-lg font-semibold">
-                  Track your applications and manage your career journey
-                </p>
-              </div>
 
-              <div className="flex flex-row sm:flex-col gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-10 md:py-12 space-y-10 md:space-y-12">
+
+
+        {/* ─── HERO HEADER CARD ──────────────────────────────────────── */}
+        <div className="relative rounded-3xl overflow-hidden shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)]">
+          {/* Dark navy background */}
+          <div className="absolute inset-0 bg-[#0B1F45]" />
+          {/* Gradient mesh */}
+          <div className="absolute inset-0 opacity-60"
+            style={{
+              background:
+                "radial-gradient(ellipse at 20% 50%, #1e40af44 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #7c3aed33 0%, transparent 55%), radial-gradient(ellipse at 60% 80%, #0ea5e922 0%, transparent 50%)",
+            }}
+          />
+          {/* Grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage:
+                "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
+          {/* Decorative ping dots */}
+          <div className="absolute top-8 right-32 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-60" />
+          <div className="absolute bottom-10 right-20 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping opacity-40" style={{ animationDelay: "0.8s" }} />
+
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6 sm:gap-8 lg:gap-10">
+            {/* Left: greeting */}
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <LayoutDashboard className="w-4 h-4 text-blue-300/80" />
+                <span className="text-blue-300/80 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em]">
+                  Dashboard
+                </span>
+
+<!--               <div className="flex flex-row sm:flex-col gap-4">
                 <button
                   onClick={() => router.push("/jobseeker/passport")}
                   className="relative inline-flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white px-6 py-4 rounded-xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-bold overflow-hidden cursor-pointer group/btn"
@@ -123,13 +155,50 @@ const Dashboard = () => {
                   <Target className="w-5 h-5 relative z-10 group-hover/btn:rotate-12 transition-transform duration-300" />
                   <span className="relative z-10">View Recommended Jobs</span>
                   <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                </button>
+                </button> -->
+
               </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+                Welcome Back, {user?.firstName || 'User'}! 👋
+              </h1>
+              <p className="mt-4 text-blue-200/80 text-sm sm:text-base max-w-xl leading-relaxed">
+                Track your applications, manage your career journey, and
+                discover new opportunities tailored for you.
+              </p>
+            </div>
+
+
+            {/* Right: CTA buttons */}
+            <div className="flex flex-col sm:flex-row md:flex-col gap-3.5 sm:gap-4 shrink-0 w-full md:w-auto">
+              <button
+                onClick={() => router.push("/jobseeker/passport")}
+                className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-sm sm:text-base font-bold transition-all duration-200 hover:scale-[1.02] backdrop-blur-sm w-full sm:w-auto"
+              >
+                <BadgeCheck className="w-5 h-5 text-blue-300" />
+                View Employment Passport
+                <ArrowRight className="w-4 h-4 opacity-70" />
+              </button>
+              <button
+                onClick={() => router.push("/jobs?filter=recommended")}
+                className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-linear-to-r from-violet-500 via-indigo-500 to-blue-500 hover:from-violet-600 hover:via-indigo-600 hover:to-blue-600 text-white text-sm sm:text-base font-bold shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-[1.02] w-full sm:w-auto"
+              >
+                <Target className="w-5 h-5" />
+                View Recommended Jobs
+                <ArrowRight className="w-4 h-4 opacity-80" />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* ─── STATS GRID ────────────────────────────────────────────── */}
+        <section className="space-y-6 sm:space-y-7">
+          <div className="flex items-center gap-2.5">
+            <TrendingUp className="w-5 h-5 text-slate-500" />
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+              Your Statistics
+            </h2>
+
+<!--         {/* Stats Grid */}
         <div>
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -202,60 +271,104 @@ const Dashboard = () => {
                 View All
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-            </div>
+            </div> -->
+
           </div>
 
-          <div className="divide-y divide-gray-100">
-            {recentApplications.map((app, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-7">
+            {DASHBOARD_STAT_ITEMS.map((s) => {
+              const Icon = s.icon;
+              const cardValue =
+                s.id === "profile-strength" ? 100 : displayStats[s.valueKey] ?? 0;
+
+              return (
               <div
-                key={app.id}
-                className="p-6 hover:bg-linear-to-r hover:from-blue-50/50 hover:to-transparent transition-all duration-300 group cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
+                key={s.id}
+                className={`group relative rounded-2xl border ${s.border} p-5 sm:p-6 min-h-36 overflow-hidden
+                  bg-linear-to-br from-white via-blue-50/45 to-white
+                  shadow-[0_8px_22px_-14px_rgba(37,99,235,0.42),0_0_0_1px_rgba(96,165,250,0.26)]
+                  hover:shadow-[0_14px_30px_-14px_rgba(37,99,235,0.55),0_0_0_1px_rgba(37,99,235,0.3)]
+                  transition-all duration-300 hover:-translate-y-1`}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                        <Briefcase className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                          {app.jobTitle}
-                        </h3>
-                        <p className="text-gray-600 mt-1">{app.company}</p>
-                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                          <Clock className="w-4 h-4" />
-                          <span>Applied {app.appliedDate}</span>
-                        </div>
-                      </div>
+                <div
+                  className={`absolute inset-0 bg-linear-to-br ${s.color} opacity-0 group-hover:opacity-[0.05] transition-opacity duration-300`}
+                />
+
+                <div className="relative h-full flex flex-col justify-between gap-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-3xl sm:text-4xl font-black text-slate-800 leading-none">
+                        {cardValue}
+                        {s.suffix ?? ""}
+                      </p>
+                      <p className="text-sm sm:text-base text-slate-500 font-medium mt-1.5 leading-tight">
+                        {s.label}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`w-11 h-11 rounded-xl bg-linear-to-br ${s.color} text-white flex items-center justify-center shrink-0 shadow-[0_8px_16px_-8px_rgba(37,99,235,0.55)] group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300`}
+                    >
+                      <Icon className="w-5 h-5" />
                     </div>
                   </div>
-                  <span
+
+<!--                   <span
                     className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap ${getStatusStyle(
                       app.status,
                     )}`}
                   >
                     {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                  </span> -->
 
-        {/* Quick Actions */}
+                </div>
+
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-1.5 bg-linear-to-r ${s.color} origin-left transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}
+                />
+              </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ─── RECENT APPLICATIONS ───────────────────────────────────── */}
+        <section className="bg-linear-to-br from-white via-blue-50/35 to-white rounded-3xl overflow-hidden border border-blue-100/70
+          shadow-[0_10px_30px_-16px_rgba(37,99,235,0.35),0_0_0_1px_rgba(96,165,250,0.18)]
+          hover:shadow-[0_16px_38px_-18px_rgba(37,99,235,0.45),0_0_0_1px_rgba(59,130,246,0.22)]
+          transition-all duration-300">
+          {/* Card header */}
+          <div className="px-5 sm:px-7 lg:px-8 py-5 sm:py-6 flex items-center justify-between border-b border-slate-100">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+                  Recent Applications
+                </h2>
+                <p className="text-sm sm:text-base text-slate-400">Your latest activity</p>
+              </div>
+            </div>
+
+<!--         {/* Quick Actions */}
         <div>
           <div className="flex items-center gap-2 mb-6">
             <Sparkles className="w-5 h-5 text-blue-600" />
             <h2 className="text-2xl font-bold text-gray-900">Quick Actions</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"> -->
+
             <Link
-              href="/jobs"
-              className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden"
+              href="/jobseeker/applications"
+              className="flex items-center gap-1.5 text-sm sm:text-base text-blue-600 hover:text-blue-700 font-semibold group transition-colors"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
+
+              View All
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+
+<!--               <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
 
               <div className="relative">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl w-fit mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
@@ -271,10 +384,30 @@ const Dashboard = () => {
                   Get Started
                   <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
-              </div>
-            </Link>
+              </div> -->
 
-            <Link
+            </Link>
+          </div>
+
+
+          {/* Table header */}
+          {recentApplications.length > 0 && (
+            <div className="hidden md:grid grid-cols-[1fr_1fr_auto_auto] gap-4 px-5 sm:px-7 lg:px-8 py-3.5 bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span>Position</span>
+              <span>Company</span>
+              <span>Date Applied</span>
+              <span>Status</span>
+            </div>
+          )}
+
+          {/* Rows */}
+          <div>
+            {recentApplications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 sm:px-8 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30">
+                  <Briefcase className="w-8 h-8 text-white" />
+
+<!--             <Link
               href="/jobseeker/profile"
               className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden"
             >
@@ -282,22 +415,126 @@ const Dashboard = () => {
 
               <div className="relative">
                 <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-xl w-fit mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">
-                  My Profile
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Update your profile and manage your information
-                </p>
-                <div className="flex items-center text-purple-600 font-medium group-hover:gap-2 transition-all">
-                  Update Now
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </Link>
+                  <FileText className="w-6 h-6" /> -->
 
-            <Link
+                </div>
+                <h3 className="text-xl font-bold text-slate-700">
+                  No Applications Yet
+                </h3>
+                <p className="text-base sm:text-lg text-slate-400 mt-2 max-w-sm leading-relaxed">
+                  Your latest job applications will appear here once you apply.
+                </p>
+                <Link
+                  href="/jobs"
+                  className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm sm:text-base font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Browse Jobs <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : (
+              recentApplications.map((app) => {
+                const sc = DASHBOARD_STATUS_CONFIGS[app.status] || DASHBOARD_STATUS_CONFIGS.pending;
+                return (
+                  <div
+                    key={app.id}
+                    className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto_auto] gap-3 md:gap-5 items-center px-5 sm:px-7 lg:px-8 py-5 sm:py-6 hover:bg-slate-50/80 transition-colors duration-150 border-b border-slate-50 last:border-0 cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                        <Briefcase className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="font-semibold text-base sm:text-lg text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                        {app.jobTitle}
+                      </span>
+                    </div>
+                    <span className="text-sm sm:text-base text-slate-500 truncate pl-12 md:pl-0">
+                      {app.company}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-sm text-slate-400 pl-12 md:pl-0">
+                      <Clock className="w-4 h-4" />
+                      {app.appliedDate}
+                    </div>
+                    <div className="pl-12 md:pl-0">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold ${sc.style}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
+                        {sc.label}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+
+        {/* ─── QUICK ACTIONS ─────────────────────────────────────────── */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-slate-400" />
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-700">
+              Quick Actions
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-6">
+            {DASHBOARD_QUICK_ACTIONS.map((action) => {
+              const ActionIcon = action.icon;
+
+              return (
+              <Link
+                key={action.id}
+                href={action.href}
+                className={`group relative overflow-hidden rounded-2xl border min-h-[255px] transition-all duration-300
+                  hover:-translate-y-1
+                  ${
+                  action.dark
+                    ? "bg-linear-to-br from-slate-800 to-slate-900 border-slate-700 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)] hover:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,255,255,0.10)]"
+                    : "bg-linear-to-br from-white via-blue-50/40 to-white border-blue-100/80 shadow-[0_10px_24px_-14px_rgba(37,99,235,0.4),0_0_0_1px_rgba(59,130,246,0.18)] hover:shadow-[0_16px_34px_-14px_rgba(37,99,235,0.52),0_0_0_1px_rgba(79,70,229,0.22)]"
+                }`}
+              >
+                {/* Hover gradient fill */}
+                <div
+                  className={`absolute inset-0 bg-linear-to-br ${action.bg} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
+
+                <div className="relative z-10 p-6 sm:p-7 h-full flex flex-col">
+                  {/* Icon */}
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-linear-to-br ${action.grad} flex items-center justify-center text-white mb-5 group-hover:scale-110 transition-transform duration-300 shadow-lg`}
+                  >
+                    <ActionIcon className="w-5 h-5" />
+                  </div>
+
+                  <h3
+                    className={`font-bold text-xl mb-2 transition-colors ${
+                      action.dark
+                        ? "text-white"
+                        : `text-slate-800 ${action.hoverText}`
+                    }`}
+                  >
+                    {action.title}
+                  </h3>
+                  <p
+                    className={`text-sm sm:text-base leading-relaxed mb-6 ${
+                      action.dark ? "text-slate-400" : "text-slate-400"
+                    }`}
+                  >
+                    {action.desc}
+                  </p>
+
+                  <div
+                    className={`mt-auto inline-flex items-center gap-2 text-sm sm:text-base font-semibold ${
+                      action.dark ? "text-blue-300" : action.accentText
+                    }`}
+                  >
+                    {action.cta}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+
+<!--             <Link
               href="/jobseeker/reviews"
               className="group relative bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 overflow-hidden"
             >
@@ -338,36 +575,16 @@ const Dashboard = () => {
                 </p>
                 <div className="flex items-center text-blue-100 font-medium group-hover:gap-2 group-hover:text-white transition-all">
                   View Passport
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
+                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" /> -->
 
-      <style jsx>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style>
+                </div>
+              </Link>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+      <Footer />
     </div>
   );
 };
