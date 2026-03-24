@@ -31,6 +31,7 @@ export default function JobApplicantsPage() {
   const [filteredApplications, setFilteredApplications] = useState<
     JobApplication[]
   >([]);
+  const [jobTitle, setJobTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
@@ -43,9 +44,11 @@ export default function JobApplicantsPage() {
 
       setLoading(true);
       try {
-        const apps = await fetchJobApplications(jobId, getToken);
+        const { applications: apps, jobTitle: title } =
+          await fetchJobApplications(jobId, getToken);
         setApplications(apps);
         setFilteredApplications(apps);
+        setJobTitle(title);
       } catch (error) {
         console.error("Error loading applications:", error);
         Swal.fire({
@@ -147,10 +150,13 @@ export default function JobApplicantsPage() {
 
         {/* Page Header */}
         <div className="mb-8 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 flex items-center gap-3">
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 flex items-center gap-3">
             <Briefcase className="w-10 h-10 text-blue-600" />
             Job Applicants
           </h1>
+          {jobTitle && (
+            <p className="text-xl font-bold text-blue-700 mb-2">{jobTitle}</p>
+          )}
           <p className="text-lg text-slate-600">
             Review and manage applications for this position
           </p>

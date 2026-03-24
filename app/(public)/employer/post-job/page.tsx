@@ -19,7 +19,7 @@ export default function PostJobPage() {
   const { getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
-  const [employerId, setEmployerId] = useState<number | null>(null);
+  const [employerId, setEmployerId] = useState<string | null>(null);
 
   // Check if user is an employer and has company profile
   useEffect(() => {
@@ -37,10 +37,8 @@ export default function PostJobPage() {
           return;
         }
 
-        // Get employer ID from metadata or use a temporary ID
-        // TODO: Replace with actual employer ID from your auth system
-        const empId = (user.unsafeMetadata?.employerId as number) || 1;
-        setEmployerId(empId);
+        // Use Clerk ID — numeric employerId is not stored in metadata
+        setEmployerId(user.id);
 
         try {
           // Check if employer has company profile (pass Clerk ID)
@@ -105,14 +103,14 @@ export default function PostJobPage() {
         icon: "success",
         title: "Job Posted Successfully!",
         text: "Your job posting is now live and visible to candidates.",
-        confirmButtonText: "View Jobs",
+        confirmButtonText: "Go to Dashboard",
         showCancelButton: true,
         cancelButtonText: "Post Another Job",
         confirmButtonColor: "#3b82f6",
         cancelButtonColor: "#6b7280",
       }).then((result) => {
         if (result.isConfirmed) {
-          router.push("/jobs");
+          router.push("/employer/dashboard");
         } else {
           // Reset form by reloading page
           window.location.reload();

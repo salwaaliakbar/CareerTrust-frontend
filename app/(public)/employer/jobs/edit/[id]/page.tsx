@@ -22,7 +22,9 @@ export default function EditJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [initialData, setInitialData] = useState<JobFormData | null>(null);
-  const [employerId, setEmployerId] = useState<number | null>(null);
+  const [employerId, setEmployerId] = useState<string | null>(null);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
 
   // Check if user is an employer and fetch job data
   useEffect(() => {
@@ -40,8 +42,8 @@ export default function EditJobPage() {
           return;
         }
 
-        const empId = (user.unsafeMetadata?.employerId as number) || 1;
-        setEmployerId(empId);
+        // Use Clerk ID — numeric employerId is not stored in metadata
+        setEmployerId(user.id);
 
         try {
           setIsLoading(true);
@@ -57,6 +59,10 @@ export default function EditJobPage() {
             router.push("/employer/dashboard");
             return;
           }
+
+          // Store logo for header display
+          if (job.companyLogo) setCompanyLogo(job.companyLogo);
+          if (job.company) setCompanyName(job.company);
 
           // Convert job data to form format
           const formData: JobFormData = {
@@ -174,7 +180,7 @@ export default function EditJobPage() {
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
         <div className="text-center">
           <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
           <p className="text-slate-600 font-medium">Loading job data...</p>
@@ -188,12 +194,39 @@ export default function EditJobPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       <Header />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Page Header */}
         <div className="text-center mb-12 animate-fade-in-up">
+          {/* Company logo / fallback icon */}
+          <div className="flex justify-center mb-5">
+            {companyLogo &&
+            (companyLogo.startsWith("http") || companyLogo.startsWith("/")) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={companyLogo}
+                alt={companyName ?? "Company"}
+                className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-xl ring-4 ring-blue-100"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xl ring-4 ring-blue-100">
+                {companyName ? (
+                  <span className="text-white font-black text-2xl">
+                    {companyName
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((w) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                ) : (
+                  <Loader2 className="w-10 h-10 text-white/60" />
+                )}
+              </div>
+            )}
+          </div>
           <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
             Edit Job Posting
           </h1>

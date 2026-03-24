@@ -7,7 +7,7 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers } from "formik";
 import * as Yup from "yup";
-import { useSignIn } from "@clerk/nextjs";
+import { useClerk, useSignIn, useUser } from "@clerk/nextjs";
 import Swal from "sweetalert2";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import logger from "@/lib/logger";
@@ -22,11 +22,34 @@ type FormValues = {
   password: string;
 };
 
+async function getActiveUserRole(
+  getUser: () => { reload?: () => Promise<unknown>; unsafeMetadata?: unknown } | null | undefined,
+  timeoutMs = 2000,
+  intervalMs = 100,
+) {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    const activeUser = getUser();
+
+    if (activeUser) {
+      await activeUser.reload?.();
+      return (activeUser.unsafeMetadata as { role?: string } | undefined)?.role;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+
+  return undefined;
+}
+
 export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const clerk = useClerk();
   const { isLoaded, signIn, setActive } = useSignIn();
+  const { user } = useUser();
   const router = useRouter();
 
   async function handleSubmit(
@@ -58,9 +81,8 @@ export default function LoginForm() {
         // Set the active session
         await setActive({ session: result.createdSessionId });
 
-        // Get user metadata to determine role
-        console.log(result);
-        const userRole = (result.userData as any)?.unsafeMetadata?.role;
+        // Read role from the newly active Clerk user instead of sign-in result payload.
+        const userRole = await getActiveUserRole(() => clerk.user ?? user);
 
         Swal.fire({
           icon: "success",

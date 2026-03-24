@@ -6,10 +6,8 @@ import {
   Building2,
   Calendar,
   FileCheck,
-  ArrowRight,
   AlertCircle,
   Shield,
-  Download,
   Briefcase,
   FileText,
   ExternalLink,
@@ -391,75 +389,64 @@ export default function DigitalEmploymentPassport({
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Decorative background elements */}
-      <div className="fixed top-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none" />
-      <div className="fixed bottom-0 left-0 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none" />
+    <div className="min-h-screen bg-[#F4F6FB]">
+      <div className="h-1 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500" />
 
       <div
         ref={passportRef}
-        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-10 md:py-12 space-y-10 md:space-y-12"
       >
         {/* Header Section */}
-        <div className="relative mb-16 group">
-          <div className="absolute inset-0 bg-linear-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl blur-2xl opacity-25 group-hover:opacity-35 transition-opacity duration-500"></div>
-          <div className="relative bg-linear-to-r from-[#0A1F44] via-[#1e3a5f] to-[#2d4a6f] rounded-3xl p-12 shadow-2xl border border-white/10 backdrop-blur-sm overflow-hidden">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-linear-to-br from-blue-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-linear-to-tr from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
-            <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping animation-delay-500"></div>
+        <div className="relative rounded-3xl overflow-hidden shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)]">
+          <div className="absolute inset-0 bg-[#0B1F45]" />
+          <div className="absolute inset-0 opacity-60 passport-hero-mesh" />
+          <div className="absolute inset-0 opacity-[0.05] passport-hero-grid" />
+          <div className="absolute top-8 right-32 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-60" />
+          <div className="absolute bottom-10 right-20 w-1.5 h-1.5 bg-purple-400 rounded-full animate-ping opacity-40 animation-delay-800" />
 
-            <div className="relative z-10">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between my-4">
-                <div className="space-y-8 flex-1">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-linear-to-br from-blue-400/20 to-purple-400/20 backdrop-blur-sm rounded-2xl border border-white/20 mt-1">
-                      <Shield className="w-6 h-6 text-blue-200" />
-                    </div>
-                    <div className="space-y-4">
-                      <h1 className="text-4xl md:text-5xl font-black bg-linear-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent leading-tight">
-                        Employment Passport
-                      </h1>
-                      <p className="text-blue-200 text-lg font-semibold mt-1">
-                        Your verified professional journey
-                      </p>
-                    </div>
-                  </div>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-12 py-8 sm:py-10 lg:py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6 sm:gap-8 lg:gap-10">
+            <div>
+              <div className="flex items-center gap-2.5 mb-4">
+                <Shield className="w-4 h-4 text-blue-300/80" />
+                <span className="text-blue-300/80 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.18em]">
+                  Verified Career Identity
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+                Employment Passport
+              </h1>
+              <p className="mt-4 text-blue-200/80 text-sm sm:text-base max-w-xl leading-relaxed">
+                A trusted timeline of your verified companies, roles, and
+                supporting records.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row md:flex-col gap-3.5 sm:gap-4 shrink-0 w-full md:w-auto">
+              <div className="inline-flex items-center gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-white/10 border border-white/15 text-white backdrop-blur-sm w-full sm:w-auto">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-blue-200/80 font-semibold">
+                    Verified Records
+                  </p>
+                  <p className="text-xl font-black">{verifiedEmployment.length}</p>
+                </div>
+              </div>
 
-                <div className="flex flex-col gap-3 mt-6 lg:mt-0">
-                  <div className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl border border-white/20">
-                    <div className="flex -space-x-2">
-                      <div className="w-8 h-8 bg-linear-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center border-2 border-white/30">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-blue-200 font-semibold">
-                        Verified Records
-                      </p>
-                      <p className="text-xl font-bold text-white">
-                        {verifiedEmployment.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-2xl border border-white/20">
-                    <div className="flex -space-x-2">
-                      <div className="w-8 h-8 bg-linear-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white/30">
-                        <Briefcase className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-blue-200 font-semibold">
-                        Total Experience
-                      </p>
-                      <p className="text-lg font-bold text-white">
-                        {calculateTotalExperience()}
-                      </p>
-                    </div>
-                  </div>
+              <div className="inline-flex items-center gap-3 px-5 sm:px-6 py-3.5 sm:py-4 rounded-xl bg-linear-to-r from-violet-500/90 via-indigo-500/90 to-blue-500/90 border border-white/10 text-white shadow-lg shadow-blue-500/30 w-full sm:w-auto">
+                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center border border-white/15">
+                  <Briefcase className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-blue-100/90 font-semibold">
+                    Total Experience
+                  </p>
+                  <p className="text-base sm:text-lg font-black leading-tight">
+                    {calculateTotalExperience()}
+                  </p>
+                </div>
+              </div>
 {/* 
                   <button
                     id="download-pdf-btn"
@@ -469,8 +456,6 @@ export default function DigitalEmploymentPassport({
                     <Download className="w-5 h-5 group-hover/download:scale-110 transition-transform" />
                     Download PDF
                   </button> */}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -478,32 +463,28 @@ export default function DigitalEmploymentPassport({
         {/* Main Content */}
         <div className="space-y-6">
           {verifiedEmployment.length === 0 ? (
-            <div className="relative group">
-              <div className="absolute inset-0 bg-linear-0-to-r from-blue-500/20 to-indigo-500/20 rounded-3xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-500"></div>
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-3xl p-16 shadow-lg border border-white/50 text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-100 to-indigo-100 rounded-3xl mb-6">
-                  <FileCheck className="w-10 h-10 text-blue-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  No Verified Employment Yet
-                </h3>
-                <p className="text-gray-600 max-w-2xl mx-auto">
-                  Upload and verify your employment documents to build your
-                  verified work history on CareerTrust
-                </p>
+            <div className="bg-linear-to-br from-white via-blue-50/35 to-white rounded-3xl border border-blue-100/80 shadow-[0_10px_30px_-16px_rgba(37,99,235,0.35),0_0_0_1px_rgba(96,165,250,0.18)] text-center p-14 sm:p-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-500 to-indigo-600 rounded-3xl mb-6 shadow-lg shadow-blue-500/30">
+                <FileCheck className="w-10 h-10 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-3">
+                No Verified Employment Yet
+              </h3>
+              <p className="text-slate-500 max-w-2xl mx-auto">
+                Upload and verify your employment documents to build your
+                trusted work history on CareerTrust.
+              </p>
             </div>
           ) : (
             <div className="space-y-6">
-              {verifiedEmployment.map((emp, index) => (
+              {verifiedEmployment.map((emp) => (
                 <div
                   key={emp.id}
                   className="group relative transform transition-all duration-500 hover:scale-[1.01]"
-                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 to-indigo-500/20 rounded-3xl blur opacity-0 group-hover:opacity-40 transition-opacity duration-500"></div>
+                  <div className="absolute inset-0 bg-linear-to-r from-blue-500/18 to-indigo-500/18 rounded-3xl blur opacity-0 group-hover:opacity-45 transition-opacity duration-500"></div>
                   <div
-                    className={`relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border-2 ${getStatusColor(emp.verificationStatus)} transition-all duration-300 hover:shadow-2xl overflow-hidden`}
+                    className={`relative bg-linear-to-br from-white via-blue-50/35 to-white rounded-3xl p-7 sm:p-8 shadow-[0_10px_24px_-14px_rgba(37,99,235,0.4),0_0_0_1px_rgba(59,130,246,0.18)] border ${getStatusColor(emp.verificationStatus)} transition-all duration-300 hover:shadow-[0_16px_34px_-14px_rgba(37,99,235,0.5),0_0_0_1px_rgba(79,70,229,0.2)] overflow-hidden`}
                   >
                     {/* Gradient overlay on hover */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
@@ -511,7 +492,7 @@ export default function DigitalEmploymentPassport({
                     {/* Status Badge */}
                     <div className="absolute top-0 right-0 p-6">
                       <div
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${getStatusColor(emp.verificationStatus)} font-medium text-sm backdrop-blur-sm`}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${getStatusColor(emp.verificationStatus)} font-semibold text-sm backdrop-blur-sm`}
                       >
                         {getStatusIcon(emp.verificationStatus)}
                         <span>
@@ -524,21 +505,21 @@ export default function DigitalEmploymentPassport({
                     <div className="space-y-6">
                       {/* Header with Company and Position */}
                       <div className="flex items-start gap-5 pr-40">
-                        <div className="p-3 bg-linear-to-br from-[#1D546C] to-[#0C2B4E] rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <div className="p-3 bg-linear-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
                           <Briefcase className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-semibold text-[#1D546C] mb-2 group-hover:text-[#0C2B4E] transition-colors">
+                          <h3 className="text-xl font-semibold text-slate-800 mb-2 group-hover:text-blue-700 transition-colors">
                             {emp.position}
                           </h3>
-                          <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-3">
+                          <div className="flex flex-wrap items-center gap-4 text-slate-500 mb-3">
                             <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-[#1D546C]" />
+                              <Building2 className="w-4 h-4 text-blue-600" />
                               <span>{emp.company}</span>
                             </div>
                           </div>
                           {emp.description && (
-                            <p className="text-gray-600 leading-relaxed mt-2 line-clamp-3">
+                            <p className="text-slate-500 leading-relaxed mt-2 line-clamp-3">
                               {emp.description}
                             </p>
                           )}
@@ -546,18 +527,18 @@ export default function DigitalEmploymentPassport({
                       </div>
 
                       {/* Duration and Documents */}
-                      <div className="flex flex-col lg:flex-row lg:flex-wrap items-start gap-5 pt-5 border-t border-gray-100">
+                      <div className="flex flex-col lg:flex-row lg:flex-wrap items-start gap-5 pt-5 border-t border-slate-100">
                         <div className="flex items-center gap-3 flex-1 min-w-max">
-                          <div className="p-2.5 bg-linear-to-br from-blue-100 to-blue-50 rounded-xl">
-                            <Calendar className="w-4 h-4 text-[#1D546C]" />
+                          <div className="p-2.5 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md shadow-blue-500/20">
+                            <Calendar className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500 font-medium">
+                            <p className="text-sm text-slate-500 font-medium">
                               Duration
                             </p>
-                            <p className="font-semibold text-gray-900">
+                            <p className="font-semibold text-slate-800">
                               {emp.startDate} -{" "}
-                              <span className="text-[#1D546C]">
+                              <span className="text-blue-600">
                                 {emp.currentlyWorking ? "Present" : emp.endDate}
                               </span>
                             </p>
@@ -565,15 +546,15 @@ export default function DigitalEmploymentPassport({
                         </div>
 
                         <div className="flex items-center gap-3 flex-1 min-w-max">
-                          <div className="p-2.5 bg-linear-to-br from-emerald-100 to-emerald-50 rounded-xl">
-                            <FileCheck className="w-4 h-4 text-emerald-600" />
+                          <div className="p-2.5 bg-linear-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md shadow-emerald-500/25">
+                            <FileCheck className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <p className="text-sm text-gray-500 font-medium">
+                            <p className="text-sm text-slate-500 font-medium">
                               Documents
                             </p>
-                            <p className="font-semibold text-gray-900">
-                              {emp.documents.filter(d => d.url).length}{" "}
+                            <p className="font-semibold text-slate-800">
+                              {emp.documents.filter((d) => d.url).length}{" "}
                               <span className="text-emerald-600">Uploaded</span>
                             </p>
                           </div>
@@ -582,7 +563,7 @@ export default function DigitalEmploymentPassport({
                         {/* Rejection Reason */}
                         {emp.verificationStatus === "rejected" &&
                           emp.rejectionReason && (
-                            <div className="ml-auto p-4 bg-red-50 border-2 border-red-200 rounded-xl flex-1">
+                            <div className="ml-auto p-4 bg-red-50 border border-red-200 rounded-xl flex-1">
                               <p className="text-red-700">
                                 <span className="font-semibold">
                                   Rejection Reason:{" "}
@@ -594,15 +575,15 @@ export default function DigitalEmploymentPassport({
                       </div>
 
                       {/* Action Button */}
-                      {emp.verificationStatus === "verified" && emp.documents.filter(d => d.url).length > 0 && (
-                        <div className="pt-4 border-t border-gray-100">
-                          <button 
+                      {emp.verificationStatus === "verified" && emp.documents.filter((d) => d.url).length > 0 && (
+                        <div className="pt-4 border-t border-slate-100">
+                          <button
                             onClick={() => toggleDocuments(emp.id)}
-                            className="inline-flex items-center gap-2 text-[#1D546C] font-medium hover:text-[#0C2B4E] transition-all group/btn w-full justify-between"
+                            className="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-800 transition-all group/btn w-full justify-between"
                           >
                             <span className="flex items-center gap-2">
                               <FileCheck className="w-4 h-4" />
-                              View Documents ({emp.documents.filter(d => d.url).length})
+                              View Documents ({emp.documents.filter((d) => d.url).length})
                             </span>
                             {expandedDocuments.has(emp.id) ? (
                               <ChevronUp className="w-4 h-4 transition-transform" />
@@ -614,7 +595,7 @@ export default function DigitalEmploymentPassport({
                           {/* Documents List */}
                           {expandedDocuments.has(emp.id) && (
                             <div className="mt-4 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                              {emp.documents.filter(d => d.url).map((doc) => (
+                              {emp.documents.filter((d) => d.url).map((doc) => (
                                 <a
                                   key={doc.id}
                                   href={doc.url}
@@ -631,7 +612,7 @@ export default function DigitalEmploymentPassport({
                                         {doc.name}
                                       </p>
                                       <p className="text-xs text-slate-500 font-medium">
-                                        {doc.type === "application/pdf" ? "PDF Document" : 
+                                        {doc.type === "application/pdf" ? "PDF Document" :
                                          doc.type.startsWith("image/") ? "Image" : "Document"}
                                       </p>
                                     </div>
@@ -677,6 +658,21 @@ export default function DigitalEmploymentPassport({
         }
         .animation-delay-500 {
           animation-delay: 0.5s;
+        }
+        .animation-delay-800 {
+          animation-delay: 0.8s;
+        }
+        .passport-hero-mesh {
+          background:
+            radial-gradient(ellipse at 20% 50%, #1e40af44 0%, transparent 60%),
+            radial-gradient(ellipse at 80% 20%, #7c3aed33 0%, transparent 55%),
+            radial-gradient(ellipse at 60% 80%, #0ea5e922 0%, transparent 50%);
+        }
+        .passport-hero-grid {
+          background-image:
+            linear-gradient(#fff 1px, transparent 1px),
+            linear-gradient(90deg, #fff 1px, transparent 1px);
+          background-size: 40px 40px;
         }
       `}</style>
     </div>

@@ -22,6 +22,8 @@ export interface Job {
   updatedAt?: string;
   employerId?: string;
   employerName?: string;
+  companyId?: number;
+  companyLogo?: string;
 }
 
 export interface JobFormData {

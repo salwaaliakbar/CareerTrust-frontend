@@ -31,6 +31,8 @@ export const API_ENDPOINTS = {
     `${BACKEND_API_URL}/jobseeker/applications/details/${id}`,
   APPLICATIONS_BY_CLERKID: (clerkId: string) =>
     `${BACKEND_API_URL}/jobseeker/applications/${clerkId}`,
+  USER_APPLICATIONS_BACKEND: (clerkId: string) =>
+    `${BACKEND_API_URL}/jobseeker/applications/${clerkId}`,
   APPLICATION_OFFER_RESPONSE: (applicationId: string | number) =>
     `${BACKEND_API_URL}/jobseeker/applications/${applicationId}/offer-response`,
 

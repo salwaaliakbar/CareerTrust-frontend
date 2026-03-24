@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -53,6 +53,31 @@ const calculateDuration = (
   }
 };
 
+const durationInMonths = (
+  startDate: string,
+  endDate: string | null,
+): number => {
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+  const months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
+  return Math.max(0, months);
+};
+
+const formatDurationFromMonths = (totalMonths: number): string => {
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  if (years === 0) {
+    return `${months} month${months !== 1 ? "s" : ""}`;
+  }
+  if (months === 0) {
+    return `${years} year${years !== 1 ? "s" : ""}`;
+  }
+  return `${years} year${years !== 1 ? "s" : ""}, ${months} month${months !== 1 ? "s" : ""}`;
+};
+
 // Helper function to format date
 const formatDate = (date: string | null): string => {
   if (!date) return "N/A";
@@ -71,12 +96,64 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-compute employed status from employment history:
-  // Employed = has at least one job with startDate but no endDate
-  const isCurrentlyEmployed =
-    profile?.employmentHistory?.some(
-      (job) => job.startDate && (!job.endDate || job.endDate.trim() === ""),
-    ) ?? false;
+  // isCurrentlyEmployed is maintained server-side on JobseekerProfile
+  const isCurrentlyEmployed = profile?.isCurrentlyEmployed ?? false;
+
+  // Keep timeline sections consistent: newest entries first.
+  const sortedEmploymentHistory = useMemo(() => {
+    if (!profile) return [];
+    return [...profile.employmentHistory].sort((a, b) => {
+      if (a.currentlyWorking && !b.currentlyWorking) return -1;
+      if (!a.currentlyWorking && b.currentlyWorking) return 1;
+
+      const aEnd = a.currentlyWorking
+        ? Number.MAX_SAFE_INTEGER
+        : new Date(a.endDate || a.startDate).getTime();
+      const bEnd = b.currentlyWorking
+        ? Number.MAX_SAFE_INTEGER
+        : new Date(b.endDate || b.startDate).getTime();
+
+      if (aEnd !== bEnd) return bEnd - aEnd;
+
+      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
+  }, [profile]);
+
+  const sortedEducationHistory = useMemo(() => {
+    if (!profile) return [];
+    return [...profile.educationHistory].sort((a, b) => {
+      const aEnd = new Date(a.endDate || a.startDate || 0).getTime();
+      const bEnd = new Date(b.endDate || b.startDate || 0).getTime();
+      if (aEnd !== bEnd) return bEnd - aEnd;
+
+      const aStart = new Date(a.startDate || 0).getTime();
+      const bStart = new Date(b.startDate || 0).getTime();
+      return bStart - aStart;
+    });
+  }, [profile]);
+
+  const calculatedTotalExperience = useMemo(() => {
+    if (!profile || profile.employmentHistory.length === 0) return null;
+    const totalMonths = profile.employmentHistory.reduce((acc, job) => {
+      return (
+        acc +
+        durationInMonths(
+          job.startDate,
+          job.currentlyWorking ? null : job.endDate,
+        )
+      );
+    }, 0);
+    return formatDurationFromMonths(totalMonths);
+  }, [profile]);
+
+  const effectiveTotalExperience = useMemo(() => {
+    const stored = (profile?.totalExperience || "").trim();
+    // Prefer calculated value when backend value is empty or stale like "0 years".
+    if (!stored || /^0\s*year/i.test(stored)) {
+      return calculatedTotalExperience;
+    }
+    return stored;
+  }, [profile, calculatedTotalExperience]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -232,11 +309,11 @@ export default function PublicProfilePage() {
                       <span className="font-medium">{profile.location}</span>
                     </div>
                   )}
-                  {profile.totalExperience && (
+                  {effectiveTotalExperience && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <Briefcase className="w-5 h-5 text-blue-600" />
                       <span className="font-medium">
-                        {profile.totalExperience} of experience
+                        {effectiveTotalExperience} of experience
                       </span>
                     </div>
                   )}
@@ -448,7 +525,7 @@ export default function PublicProfilePage() {
           )}
 
           {/* Work Experience */}
-          {profile.employmentHistory.length > 0 && (
+          {sortedEmploymentHistory.length > 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -459,12 +536,12 @@ export default function PublicProfilePage() {
                     Work Experience
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Professional employment history
+                    Professional employment history • Newest first
                   </p>
                 </div>
               </div>
               <div className="space-y-8">
-                {profile.employmentHistory.map((job, index) => {
+                {sortedEmploymentHistory.map((job, index) => {
                   const duration = calculateDuration(
                     job.startDate,
                     job.currentlyWorking ? null : job.endDate,
@@ -475,11 +552,6 @@ export default function PublicProfilePage() {
                       key={job.id}
                       className={`relative ${index > 0 ? "border-t pt-8" : ""}`}
                     >
-                      {/* Timeline dot */}
-                      <div className="absolute -left-4 top-10 hidden md:block">
-                        <div className="w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-lg"></div>
-                      </div>
-
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                         <div className="flex-grow">
                           <div className="flex items-start gap-3 mb-2">
@@ -507,7 +579,7 @@ export default function PublicProfilePage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600">
+                      <div className="flex flex-wrap items-center gap-4 mb-2 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <span className="font-medium">
@@ -517,13 +589,11 @@ export default function PublicProfilePage() {
                               : formatDate(job.endDate)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-blue-600">
-                            {duration}
-                          </span>
-                        </div>
                       </div>
+
+                      <p className="text-sm font-semibold text-blue-600 mb-4">
+                        {duration}
+                      </p>
 
                       {job.description && (
                         <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
@@ -540,7 +610,7 @@ export default function PublicProfilePage() {
           )}
 
           {/* Education */}
-          {profile.educationHistory.length > 0 && (
+          {sortedEducationHistory.length > 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
@@ -551,12 +621,12 @@ export default function PublicProfilePage() {
                     Education
                   </h2>
                   <p className="text-sm text-gray-600">
-                    Academic qualifications and certifications
+                    Academic qualifications and certifications • Newest first
                   </p>
                 </div>
               </div>
               <div className="space-y-6">
-                {profile.educationHistory.map((edu, index) => {
+                {sortedEducationHistory.map((edu, index) => {
                   const duration =
                     edu.startDate && edu.endDate
                       ? calculateDuration(edu.startDate, edu.endDate)
@@ -567,11 +637,6 @@ export default function PublicProfilePage() {
                       key={edu.id}
                       className={`relative ${index > 0 ? "border-t pt-6" : ""}`}
                     >
-                      {/* Timeline dot */}
-                      <div className="absolute -left-4 top-8 hidden md:block">
-                        <div className="w-4 h-4 rounded-full bg-green-600 border-4 border-white shadow-lg"></div>
-                      </div>
-
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center flex-shrink-0">
                           <GraduationCap className="w-6 h-6 text-green-600" />
