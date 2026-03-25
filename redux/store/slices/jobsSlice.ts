@@ -26,6 +26,7 @@ export interface Job {
   updatedAt?: string;
   companyId?: number;
   companyLogo?: string;
+  matchPercentage?: number;
 }
 
 export interface JobsState {
@@ -39,6 +40,7 @@ export interface JobsState {
   lastFetchTime: number | null;
   lastFetchTimeFeatured: number | null;
   lastFetchTimeById: Record<string | number, number>; // Timestamp for each cached job
+  lastFetchContext: "anonymous" | "personalized" | null;
 }
 
 const initialState: JobsState = {
@@ -52,6 +54,7 @@ const initialState: JobsState = {
   lastFetchTime: null,
   lastFetchTimeFeatured: null,
   lastFetchTimeById: {},
+  lastFetchContext: null,
 };
 
 // Cache duration: 10 minutes
@@ -72,12 +75,14 @@ export const getAllJobs = createAsyncThunk<
       const now = Date.now();
       const forceRefresh = typeof args === "object" && args?.forceRefresh;
       const clerkId = args?.clerkId;
+      const requestContext = clerkId ? "personalized" : "anonymous";
 
       // Return cached data if fresh (unless force refresh)
       if (
         !forceRefresh &&
         state.items.length > 0 &&
         state.lastFetchTime &&
+        state.lastFetchContext === requestContext &&
         now - state.lastFetchTime < CACHE_DURATION
       ) {
         return state.items;
@@ -174,18 +179,99 @@ const jobsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    stripPersonalizedJobData: (state) => {
+      state.items = state.items.map((job) => ({ ...job, match: 0, matchPercentage: 0 }));
+      state.featuredItems = state.featuredItems.map((job) => ({ ...job, match: 0, matchPercentage: 0 }));
+
+      const normalizedById: Record<string | number, Job> = {};
+      Object.entries(state.jobsById).forEach(([id, job]) => {
+        normalizedById[id] = { ...job, match: 0, matchPercentage: 0 };
+      });
+      state.jobsById = normalizedById;
+
+      if (state.selectedJob) {
+        state.selectedJob = { ...state.selectedJob, match: 0, matchPercentage: 0 };
+      }
+
+      state.lastFetchContext = "anonymous";
+    },
     // Update job match values from recommendations
+    // FIXED: Now accepts matchPercentage (0-100 scale) instead of match
+    // Also handles merging additional job data (e.g., full job details from socket event)
     updateJobMatches: (
       state,
-      action: PayloadAction<{ id: string | number; match: number }[]>,
+      action: PayloadAction<
+        Array<{
+          id: string | number;
+          matchPercentage?: number;
+          match?: number;  // Backward compat
+          [key: string]: any;  // Allow merging other fields (title, description, etc.)
+        }>
+      >,
     ) => {
       const updates = action.payload;
-      updates.forEach(({ id, match }) => {
+      updates.forEach((update) => {
+        const { id, matchPercentage, match, ...otherFields } = update;
+        
+        // Normalize match percentage: prefer matchPercentage, fall back to match
+        const normalizedMatch = 
+          typeof matchPercentage === "number" 
+            ? matchPercentage 
+            : typeof match === "number" 
+            ? match 
+            : undefined;
+
         // Update in items array
-        const job = state.items.find((j) => j.id === id);
-        if (job) job.match = match;
+        const itemJob = state.items.find((j) => j.id === id);
+        if (itemJob) {
+          // Update match percentage (0-100 scale)
+          if (typeof normalizedMatch === "number") {
+            itemJob.matchPercentage = normalizedMatch;
+            itemJob.match = normalizedMatch;  // Keep for backward compat
+          }
+          // Merge any other fields (title, description, company, etc.)
+          Object.assign(itemJob, otherFields);
+        } else if (Object.keys(otherFields).length > 0) {
+          // Job not in items array yet, so create basic entry from event data
+          // This handles case where socket event arrives before job is loaded
+          state.items.push({
+            id,
+            title: otherFields.title || "New Job",
+            description: otherFields.description || "",
+            company: otherFields.company || "",
+            location: otherFields.location || "",
+            jobType: otherFields.jobType || "",
+            experience: otherFields.experience || "",
+            skills: otherFields.skills || [],
+            matchPercentage: normalizedMatch || 0,
+            match: normalizedMatch || 0,
+            ...otherFields,
+          } as Job);
+        }
+
         // Update in jobsById cache
-        if (state.jobsById[id]) state.jobsById[id].match = match;
+        if (state.jobsById[id]) {
+          if (typeof normalizedMatch === "number") {
+            state.jobsById[id].matchPercentage = normalizedMatch;
+            state.jobsById[id].match = normalizedMatch;  // Backward compat
+          }
+          Object.assign(state.jobsById[id], otherFields);
+        } else if (Object.keys(otherFields).length > 0) {
+          // Add to cache if not present
+          state.jobsById[id] = {
+            id,
+            title: otherFields.title || "New Job",
+            description: otherFields.description || "",
+            company: otherFields.company || "",
+            location: otherFields.location || "",
+            jobType: otherFields.jobType || "",
+            experience: otherFields.experience || "",
+            skills: otherFields.skills || [],
+            matchPercentage: normalizedMatch || 0,
+            match: normalizedMatch || 0,
+            ...otherFields,
+          } as Job;
+        }
       });
     },
   },
@@ -198,13 +284,21 @@ const jobsSlice = createSlice({
       })
       .addCase(getAllJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
         state.loading = false;
+        const isPersonalized = Boolean(action.meta.arg?.clerkId);
         // Ensure every job has match: 0 if not present
         state.items = action.payload.map((job) => ({
           ...job,
           match: typeof job.match === "number" ? job.match : 0,
+          matchPercentage:
+            typeof (job as any).matchPercentage === "number"
+              ? (job as any).matchPercentage
+              : typeof job.match === "number"
+                ? job.match
+                : 0,
         }));
         state.totalCount = action.payload.length;
         state.lastFetchTime = Date.now();
+        state.lastFetchContext = isPersonalized ? "personalized" : "anonymous";
       })
       .addCase(getAllJobs.rejected, (state, action) => {
         state.loading = false;
@@ -262,6 +356,6 @@ const jobsSlice = createSlice({
   },
 });
 
-export const { clearSelectedJob, clearError, updateJobMatches } =
+export const { clearSelectedJob, clearError, updateJobMatches, stripPersonalizedJobData } =
   jobsSlice.actions;
 export default jobsSlice.reducer;

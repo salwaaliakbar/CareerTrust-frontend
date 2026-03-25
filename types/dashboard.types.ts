@@ -15,6 +15,8 @@ export type ApplicationStatus =
   | "shortlisted"
   | "interviewed"
   | "hired"
+  | "offer_accepted"
+  | "offer_declined"
   | "rejected";
 
 export interface RecentApplication {

@@ -19,7 +19,13 @@ const nextConfig: NextConfig = {
 
   // Optimize images
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+    ],
     dangerouslyAllowSVG: true,
   },
 

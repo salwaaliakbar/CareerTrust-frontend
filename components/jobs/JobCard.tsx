@@ -62,7 +62,7 @@ export default function JobCard({ job, isApplied = false }: JobCardProps) {
 
       {/* Content wrapper */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-start gap-3 mb-3">
             <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
               <Briefcase className="w-6 h-6 text-sky-700" />
@@ -77,7 +77,7 @@ export default function JobCard({ job, isApplied = false }: JobCardProps) {
             </div>
           </div>
 
-          <p className="text-gray-600 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors duration-300">
+          <p className="text-gray-600 mb-3 w-190  md:max-w-[80%] whitespace-normal wrap-break-word group-hover:text-gray-700 transition-colors duration-300">
             {job.description}
           </p>
 

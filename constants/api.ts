@@ -53,8 +53,8 @@ export const API_ENDPOINTS = {
   DASHBOARD_RECENT_APPLICATIONS: `${API_BASE_URL}/dashboard/recent-applications`,
 
   // Dashboard (Node.js backend routes)
-  BACKEND_DASHBOARD_STATS: `${BACKEND_API_URL}/dashboard/stats`,
-  BACKEND_DASHBOARD_RECENT_APPLICATIONS: `${BACKEND_API_URL}/dashboard/recent-applications`,
+  BACKEND_DASHBOARD_STATS: `${BACKEND_API_URL}/jobseeker/dashboard/stats`,
+  BACKEND_DASHBOARD_RECENT_APPLICATIONS: `${BACKEND_API_URL}/jobseeker/dashboard/recent-applications`,
 
   // Employer controls
   PUBLIC_PROFILE: (clerkId: string) => `${BACKEND_API_URL}/profile/${clerkId}`,

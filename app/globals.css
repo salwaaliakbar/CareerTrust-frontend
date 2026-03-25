@@ -191,6 +191,36 @@ body {
   }
 }
 
+@keyframes bellRing {
+  0% {
+    transform: rotate(0deg);
+  }
+  12% {
+    transform: rotate(16deg);
+  }
+  24% {
+    transform: rotate(-14deg);
+  }
+  36% {
+    transform: rotate(10deg);
+  }
+  48% {
+    transform: rotate(-8deg);
+  }
+  60% {
+    transform: rotate(6deg);
+  }
+  72% {
+    transform: rotate(-4deg);
+  }
+  84% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
 /* Gradient Shift */
 @keyframes gradientShift {
   0% {
@@ -411,6 +441,11 @@ body {
     animation: subtleBounce 2s ease-in-out infinite;
   }
 
+  .animate-bell-ring {
+    transform-origin: top center;
+    animation: bellRing 700ms ease-in-out;
+  }
+
   /* Gradient animations */
   .animate-gradient {
     background-size: 200% 200%;
@@ -483,6 +518,10 @@ body {
   .card-hover {
     animation: none !important;
     transition: none !important;
+  }
+
+  .animate-bell-ring {
+    animation: none !important;
   }
 }
 
