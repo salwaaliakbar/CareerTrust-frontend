@@ -41,6 +41,16 @@ export const DASHBOARD_STATUS_CONFIGS: DashboardStatusConfig = {
     dot: "bg-emerald-400",
     label: "Hired",
   },
+  offer_accepted: {
+    style: "bg-green-50 text-green-700 border border-green-200",
+    dot: "bg-green-500",
+    label: "Accepted",
+  },
+  offer_declined: {
+    style: "bg-rose-50 text-rose-700 border border-rose-200",
+    dot: "bg-rose-500",
+    label: "Declined",
+  },
   rejected: {
     style: "bg-red-50 text-red-700 border border-red-200",
     dot: "bg-red-400",

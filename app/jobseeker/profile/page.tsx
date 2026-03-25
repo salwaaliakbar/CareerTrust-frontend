@@ -23,9 +23,7 @@ import axios from "axios";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
-import Test from "@/app/Test";
-import { useRef, useCallback } from "react";
-import { useNotificationState } from "@/hooks/useNotificationState";
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchJobseekerProfile,
@@ -37,13 +35,6 @@ import {
   setProfilePicUrl,
   setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
-import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
-import { useJobRecommendationPolling } from "@/hooks/useJobRecommenadtionPolling";
-
-type JobRecommendationItem = {
-  jobId: number;
-  score?: number | null;
-};
 
 type ProfileApiResponseData = {
   fullName?: string | null;
@@ -108,69 +99,54 @@ function mapApiProfileToForm(data: ProfileApiResponseData): ProfileData {
   };
 }
 
+function normalizeProfileForm(form: ProfileData): ProfileData {
+  return {
+    fullName: (form.fullName || "").trim(),
+    headline: (form.headline || "").trim(),
+    location: (form.location || "").trim(),
+    skills: (form.skills || "").trim(),
+    summary: (form.summary || "").trim(),
+    email: (form.email || "").trim(),
+    total_experience: (form.total_experience || "").trim(),
+    total_experience_years: Number(form.total_experience_years || 0),
+    employmentStatus: form.employmentStatus || "open",
+  };
+}
+
+function normalizeEducationHistory(history: EducationRecord[]) {
+  return history.map((edu) => ({
+    institution: (edu.institution || "").trim(),
+    degree: (edu.degree || "").trim(),
+    startDate: (edu.startDate || "").trim(),
+    endDate: (edu.endDate || "").trim(),
+  }));
+}
+
+function normalizeEmploymentHistory(history: EmploymentRecord[]) {
+  return history.map((emp) => ({
+    company: (emp.company || "").trim(),
+    position: (emp.position || "").trim(),
+    startDate: (emp.startDate || "").trim(),
+    endDate: (emp.endDate || "").trim(),
+    currentlyWorking: Boolean(emp.currentlyWorking),
+    description: (emp.description || "").trim(),
+    documents: (emp.documents || []).map((doc) => ({
+      name: (doc.name || "").trim(),
+      size: Number(doc.size || 0),
+      type: (doc.type || "").trim(),
+      url: (doc.url || "").trim(),
+    })),
+  }));
+}
+
+function areEqualByJson(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
-  // Job Recommendation Polling and Redux update
-  const clerkId = user?.id;
-  const [startPolling, setStartPolling] = useState(false);
-  const [pollSince, setPollSince] = useState<string | null>(null);
   const dispatch = useDispatch();
-  // Notification state
-  const { notifications, addNotification } = useNotificationState();
-  const [showPopup, setShowPopup] = useState(false);
-  const popupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch new recommendations from BFF
-  const fetchNewRecommendations = useCallback(async () => {
-    if (!clerkId) return;
-    try {
-      const res = await axios.get(
-        `/api/jobRecommendation/recommendations?clerkId=${clerkId}`,
-      );
-      const recommendations: JobRecommendationItem[] = Array.isArray(
-        res.data?.recommendations,
-      )
-        ? res.data.recommendations
-        : [];
-      console.log("Fetched new job recommendations:", recommendations);
-      // Handle both normalized scores (0-1) and percentage scores (0-100).
-      dispatch(
-        updateJobMatches(
-          recommendations.map((r) => ({
-            id: r.jobId,
-            match:
-              typeof r.score === "number"
-                ? Math.round(r.score <= 1 ? r.score * 100 : r.score)
-                : 0,
-          })),
-        ),
-      );
-      // Add notification and show popup
-      addNotification({
-        type: "job_recommendation",
-        title: "New Job Recommendations!",
-        message: "You have new job recommendations. Check the jobs page.",
-      });
-      setShowPopup(true);
-      if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
-      popupTimeoutRef.current = setTimeout(() => setShowPopup(false), 3500);
-    } catch (err) {
-      logger.error("Failed to fetch job recommendations", err);
-    }
-  }, [addNotification, clerkId, dispatch]);
-
-  // Only start polling after profile update
-  useJobRecommendationPolling({
-    clerkId: startPolling && clerkId ? clerkId : "",
-    pollSince,
-    onNewRecommendation: fetchNewRecommendations,
-    onPollingEnd: () => {
-      setStartPolling(false);
-    },
-    interval: 10000,
-    maxAttempts: 10,
-  });
 
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
@@ -533,6 +509,54 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
+    const baselineForm: ProfileData = {
+      fullName: reduxProfile.profile?.fullName || "",
+      headline: reduxProfile.profile?.headline || "",
+      location: reduxProfile.profile?.location || "",
+      skills: reduxProfile.profile?.skills || "",
+      summary: reduxProfile.profile?.summary || "",
+      email: reduxProfile.profile?.email || "",
+      total_experience: reduxProfile.profile?.total_experience || "",
+      total_experience_years: Number(
+        reduxProfile.profile?.total_experience_years || 0,
+      ),
+      employmentStatus: reduxProfile.profile?.employmentStatus || "open",
+    };
+
+    const formChanged = !areEqualByJson(
+      normalizeProfileForm(form),
+      normalizeProfileForm(baselineForm),
+    );
+    const educationChanged = !areEqualByJson(
+      normalizeEducationHistory(educationHistory),
+      normalizeEducationHistory(reduxProfile.education),
+    );
+    const employmentChanged = !areEqualByJson(
+      normalizeEmploymentHistory(employmentHistory),
+      normalizeEmploymentHistory(reduxProfile.employment),
+    );
+
+    const resumeChanged = Boolean(resumeFile);
+    const profileImageChanged =
+      Boolean(profileFile) ||
+      !areEqualByJson(profileImage || null, reduxProfile.profilePicUrl || null);
+
+    const hasAnyProfileChanges =
+      formChanged ||
+      educationChanged ||
+      employmentChanged ||
+      resumeChanged ||
+      profileImageChanged;
+
+    if (!hasAnyProfileChanges) {
+      await Swal.fire({
+        icon: "info",
+        title: "No Changes Detected",
+        text: "No field was changed. Please update something before saving.",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = new FormData();
@@ -628,13 +652,6 @@ export default function ProfilePage() {
         });
         // only exit edit mode on success
         setIsEditing(false);
-        const profileUpdatedAt = data?.data?.updatedAt;
-        setPollSince(
-          typeof profileUpdatedAt === "string" && profileUpdatedAt
-            ? profileUpdatedAt
-            : new Date().toISOString(),
-        );
-        setStartPolling(true);
         return;
       }
 
@@ -999,31 +1016,6 @@ export default function ProfilePage() {
             // Real refresh will happen on next profile load
           }}
         />
-      )}
-      {showPopup && (
-        <div className="fixed top-6 right-6 z-[9999] bg-blue-600 text-white px-6 py-3 rounded-xl shadow-2xl text-base font-semibold animate-fade-in flex items-center gap-2">
-          <svg
-            className="w-5 h-5 text-white"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
-          New notification arrived!
-          <button
-            className="ml-3 text-white hover:text-gray-200 text-lg font-bold px-2 focus:outline-none"
-            onClick={() => setShowPopup(false)}
-            aria-label="Close notification popup"
-          >
-            ×
-          </button>
-        </div>
       )}
     </div>
   );
