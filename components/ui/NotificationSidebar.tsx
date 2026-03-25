@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Notification } from "@/hooks/useNotificationState";
 
 interface NotificationSidebarProps {
@@ -74,15 +75,32 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
 }) => {
   const [activeNotification, setActiveNotification] = useState<Notification | null>(null);
 
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   const handleCardClick = (n: Notification) => {
     if (!n.read && onMarkAsRead) onMarkAsRead(n.id);
     setActiveNotification(n);
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-9998 bg-slate-900/35 backdrop-blur-[1px]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
       {/* Sidebar panel */}
-      <div className="fixed top-0 right-0 h-full w-[350px] bg-white shadow-2xl z-9998 flex flex-col border-l border-blue-100 animate-slide-in">
+      <div className="fixed top-0 right-0 h-full w-[380px] max-w-[92vw] bg-white shadow-2xl z-9999 flex flex-col border-l border-blue-100 animate-slide-in">
         <div className="flex items-center justify-between px-6 py-4 border-b border-blue-50 bg-blue-50">
           <span className="font-bold text-lg text-blue-900">Notifications</span>
           <button
@@ -199,6 +217,8 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
         </div>
       )}
     </>
+    ,
+    document.body,
   );
 };
 
