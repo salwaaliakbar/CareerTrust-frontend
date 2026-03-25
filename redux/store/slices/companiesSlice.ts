@@ -15,6 +15,7 @@ export interface Company {
   featured: boolean;
   createdAt?: string;
   updatedAt?: string;
+  reputationScore?: number;
 }
 
 export interface CompaniesState {
@@ -28,6 +29,7 @@ export interface CompaniesState {
   lastFetchTime: number | null;
   lastFetchTimeFeatured: number | null;
   lastFetchTimeById: Record<string | number, number>; // Timestamp for each cached company
+  lastFetchContext: "anonymous" | "personalized" | null;
 }
 
 const initialState: CompaniesState = {
@@ -41,6 +43,7 @@ const initialState: CompaniesState = {
   lastFetchTime: null,
   lastFetchTimeFeatured: null,
   lastFetchTimeById: {},
+  lastFetchContext: null,
 };
 
 // Cache duration: 10 minutes
@@ -49,20 +52,25 @@ const CACHE_DURATION = 10 * 60 * 1000;
 // Async thunks
 export const getAllCompanies = createAsyncThunk<
   Company[],
-  { forceRefresh?: boolean } | undefined
+  { forceRefresh?: boolean; clerkId?: string } | undefined
 >(
   'companies/getAllCompanies',
-  async (args: { forceRefresh?: boolean } | undefined = {}, { getState, rejectWithValue }) => {
+  async (
+    args: { forceRefresh?: boolean; clerkId?: string } | undefined = {},
+    { getState, rejectWithValue },
+  ) => {
     try {
       const state = (getState() as any).companies as CompaniesState;
       const now = Date.now();
       const forceRefresh = typeof args === 'object' && args?.forceRefresh;
+      const requestContext = args?.clerkId ? 'personalized' : 'anonymous';
 
       // Return cached data if fresh (unless force refresh)
       if (
         !forceRefresh &&
         state.items.length > 0 &&
         state.lastFetchTime &&
+        state.lastFetchContext === requestContext &&
         now - state.lastFetchTime < CACHE_DURATION
       ) {
         return state.items;
@@ -137,6 +145,35 @@ const companiesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    stripPersonalizedCompanyData: (state) => {
+      state.items = state.items.map((company) => ({
+        ...company,
+        reputationScore: undefined,
+      }));
+
+      state.featuredItems = state.featuredItems.map((company) => ({
+        ...company,
+        reputationScore: undefined,
+      }));
+
+      const normalizedById: Record<string | number, Company> = {};
+      Object.entries(state.companiesById).forEach(([id, company]) => {
+        normalizedById[id] = {
+          ...company,
+          reputationScore: undefined,
+        };
+      });
+      state.companiesById = normalizedById;
+
+      if (state.selectedCompany) {
+        state.selectedCompany = {
+          ...state.selectedCompany,
+          reputationScore: undefined,
+        };
+      }
+
+      state.lastFetchContext = 'anonymous';
+    },
   },
   extraReducers: (builder) => {
     // Get all companies
@@ -150,6 +187,7 @@ const companiesSlice = createSlice({
         state.items = action.payload;
         state.totalCount = action.payload.length;
         state.lastFetchTime = Date.now();
+        state.lastFetchContext = action.meta.arg?.clerkId ? 'personalized' : 'anonymous';
       })
       .addCase(getAllCompanies.rejected, (state, action) => {
         state.loading = false;
@@ -193,5 +231,5 @@ const companiesSlice = createSlice({
   },
 });
 
-export const { clearSelectedCompany, clearError } = companiesSlice.actions;
+export const { clearSelectedCompany, clearError, stripPersonalizedCompanyData } = companiesSlice.actions;
 export default companiesSlice.reducer;

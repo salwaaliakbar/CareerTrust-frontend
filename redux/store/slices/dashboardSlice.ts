@@ -4,6 +4,11 @@ import type { RootState } from '../store';
 import API_ENDPOINTS from '@/constants/api';
 import type { DashboardStats, RecentApplication } from '@/types/dashboard.types';
 
+type OfferResponsePayload = {
+  applicationId: number;
+  response: 'accept' | 'decline';
+};
+
 /**
  * Dashboard Redux Slice
  * Manages dashboard-specific state: stats, recent applications, recommendations
@@ -223,7 +228,35 @@ const dashboardSlice = createSlice({
       if (state.stats) {
         state.stats = { ...state.stats, ...action.payload };
       }
-    }
+    },
+
+    applyOfferResponseOptimistic: (state, action: PayloadAction<OfferResponsePayload>) => {
+      const { applicationId, response } = action.payload;
+
+      const targetApp = state.recentApplications.find(
+        (app) => String(app.id) === String(applicationId),
+      );
+
+      if (response === 'accept') {
+        if (state.stats) {
+          state.stats.acceptedApplications = Math.max(
+            0,
+            (state.stats.acceptedApplications ?? 0) + 1,
+          );
+        }
+
+        // Keep in recent list but reflect latest lifecycle status.
+        if (targetApp) {
+          targetApp.status = 'offer_accepted';
+        }
+        return;
+      }
+
+      // For declines, keep the card but reflect latest status.
+      if (targetApp) {
+        targetApp.status = 'offer_declined';
+      }
+    },
   },
   extraReducers: (builder) => {
     // Fetch stats
@@ -284,7 +317,12 @@ const dashboardSlice = createSlice({
   }
 });
 
-export const { clearDashboardCache, clearError, updateStatsOptimistic } = dashboardSlice.actions;
+export const {
+  clearDashboardCache,
+  clearError,
+  updateStatsOptimistic,
+  applyOfferResponseOptimistic,
+} = dashboardSlice.actions;
 
 // Selectors
 export const selectDashboardStats = (state: RootState) => state.dashboard.stats;

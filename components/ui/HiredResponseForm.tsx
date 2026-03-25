@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
+import {
+  X,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+  Briefcase,
+  Building2,
+  Sparkles,
+} from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { API_ENDPOINTS } from "@/constants/api";
@@ -27,6 +36,15 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCurrentlyEmployed, setIsCurrentlyEmployed] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setResponse(null);
+      setReason("");
+      setValidationError(null);
+    }
+  }, [isOpen]);
 
   // Fetch employment status when the form opens
   useEffect(() => {
@@ -50,41 +68,48 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
     e.preventDefault();
 
     if (!response) {
-      alert("Please select your response");
+      setValidationError("Please select your response before submitting.");
       return;
     }
 
     if (response === "decline" && !reason.trim()) {
-      alert("Please provide a reason for declining");
+      setValidationError("Please provide a reason for declining this offer.");
       return;
     }
 
+    setValidationError(null);
     setIsSubmitting(true);
     try {
       await onSubmit(response, reason);
       onClose();
     } catch (error) {
       console.error("Failed to submit response:", error);
-      alert("Failed to submit your response. Please try again.");
+      setValidationError("Failed to submit your response. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/65 backdrop-blur-sm p-4 sm:p-6">
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-[0_24px_70px_-18px_rgba(15,23,42,0.55)] border border-blue-100">
         {/* Header */}
-        <div className="sticky top-0 bg-linear-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">🎊 Job Offer Response</h2>
-            <p className="text-blue-100 text-sm mt-1">
-              Congratulations on your offer!
+        <div className="sticky top-0 z-10 bg-linear-to-r from-[#0E2A5A] via-[#123C76] to-[#18508F] text-white px-5 sm:px-6 py-4 sm:py-5 rounded-t-3xl flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold tracking-wide uppercase">
+              <Sparkles className="w-3.5 h-3.5" />
+              Offer Decision
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black mt-2 leading-tight">
+              Job Offer Response
+            </h2>
+            <p className="text-blue-100/90 text-sm mt-1">
+              Review the offer details and submit your final decision.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-gray-200 transition-colors"
+            className="shrink-0 text-white/85 hover:text-white transition-colors p-2 rounded-full hover:bg-white/15"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -92,19 +117,25 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 sm:space-y-6">
           {/* Job Details */}
-          <div className="bg-linear-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-5">
-            <p className="text-sm text-gray-600 mb-2">
+          <div className="bg-linear-to-r from-blue-50 via-indigo-50 to-sky-50 border border-blue-200 rounded-2xl p-4 sm:p-5">
+            <p className="text-xs sm:text-sm text-slate-600 mb-2 font-medium">
               You&apos;ve been offered:
             </p>
-            <h3 className="text-xl font-bold text-gray-900">{jobTitle}</h3>
-            <p className="text-gray-700 font-medium mt-1">at {companyName}</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 flex items-start gap-2.5">
+              <Briefcase className="w-5 h-5 text-blue-700 mt-0.5 shrink-0" />
+              <span>{jobTitle}</span>
+            </h3>
+            <p className="text-slate-700 font-medium mt-2 flex items-center gap-2">
+              <Building2 className="w-4.5 h-4.5 text-slate-500" />
+              <span>{companyName}</span>
+            </p>
           </div>
 
           {/* Currently-employed warning */}
           {isCurrentlyEmployed && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl p-4">
               <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
               <div className="text-sm text-amber-800">
                 <p className="font-semibold mb-1">You are currently employed</p>
@@ -127,18 +158,18 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
 
           {/* Response Selection */}
           <div className="space-y-3">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
               Your Response *
             </label>
 
             {/* Accept Option */}
             <label
-              className={`flex items-center gap-4 p-4 border-2 rounded-xl transition-all ${
+              className={`flex items-center gap-4 p-4 border-2 rounded-2xl transition-all ${
                 isCurrentlyEmployed
                   ? "opacity-50 cursor-not-allowed border-gray-200 bg-gray-50"
                   : response === "accept"
-                    ? "border-green-500 bg-green-50 cursor-pointer"
-                    : "border-gray-200 hover:border-green-300 hover:bg-green-50/30 cursor-pointer"
+                    ? "border-emerald-500 bg-emerald-50 cursor-pointer shadow-[0_10px_24px_-18px_rgba(5,150,105,0.9)]"
+                    : "border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 cursor-pointer"
               }`}
             >
               <input
@@ -152,11 +183,11 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
               />
               <div className="flex items-center gap-3 flex-1">
                 <CheckCircle
-                  className={`w-6 h-6 ${response === "accept" ? "text-green-600" : "text-gray-400"}`}
+                  className={`w-6 h-6 ${response === "accept" ? "text-emerald-600" : "text-gray-400"}`}
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">Accept Offer</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-semibold text-slate-900">Accept Offer</p>
+                  <p className="text-sm text-slate-600">
                     {isCurrentlyEmployed
                       ? "Leave your current job first to accept"
                       : "I'm excited to join the team!"}
@@ -167,10 +198,10 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
 
             {/* Decline Option */}
             <label
-              className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+              className={`flex items-center gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
                 response === "decline"
-                  ? "border-red-500 bg-red-50"
-                  : "border-gray-200 hover:border-red-300 hover:bg-red-50/30"
+                  ? "border-rose-500 bg-rose-50 shadow-[0_10px_24px_-18px_rgba(225,29,72,0.9)]"
+                  : "border-slate-200 hover:border-rose-300 hover:bg-rose-50/30"
               }`}
             >
               <input
@@ -183,11 +214,11 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
               />
               <div className="flex items-center gap-3 flex-1">
                 <XCircle
-                  className={`w-6 h-6 ${response === "decline" ? "text-red-600" : "text-gray-400"}`}
+                  className={`w-6 h-6 ${response === "decline" ? "text-rose-600" : "text-gray-400"}`}
                 />
                 <div>
-                  <p className="font-semibold text-gray-900">Decline Offer</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-semibold text-slate-900">Decline Offer</p>
+                  <p className="text-sm text-slate-600">
                     I appreciate the offer, but...
                   </p>
                 </div>
@@ -195,36 +226,51 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
             </label>
           </div>
 
+          {validationError && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {validationError}
+            </div>
+          )}
+
           {/* Reason Field (shown when declining) */}
           {response === "decline" && (
             <div className="space-y-2 animate-fade-in">
-              <label className="block text-sm font-semibold text-gray-700">
+              <label className="block text-sm font-semibold text-slate-700">
                 Reason for Declining *
               </label>
               <textarea
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all resize-none"
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/20 transition-all resize-none"
                 rows={4}
                 placeholder="Please provide a brief reason for declining this offer..."
                 required
               />
-              <p className="text-xs text-gray-500">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-slate-500">
                 This feedback helps companies improve their hiring process
-              </p>
+                </p>
+                <span className="text-xs text-slate-400">{reason.length}/500</span>
+              </div>
             </div>
           )}
 
           {/* Message Field (optional for accepting) */}
           {response === "accept" && (
             <div className="space-y-2 animate-fade-in">
-              <label className="block text-sm font-semibold text-gray-700">
+              <label className="block text-sm font-semibold text-slate-700">
                 Message to Employer (Optional)
               </label>
               <textarea
                 value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all resize-none"
+                onChange={(e) => {
+                  setReason(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                className="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all resize-none"
                 rows={3}
                 placeholder="Express your excitement or ask any questions..."
               />
@@ -232,11 +278,11 @@ const HiredResponseForm: React.FC<HiredResponseFormProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+              className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all"
               disabled={isSubmitting}
             >
               Cancel
