@@ -1,3 +1,5 @@
+"use client";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -9,8 +11,7 @@ export interface EligibleCompanyForReview {
     location: string;
     logo: string;
     description: string;
-    rating: number;
-    reviews: number;
+    reviewCount: number;
     isVerified: boolean;
   };
   employment: {
@@ -64,7 +65,7 @@ export async function getEligibleCompaniesForReview(
 }
 
 export async function submitCompanyReview(
-  payload: { companyId: number; rating: number; reviewText: string },
+  payload: { companyId: number; rating?: number; reviewText: string },
   getToken: () => Promise<string | null>,
 ) {
   const token = await getToken();
