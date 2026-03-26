@@ -16,6 +16,7 @@ import ExitRequestModal from "@/components/jobseekerDashboard/ExitRequestModal";
 import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
 import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
+import MyReviewsCard from "@/components/jobseeker/MyReviewsCard";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
@@ -35,6 +36,7 @@ import {
   setProfilePicUrl,
   setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
+import { fetchMyReviews, type JobseekerReview } from "@/services/api/myReviews.service";
 
 type ProfileApiResponseData = {
   fullName?: string | null;
@@ -216,6 +218,10 @@ export default function ProfilePage() {
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  // Reviews state
+  const [myReviews, setMyReviews] = useState<JobseekerReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
   const updateEmploymentStatus = useCallback(
     (status: "open" | "not_open") => {
       setForm((prev) => ({ ...prev, employmentStatus: status }));
@@ -299,6 +305,25 @@ export default function ProfilePage() {
     setEducationHistory,
     setEmploymentHistory,
   ]);
+
+  // Fetch user's own reviews
+  React.useEffect(() => {
+    if (!mounted || !user) return;
+
+    const loadReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        const reviews = await fetchMyReviews(getToken);
+        setMyReviews(reviews);
+      } catch (error) {
+        logger.error("Failed to load my reviews:", error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, [mounted, user, getToken]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
@@ -557,6 +582,9 @@ export default function ProfilePage() {
       return;
     }
 
+    const formatPercent = (value: number) =>
+      `${(value * 100).toFixed(2).replace(/\.00$/, "")}%`;
+
     setSaving(true);
     try {
       const payload = new FormData();
@@ -673,13 +701,13 @@ export default function ProfilePage() {
         } else if (rd?.error) {
           userMessage = String(rd.error);
         } else if (typeof rd?.similarity === "number") {
-          const pct = Math.round(rd.similarity * 100);
+          const pct = formatPercent(rd.similarity);
           userMessage = rd.error
-            ? `${rd.error} (similarity: ${pct}%)`
-            : `Verification failed (similarity: ${pct}%).`;
+            ? `${rd.error} (similarity: ${pct})`
+            : `Verification failed (similarity: ${pct}).`;
           if (typeof rd?.threshold === "number") {
-            const thresholdPct = Math.round(rd.threshold * 100);
-            userMessage += ` Required threshold: ${thresholdPct}%.`;
+            const thresholdPct = formatPercent(rd.threshold);
+            userMessage += ` Required threshold: ${thresholdPct}.`;
           }
           if (rd?.lookupSource) {
             userMessage += ` Lookup source: ${rd.lookupSource}.`;
@@ -711,14 +739,14 @@ export default function ProfilePage() {
           }
 
           if (typeof verifyDetails?.similarity === "number") {
-            const pct = Math.round(verifyDetails.similarity * 100);
+            const pct = formatPercent(verifyDetails.similarity);
             detailsMessage = detailsMessage
-              ? `${detailsMessage} (similarity: ${pct}%)`
-              : `Verification failed (similarity: ${pct}%).`;
+              ? `${detailsMessage} (similarity: ${pct})`
+              : `Verification failed (similarity: ${pct}).`;
 
             if (typeof verifyDetails?.threshold === "number") {
-              const thresholdPct = Math.round(verifyDetails.threshold * 100);
-              detailsMessage += ` Required threshold: ${thresholdPct}%.`;
+              const thresholdPct = formatPercent(verifyDetails.threshold);
+              detailsMessage += ` Required threshold: ${thresholdPct}.`;
             }
 
             if (verifyDetails?.lookupSource) {
@@ -842,7 +870,7 @@ export default function ProfilePage() {
                 ? "opacity-40 grayscale pointer-events-none"
                 : "opacity-100"
             }`}
-            aria-hidden={!isEditing}
+            aria-hidden={isEditing}
           >
             {/* Responsive grid: main content (2fr) + sidebar (1fr) on large screens */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative">
@@ -894,6 +922,13 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   onExitRequest={(empId) => setExitRequestEmpId(empId)}
                 />
+
+                {/* My Reviews Section */}
+                <div className="mt-12">
+                  <div className="border-t pt-12">
+                    <MyReviewsCard reviews={myReviews} isLoading={reviewsLoading} />
+                  </div>
+                </div>
               </div>
 
               {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}

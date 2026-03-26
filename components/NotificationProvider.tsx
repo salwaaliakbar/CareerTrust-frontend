@@ -434,6 +434,26 @@ export function NotificationProvider({
       console.log("Job recommendation ready event:", data);
       if (!user?.id) return;
 
+      // New payload shape (single broadcast): { jobId, job, recipients: [{ clerkId, matchPercentage, breakdown }] }
+      // Keep backward compatibility with old per-user payload shape.
+      let eventPayload = data;
+      if (Array.isArray(data?.recipients)) {
+        const recipient = data.recipients.find(
+          (item: any) => item?.clerkId === user.id,
+        );
+
+        // This broadcast wasn't intended for the current user.
+        if (!recipient) {
+          return;
+        }
+
+        eventPayload = {
+          ...data,
+          matchPercentage: recipient.matchPercentage,
+          breakdown: recipient.breakdown,
+        };
+      }
+
       try {
         // CRITICAL FIX #1: Cancel previous in-flight fetch to prevent race conditions
         // If multiple socket events arrive rapidly, only the latest one should update Redux
@@ -443,23 +463,23 @@ export function NotificationProvider({
         recommendationAbortControllerRef.current = controller;
 
         const eventMatchPercentage = normalizeMatchPercentage(
-          data?.matchPercentage ?? data?.score,
+          eventPayload?.matchPercentage ?? eventPayload?.score,
         );
 
         // STEP 1: Optimistic update - immediately update Redux with job data from event
-        if (data?.jobId) {
+        if (eventPayload?.jobId) {
           // Dispatch immediate recommendation update even if user is on jobs page
           dispatch(updateJobMatches([
             {
-              id: data.jobId,
+              id: eventPayload.jobId,
               matchPercentage: eventMatchPercentage,
-              ...(data?.job || {}),
+              ...(eventPayload?.job || {}),
             }
           ]));
 
           console.log(
             "Job recommendation updated optimistically in Redux:",
-            { jobId: data.jobId, matchPercentage: eventMatchPercentage }
+            { jobId: eventPayload.jobId, matchPercentage: eventMatchPercentage }
           );
         }
 
@@ -505,7 +525,7 @@ export function NotificationProvider({
         });
 
         // STEP 4: Fetch full job details in background (if not already in state)
-        if (data?.jobId && data?.job) {
+        if (eventPayload?.jobId && eventPayload?.job) {
           // Job data already in event, but optionally fetch fresh details
           // in background for any missing fields
           (async () => {
@@ -513,13 +533,13 @@ export function NotificationProvider({
               // Skip background fetch if this request was aborted
               if (controller.signal.aborted) return;
 
-              const jobRes = await fetch(`/api/jobs/${data.jobId}`);
+              const jobRes = await fetch(`/api/jobs/${eventPayload.jobId}`);
               if (jobRes.ok) {
                 const jobDetails = await jobRes.json();
                 if (jobDetails?.data) {
                   dispatch(updateJobMatches([
                     {
-                      id: data.jobId,
+                      id: eventPayload.jobId,
                       matchPercentage: eventMatchPercentage,
                       ...jobDetails.data,
                     }
@@ -537,8 +557,8 @@ export function NotificationProvider({
         addNotification({
           type: "job_recommendation",
           title: "New Job Recommendations!",
-          message: data?.job?.title 
-            ? `New match: ${data.job.title} (${eventMatchPercentage}%)`
+          message: eventPayload?.job?.title 
+            ? `New match: ${eventPayload.job.title} (${eventMatchPercentage}%)`
             : "Your recommendations were updated. Check the jobs page.",
         });
       } catch (error) {

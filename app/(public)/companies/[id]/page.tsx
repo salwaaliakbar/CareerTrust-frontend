@@ -8,7 +8,6 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CompanyEditForm from "@/components/companies/CompanyEditForm";
 import {
-  Star,
   Users,
   Briefcase,
   MapPin,
@@ -23,6 +22,11 @@ import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
 import { getCompanyById } from "@/redux/store/slices/companiesSlice";
 import { Company } from "@/types/company.types";
 import { API_ENDPOINTS } from "@/constants/api";
+import ReputationScoreCard from "@/components/companies/ReputationScoreCard";
+import {
+  fetchCompanyReputation,
+  type CompanyReputation,
+} from "@/services/api/reputation.service";
 
 interface CompanyJob {
   id: number;
@@ -49,13 +53,12 @@ export default function CompanyPage({
   } = useAppSelector((state) => state.companies);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCompany, setEditedCompany] = useState<Company | null>(null);
-  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [companyJobs, setCompanyJobs] = useState<CompanyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
+  const [reputation, setReputation] = useState<CompanyReputation | null>(null);
 
   const companyId = Number(id);
   const CACHE_DURATION = 10 * 60 * 1000;
-  const now = Date.now();
   const lastFetchTime = lastFetchTimeById?.[companyId];
 
   const userRole = user?.unsafeMetadata?.role as string | undefined;
@@ -101,6 +104,25 @@ export default function CompanyPage({
 
     return () => {
       isCancelled = true;
+    };
+  }, [companyId]);
+
+  useEffect(() => {
+    if (!companyId) return;
+
+    let disposed = false;
+
+    const loadReputation = async () => {
+      const result = await fetchCompanyReputation(companyId);
+      if (!disposed) {
+        setReputation(result);
+      }
+    };
+
+    loadReputation();
+
+    return () => {
+      disposed = true;
     };
   }, [companyId]);
 
@@ -305,16 +327,10 @@ export default function CompanyPage({
                   {/* Stats row */}
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-all duration-200">
-                    <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Rating</p>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-lg font-bold text-slate-800">
-                        {currentCompany.rating}
-                      </span>
-                      <span className="text-slate-500 text-base">
-                        ({currentCompany.reviews} reviews)
-                      </span>
-                    </div>
+                    <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Reputation Score</p>
+                    <p className="text-lg font-bold text-slate-800">
+                      {(reputation?.reputationScore ?? currentCompany.rating ?? 0).toFixed(1)} / 5
+                    </p>
                   </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-all duration-200">
                     <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Employees</p>
@@ -340,6 +356,10 @@ export default function CompanyPage({
               </div>
 
               {/* Open Positions */}
+              <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-8">
+                <ReputationScoreCard reputation={reputation} />
+              </div>
+
               <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
                   Open Positions at {currentCompany.name}
