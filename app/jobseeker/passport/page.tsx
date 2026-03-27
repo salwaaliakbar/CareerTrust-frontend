@@ -14,6 +14,7 @@ const PassportPage = () => {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [verifiedEmployment, setVerifiedEmployment] = useState<EmploymentRecord[]>([]);
+  const [allEmployment, setAllEmployment] = useState<EmploymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -80,6 +81,7 @@ const PassportPage = () => {
         console.log("Passport - Verified employment count:", verified.length);
         console.log("Passport - Verified employment:", verified);
         setVerifiedEmployment(verified);
+        setAllEmployment(employment);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -115,6 +117,7 @@ const PassportPage = () => {
         
         <DigitalEmploymentPassport
           verifiedEmployment={verifiedEmployment}
+          allEmployment={allEmployment}
         />
       </main>
       <Footer />
