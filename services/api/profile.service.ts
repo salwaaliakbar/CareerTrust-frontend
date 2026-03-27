@@ -37,6 +37,7 @@ export interface EmploymentRecord {
   endDate: string | null;
   description: string | null;
   currentlyWorking: boolean;
+  verificationStatus: string;
 }
 
 export interface EducationRecord {

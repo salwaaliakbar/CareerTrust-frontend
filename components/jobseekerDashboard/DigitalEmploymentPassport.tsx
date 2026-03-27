@@ -18,10 +18,12 @@ import { EmploymentRecord } from "@/types/jobseeker.types";
 
 interface DigitalEmploymentPassportProps {
   verifiedEmployment: EmploymentRecord[];
+  allEmployment: EmploymentRecord[];
 }
 
 export default function DigitalEmploymentPassport({
   verifiedEmployment,
+  allEmployment,
 }: DigitalEmploymentPassportProps) {
   const passportRef = useRef<HTMLDivElement>(null);
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set());
@@ -633,6 +635,8 @@ export default function DigitalEmploymentPassport({
             </div>
           )}
         </div>
+
+
       </div>
 
       <style jsx>{`

@@ -99,10 +99,12 @@ export default function PublicProfilePage() {
   // isCurrentlyEmployed is maintained server-side on JobseekerProfile
   const isCurrentlyEmployed = profile?.isCurrentlyEmployed ?? false;
 
-  // Keep timeline sections consistent: newest entries first.
+  // Keep timeline sections consistent: newest entries first. Only verified records are shown publicly.
   const sortedEmploymentHistory = useMemo(() => {
     if (!profile) return [];
-    return [...profile.employmentHistory].sort((a, b) => {
+    return [...profile.employmentHistory]
+      .filter((job) => job.verificationStatus === "verified")
+      .sort((a, b) => {
       if (a.currentlyWorking && !b.currentlyWorking) return -1;
       if (!a.currentlyWorking && b.currentlyWorking) return 1;
 
@@ -133,8 +135,9 @@ export default function PublicProfilePage() {
   }, [profile]);
 
   const calculatedTotalExperience = useMemo(() => {
-    if (!profile || profile.employmentHistory.length === 0) return null;
-    const totalMonths = profile.employmentHistory.reduce((acc, job) => {
+    const verifiedJobs = profile?.employmentHistory.filter((j) => j.verificationStatus === "verified") ?? [];
+    if (verifiedJobs.length === 0) return null;
+    const totalMonths = verifiedJobs.reduce((acc, job) => {
       return (
         acc +
         durationInMonths(
