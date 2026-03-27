@@ -274,10 +274,15 @@ export default function ProfilePage() {
     const currentClerkId = user.id;
     if (!currentClerkId) return;
 
+    console.log("🔍 [Profile Page] Fetching profile for clerkId:", currentClerkId);
     setHasCheckedRedux(true);
     dispatch(fetchJobseekerProfile(currentClerkId) as any).then((action: any) => {
+      console.log("✅ [Profile Page] Fetch completed. Action:", action);
       if (action.payload) {
         const fetchedData = action.payload as ProfileApiResponseData;
+        console.log("📊 [Profile Page] Employment History Count:", fetchedData.employmentHistory?.length || 0);
+        console.log("📋 [Profile Page] Employment History Data:", fetchedData.employmentHistory);
+
         setForm(mapApiProfileToForm(fetchedData));
         setEducationHistory(
           Array.isArray(fetchedData.educationHistory)
@@ -616,6 +621,23 @@ export default function ProfilePage() {
       // Only append histories if provided and non-empty
       if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
         payload.append("employmentHistory", JSON.stringify(employmentHistory));
+
+        // Append employment document files individually to FormData
+        employmentHistory.forEach((emp) => {
+          if (emp.documents && Array.isArray(emp.documents)) {
+            emp.documents.forEach((doc) => {
+              // Only append NEW file uploads (has file property)
+              if (doc.file instanceof File) {
+                const fieldName = `employmentDoc_${emp.id}_${doc.id}`;
+                payload.append(fieldName, doc.file);
+                console.log(
+                  `📎 Appending document: ${fieldName} (${doc.name})`,
+                );
+              }
+              // Documents with url are already uploaded - skip
+            });
+          }
+        });
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
         payload.append("educationHistory", JSON.stringify(educationHistory));

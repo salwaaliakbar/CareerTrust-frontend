@@ -38,18 +38,19 @@ const PassportPage = () => {
 
   const fetchJobseekerProfile = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
-    
+
     if (!user?.id) {
-      console.log("Passport - No user ID available yet");
+      console.log("❌ Passport - No user ID available yet");
       setLoading(false);
       return;
     }
-    
+
     try {
       const token = await getToken();
       const url = `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`;
-      console.log("Passport - Fetching from URL:", url);
-      
+      console.log("🔍 Passport - Fetching from URL:", url);
+      console.log("🔑 Passport - Current user clerkId:", user.id);
+
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,12 +58,15 @@ const PassportPage = () => {
         cache: 'no-store', // Prevent caching
       });
 
+      console.log("📡 Passport - Response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log("Passport - Full API response:", data);
+        console.log("✅ Passport - Full API response:", data);
         const employment = data.data?.employmentHistory || [];
-        console.log("Passport - Employment history:", employment);
-        
+        console.log("📊 Passport - Employment history count:", employment.length);
+        console.log("📋 Passport - Employment history:", employment);
+
         // Log each employment with verification details
         employment.forEach((emp: any, idx: number) => {
           console.log(`Employment ${idx + 1}:`, {
@@ -73,18 +77,20 @@ const PassportPage = () => {
             shouldShow: emp.verificationStatus === "verified"
           });
         });
-        
+
         // Only show verified employment - check verificationStatus only
-        const verified = employment.filter((emp: any) => 
+        const verified = employment.filter((emp: any) =>
           emp.verificationStatus === "verified"
         );
-        console.log("Passport - Verified employment count:", verified.length);
-        console.log("Passport - Verified employment:", verified);
+        console.log("✅ Passport - Verified employment count:", verified.length);
+        console.log("✅ Passport - Verified employment:", verified);
         setVerifiedEmployment(verified);
         setAllEmployment(employment);
+      } else {
+        console.error("❌ Passport - Failed to fetch profile. Status:", response.status);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("❌ Passport - Error fetching profile:", error);
     } finally {
       setLoading(false);
       if (isManualRefresh) setRefreshing(false);
