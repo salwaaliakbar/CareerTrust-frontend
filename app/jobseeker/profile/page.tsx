@@ -141,6 +141,28 @@ function normalizeEmploymentHistory(history: EmploymentRecord[]) {
   }));
 }
 
+function normalizeMonthYearForPayload(value: string): string | null {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return null;
+
+  const mmYyyy = trimmed.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  if (mmYyyy) return trimmed;
+
+  const yyyyMm = trimmed.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+  if (yyyyMm) return `${yyyyMm[2]}/${yyyyMm[1]}`;
+
+  const yyyyMmDd = trimmed.match(/^(\d{4})-(0[1-9]|1[0-2])-\d{2}$/);
+  if (yyyyMmDd) return `${yyyyMmDd[2]}/${yyyyMmDd[1]}`;
+
+  return null;
+}
+
+function monthYearToIndex(value: string): number | null {
+  const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  if (!match) return null;
+  return Number(match[2]) * 12 + Number(match[1]);
+}
+
 function areEqualByJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -205,6 +227,7 @@ export default function ProfilePage() {
     newEmployment,
     documentInputRefs,
     addEmploymentRecord,
+    updateEmployment,
     handleNewEmploymentChange,
     deleteEmployment,
     handleDocumentUpload,
@@ -518,7 +541,7 @@ export default function ProfilePage() {
               !((e.end_date as string) ?? (e.endDate as string)) || false,
             description: (e.description as string) ?? "",
             verified: false,
-            verificationStatus: "draft",
+            verificationStatus: "pending",
             documents: [],
           } as EmploymentRecord;
         });
@@ -620,10 +643,57 @@ export default function ProfilePage() {
 
       // Only append histories if provided and non-empty
       if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
-        payload.append("employmentHistory", JSON.stringify(employmentHistory));
+        const normalizedEmploymentPayload = employmentHistory.map((emp) => {
+          const normalizedStartDate = normalizeMonthYearForPayload(
+            emp.startDate || "",
+          );
+
+          if (!normalizedStartDate) {
+            throw new Error(
+              `Invalid start date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
+            );
+          }
+
+          const normalizedEndDate = emp.currentlyWorking
+            ? ""
+            : normalizeMonthYearForPayload(emp.endDate || "");
+
+          if (!emp.currentlyWorking && emp.endDate && !normalizedEndDate) {
+            throw new Error(
+              `Invalid end date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
+            );
+          }
+
+          const startIndex = monthYearToIndex(normalizedStartDate);
+          const endIndex = normalizedEndDate
+            ? monthYearToIndex(normalizedEndDate)
+            : null;
+
+          if (
+            !emp.currentlyWorking &&
+            startIndex &&
+            endIndex &&
+            endIndex < startIndex
+          ) {
+            throw new Error(
+              `End date cannot be before start date for ${emp.position || "employment"}.`,
+            );
+          }
+
+          return {
+            ...emp,
+            startDate: normalizedStartDate,
+            endDate: emp.currentlyWorking ? "" : normalizedEndDate || "",
+          };
+        });
+
+        payload.append(
+          "employmentHistory",
+          JSON.stringify(normalizedEmploymentPayload),
+        );
 
         // Append employment document files individually to FormData
-        employmentHistory.forEach((emp) => {
+        normalizedEmploymentPayload.forEach((emp) => {
           if (emp.documents && Array.isArray(emp.documents)) {
             emp.documents.forEach((doc) => {
               // Only append NEW file uploads (has file property)
@@ -937,6 +1007,7 @@ export default function ProfilePage() {
                   }
                   onNewEmploymentChange={handleNewEmploymentChange}
                   onAddEmployment={addEmploymentRecord}
+                  onUpdateEmployment={updateEmployment}
                   onDeleteEmployment={deleteEmployment}
                   onDocumentUpload={handleDocumentUpload}
                   onDocumentRemove={removeDocument}

@@ -25,6 +25,7 @@ interface EmploymentCardProps {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   onDocumentRemove: (empId: string, docId: string) => void;
+  onUpdate: (updatedEmployment: EmploymentRecord) => void;
   documentInputRef: (el: HTMLInputElement | null) => void;
   disabled?: boolean;
   /** Called when user clicks "Request Exit" for a currently-working record */
@@ -36,10 +37,87 @@ export default function EmploymentCard({
   onDelete,
   onDocumentUpload,
   onDocumentRemove,
+  onUpdate,
   documentInputRef,
   disabled = false,
   onExitRequest,
 }: EmploymentCardProps) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState<EmploymentRecord>(employment);
+  const [editError, setEditError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setDraft(employment);
+    setIsEditing(false);
+    setEditError(null);
+  }, [employment]);
+
+  const canEditCard = employment.verificationStatus !== "verified" && !disabled;
+
+  const toMonthInputValue = (value?: string) => {
+    if (!value) return "";
+
+    const monthYearMatch = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+    if (monthYearMatch) {
+      return `${monthYearMatch[2]}-${monthYearMatch[1]}`;
+    }
+
+    const yearMonthMatch = value.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (yearMonthMatch) {
+      return value;
+    }
+
+    return "";
+  };
+
+  const fromMonthInputValue = (value: string) => {
+    const match = value.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (!match) return "";
+    return `${match[2]}/${match[1]}`;
+  };
+
+  const monthYearToIndex = (value: string) => {
+    const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+    if (!match) return null;
+
+    const month = Number(match[1]);
+    const year = Number(match[2]);
+    return year * 12 + month;
+  };
+
+  const saveCardChanges = () => {
+    const startIndex = monthYearToIndex(draft.startDate);
+    const endIndex = draft.currentlyWorking ? null : monthYearToIndex(draft.endDate);
+
+    if (!startIndex) {
+      setEditError("Please provide a valid start date in MM/YYYY format.");
+      return;
+    }
+
+    if (!draft.currentlyWorking && draft.endDate && !endIndex) {
+      setEditError("Please provide a valid end date in MM/YYYY format.");
+      return;
+    }
+
+    if (!draft.currentlyWorking && startIndex && endIndex && endIndex < startIndex) {
+      setEditError("End date cannot be before start date.");
+      return;
+    }
+
+    onUpdate({
+      ...draft,
+      endDate: draft.currentlyWorking ? "" : draft.endDate,
+    });
+    setIsEditing(false);
+    setEditError(null);
+  };
+
+  const cancelCardEditing = () => {
+    setDraft(employment);
+    setIsEditing(false);
+    setEditError(null);
+  };
+
   return (
     <div className="group/card relative p-6 bg-linear-to-br from-white via-slate-50 to-blue-50/30 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-indigo-100 to-transparent rounded-full blur-3xl opacity-0 group-hover/card:opacity-60 transition-opacity duration-500"></div>
@@ -47,22 +125,80 @@ export default function EmploymentCard({
       <div className="flex items-start justify-between mb-4 relative z-10">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <h3 className="text-xl font-black text-slate-800">
-              {employment.position}
-            </h3>
+            {isEditing ? (
+              <input
+                type="text"
+                value={draft.position}
+                onChange={(e) => setDraft((prev) => ({ ...prev, position: e.target.value }))}
+                className="text-lg font-black text-slate-800 bg-white border border-slate-300 rounded-lg px-3 py-1.5 w-full"
+              />
+            ) : (
+              <h3 className="text-xl font-black text-slate-800">{employment.position}</h3>
+            )}
             {getVerificationBadge(employment.verificationStatus)}
           </div>
           <div className="flex items-center gap-2.5 text-sm text-slate-600 mb-2">
             <Building2 className="w-5 h-5 text-indigo-600" />
-            <span className="font-bold">{employment.company}</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={draft.company}
+                onChange={(e) => setDraft((prev) => ({ ...prev, company: e.target.value }))}
+                className="font-bold bg-white border border-slate-300 rounded-lg px-3 py-1.5 w-full"
+              />
+            ) : (
+              <span className="font-bold">{employment.company}</span>
+            )}
           </div>
           <div className="flex items-center gap-2.5 text-sm text-slate-500">
             <Calendar className="w-5 h-5 text-blue-500" />
-            <span className="font-semibold">
-              {employment.startDate} -{" "}
-              {employment.currentlyWorking ? "Present" : employment.endDate}
-            </span>
-            {employment.startDate && (
+            {isEditing ? (
+              <div className="flex items-center gap-2 flex-wrap w-full">
+                <input
+                  type="month"
+                  value={toMonthInputValue(draft.startDate)}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      startDate: fromMonthInputValue(e.target.value),
+                    }))
+                  }
+                  className="border border-slate-300 rounded-lg px-3 py-1.5 bg-white"
+                />
+                <span>-</span>
+                <input
+                  type="month"
+                  value={toMonthInputValue(draft.endDate)}
+                  disabled={draft.currentlyWorking}
+                  onChange={(e) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      endDate: fromMonthInputValue(e.target.value),
+                    }))
+                  }
+                  className="border border-slate-300 rounded-lg px-3 py-1.5 bg-white disabled:bg-slate-100"
+                />
+                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={draft.currentlyWorking}
+                    onChange={(e) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        currentlyWorking: e.target.checked,
+                        endDate: e.target.checked ? "" : prev.endDate,
+                      }))
+                    }
+                  />
+                  Currently working
+                </label>
+              </div>
+            ) : (
+              <span className="font-semibold">
+                {employment.startDate} - {employment.currentlyWorking ? "Present" : employment.endDate}
+              </span>
+            )}
+            {!isEditing && employment.startDate && (
               <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                 {calculateDuration(
                   employment.startDate,
@@ -99,10 +235,55 @@ export default function EmploymentCard({
         </div>
       </div>
 
-      {employment.description && (
-        <p className="text-sm text-slate-600 mt-4 leading-relaxed relative z-10 font-medium">
-          {employment.description}
-        </p>
+      {isEditing ? (
+        <textarea
+          value={draft.description}
+          onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+          rows={3}
+          className="text-sm text-slate-600 mt-4 leading-relaxed relative z-10 font-medium w-full bg-white border border-slate-300 rounded-lg px-3 py-2"
+          placeholder="Describe your role"
+        />
+      ) : (
+        employment.description && (
+          <p className="text-sm text-slate-600 mt-4 leading-relaxed relative z-10 font-medium">
+            {employment.description}
+          </p>
+        )
+      )}
+
+      {editError && (
+        <p className="text-xs text-rose-600 font-semibold mt-2">{editError}</p>
+      )}
+
+      {canEditCard && (
+        <div className="mt-4 flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <button
+                type="button"
+                onClick={saveCardChanges}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
+              >
+                Save Changes
+              </button>
+              <button
+                type="button"
+                onClick={cancelCardEditing}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700"
+            >
+              Edit Experience
+            </button>
+          )}
+        </div>
       )}
 
       {/* Documents Section */}

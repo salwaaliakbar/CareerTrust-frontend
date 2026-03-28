@@ -398,6 +398,26 @@ export function NotificationProvider({
       });
     };
 
+    const handleEmploymentApproved = (data: any) => {
+      console.log("Employment approved notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "employment_verification_approved",
+        title: data.title || "Employment Approved",
+        message: data.message,
+      });
+    };
+
+    const handleEmploymentRejected = (data: any) => {
+      console.log("Employment rejected notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "employment_verification_rejected",
+        title: data.title || "Employment Rejected",
+        message: data.message,
+      });
+    };
+
     // Exit request handlers
     const handleExitRequestReceived = (data: any) => {
       console.log("Exit request received notification:", data);
@@ -590,6 +610,8 @@ export function NotificationProvider({
     on("application_interviewed", handleApplicationInterviewed);
     on("application_rejected", handleApplicationRejected);
     on("application_hired", handleApplicationHired);
+    on("employment_verification_approved", handleEmploymentApproved);
+    on("employment_verification_rejected", handleEmploymentRejected);
     on("exit_request_received", handleExitRequestReceived);
     on("exit_request_approved", handleExitRequestApproved);
     on("exit_request_rejected", handleExitRequestRejected);
@@ -604,6 +626,8 @@ export function NotificationProvider({
       off("application_interviewed", handleApplicationInterviewed);
       off("application_rejected", handleApplicationRejected);
       off("application_hired", handleApplicationHired);
+      off("employment_verification_approved", handleEmploymentApproved);
+      off("employment_verification_rejected", handleEmploymentRejected);
       off("exit_request_received", handleExitRequestReceived);
       off("exit_request_approved", handleExitRequestApproved);
       off("exit_request_rejected", handleExitRequestRejected);

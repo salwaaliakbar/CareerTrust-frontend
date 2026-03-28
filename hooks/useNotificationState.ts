@@ -8,6 +8,8 @@ export type NotificationType =
   | "application_interviewed"
   | "application_rejected"
   | "application_hired"
+  | "employment_verification_approved"
+  | "employment_verification_rejected"
   | "offer_response"
   | "exit_request_received"
   | "exit_request_approved"

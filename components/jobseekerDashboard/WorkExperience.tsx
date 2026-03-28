@@ -15,6 +15,7 @@ interface WorkExperienceProps {
     value: Partial<EmploymentRecord>[keyof EmploymentRecord],
   ) => void;
   onAddEmployment: () => void;
+  onUpdateEmployment: (employment: EmploymentRecord) => void;
   onDeleteEmployment: (id: string) => void;
   onDocumentUpload: (
     empId: string,
@@ -36,6 +37,7 @@ export default function WorkExperience({
   onToggleAddForm,
   onNewEmploymentChange,
   onAddEmployment,
+  onUpdateEmployment,
   onDeleteEmployment,
   onDocumentUpload,
   onDocumentRemove,
@@ -93,6 +95,7 @@ export default function WorkExperience({
                 key={emp.id}
                 employment={emp}
                 onDelete={onDeleteEmployment}
+                onUpdate={onUpdateEmployment}
                 onDocumentUpload={onDocumentUpload}
                 onDocumentRemove={onDocumentRemove}
                 documentInputRef={(el) => {

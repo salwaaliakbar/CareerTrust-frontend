@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { EmploymentRecord, DocumentFile, VerificationStatus } from "@/types/jobseeker.types";
+import { EmploymentRecord, DocumentFile } from "@/types/jobseeker.types";
 
 export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
   const [employmentHistory, setEmploymentHistory] = useState<EmploymentRecord[]>(initialEmployment);
@@ -14,14 +14,54 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     currentlyWorking: false,
     description: "",
     verified: false,
-    verificationStatus: "draft",
+    verificationStatus: "pending",
     documents: [],
   });
 
   const documentInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  const isValidMonthYear = (value: string) => /^(0[1-9]|1[0-2])\/\d{4}$/.test(value);
+
+  const monthYearToIndex = (value: string) => {
+    const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+    if (!match) return null;
+
+    const month = Number(match[1]);
+    const year = Number(match[2]);
+    return year * 12 + month;
+  };
+
   const addEmploymentRecord = () => {
-    if (newEmployment.company && newEmployment.position && newEmployment.startDate) {
+    if (
+      newEmployment.company &&
+      newEmployment.position &&
+      newEmployment.startDate &&
+      isValidMonthYear(newEmployment.startDate)
+    ) {
+      const currentlyWorking = newEmployment.currentlyWorking || false;
+      const validEndDate =
+        currentlyWorking ||
+        !newEmployment.endDate ||
+        isValidMonthYear(newEmployment.endDate);
+
+      if (!validEndDate) {
+        return;
+      }
+
+      const startIndex = monthYearToIndex(newEmployment.startDate);
+      const endIndex = newEmployment.endDate
+        ? monthYearToIndex(newEmployment.endDate)
+        : null;
+
+      if (
+        !currentlyWorking &&
+        startIndex &&
+        endIndex &&
+        endIndex < startIndex
+      ) {
+        return;
+      }
+
       const record: EmploymentRecord = {
         id: Date.now().toString(),
         company: newEmployment.company,
@@ -31,7 +71,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
         currentlyWorking: newEmployment.currentlyWorking || false,
         description: newEmployment.description || "",
         verified: false,
-        verificationStatus: "draft",
+        verificationStatus: "pending",
         documents: [],
       };
       setEmploymentHistory((prev) => [record, ...prev]);
@@ -43,7 +83,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
         currentlyWorking: false,
         description: "",
         verified: false,
-        verificationStatus: "draft",
+        verificationStatus: "pending",
         documents: [],
       });
       setShowAddEmployment(false);
@@ -52,6 +92,12 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
 
   const deleteEmployment = (id: string) => {
     setEmploymentHistory((prev) => prev.filter((emp) => emp.id !== id));
+  };
+
+  const updateEmployment = (updatedEmployment: EmploymentRecord) => {
+    setEmploymentHistory((prev) =>
+      prev.map((emp) => (emp.id === updatedEmployment.id ? updatedEmployment : emp)),
+    );
   };
 
   const handleDocumentUpload = (empId: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,14 +117,9 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
       prev.map((emp) => {
         if (emp.id === empId) {
           const updatedDocs = [...emp.documents, ...newDocs];
-          const newStatus =
-            emp.verificationStatus === "draft" && updatedDocs.length > 0
-              ? "pending"
-              : emp.verificationStatus;
           return {
             ...emp,
             documents: updatedDocs,
-            verificationStatus: newStatus as VerificationStatus,
           };
         }
         return emp;
@@ -95,14 +136,9 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
       prev.map((emp) => {
         if (emp.id === empId) {
           const updatedDocs = emp.documents.filter((doc) => doc.id !== docId);
-          const newStatus =
-            updatedDocs.length === 0 && emp.verificationStatus === "pending"
-              ? "draft"
-              : emp.verificationStatus;
           return {
             ...emp,
             documents: updatedDocs,
-            verificationStatus: newStatus as VerificationStatus,
           };
         }
         return emp;
@@ -130,6 +166,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     setNewEmployment,
     documentInputRefs,
     addEmploymentRecord,
+    updateEmployment,
     deleteEmployment,
     handleDocumentUpload,
     handleNewEmploymentChange,

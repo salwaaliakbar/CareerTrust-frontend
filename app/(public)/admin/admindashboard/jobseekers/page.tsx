@@ -17,8 +17,24 @@ interface JobSeekerData {
   totalExperience: string | null;
   highestDegree: string | null;
   isProfileComplete: boolean;
+  pendingExperiencesCount?: number;
   createdAt: string;
+  employmentHistory?: Array<{ verificationStatus?: string }>;
 }
+
+const getPendingCount = (jobseeker: JobSeekerData) => {
+  if (typeof jobseeker.pendingExperiencesCount === "number") {
+    return jobseeker.pendingExperiencesCount;
+  }
+
+  if (Array.isArray(jobseeker.employmentHistory)) {
+    return jobseeker.employmentHistory.filter(
+      (exp) => exp.verificationStatus === "pending",
+    ).length;
+  }
+
+  return 0;
+};
 
 export default function JobSeekersPage() {
   const { getToken } = useAuth();
@@ -100,7 +116,7 @@ export default function JobSeekersPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in">
           <div className="flex items-center justify-between">
             <div>
@@ -137,6 +153,23 @@ export default function JobSeekersPage() {
             </div>
             <div className="w-14 h-14 rounded-xl bg-orange-500/10 flex items-center justify-center">
               <Briefcase className="w-7 h-7 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-amber-200/80 shadow-md hover:shadow-lg transition-all duration-300 fade-in animation-delay-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Pending Experiences</p>
+              <p className="text-3xl font-bold text-amber-600">
+                {jobseekers.reduce(
+                  (sum, js) => sum + getPendingCount(js),
+                  0,
+                )}
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Briefcase className="w-7 h-7 text-amber-600" />
             </div>
           </div>
         </div>
@@ -185,13 +218,14 @@ export default function JobSeekersPage() {
                 <th className="px-6 py-4 text-left text-sm font-semibold">Experience</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Education</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Pending Experiences</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredJobseekers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p className="text-lg font-medium">No job seekers found</p>
                     <p className="text-sm">Try adjusting your search or filters</p>
@@ -262,6 +296,17 @@ export default function JobSeekersPage() {
                         }`}
                       >
                         {jobseeker.isProfileComplete ? "Complete" : "Incomplete"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                          getPendingCount(jobseeker) > 0
+                            ? "bg-amber-100 text-amber-800 border-amber-300"
+                            : "bg-gray-100 text-gray-700 border-gray-200"
+                        }`}
+                      >
+                        {getPendingCount(jobseeker)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
