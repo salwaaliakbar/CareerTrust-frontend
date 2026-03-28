@@ -337,6 +337,18 @@ export function NotificationProvider({
       });
     };
 
+    const handleApplicationReceived = (data: any) => {
+      console.log("Application received notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "application_received",
+        title: data.title || "New Job Application Received",
+        message: data.message || "A new candidate has applied to your job.",
+        applicationId: data.applicationId,
+        jobId: data.jobId,
+      });
+    };
+
     const handleApplicationShortlisted = (data: any) => {
       console.log("Application shortlisted notification:", data);
       addNotification({
@@ -573,6 +585,7 @@ export function NotificationProvider({
 
     // Register event listeners
     on("application_reviewing", handleApplicationReviewing);
+    on("application_received", handleApplicationReceived);
     on("application_shortlisted", handleApplicationShortlisted);
     on("application_interviewed", handleApplicationInterviewed);
     on("application_rejected", handleApplicationRejected);
@@ -586,6 +599,7 @@ export function NotificationProvider({
     // Cleanup
     return () => {
       off("application_reviewing", handleApplicationReviewing);
+      off("application_received", handleApplicationReceived);
       off("application_shortlisted", handleApplicationShortlisted);
       off("application_interviewed", handleApplicationInterviewed);
       off("application_rejected", handleApplicationRejected);
