@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 
 export type NotificationType =
   | "job_recommendation"
+  | "application_received"
   | "application_reviewing"
   | "application_shortlisted"
   | "application_interviewed"
