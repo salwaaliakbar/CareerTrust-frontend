@@ -7,6 +7,21 @@ import {
   CompanyDetailData
 } from "@/types/admin.types";
 
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+type DashboardItem = Record<string, unknown>;
+
+type JobseekerListItem = Record<string, unknown>;
+type JobseekerDetail = Record<string, unknown>;
+type EmploymentVerificationResult = Record<string, unknown>;
+type EducationVerificationResult = Record<string, unknown>;
+type JobItem = Record<string, unknown>;
+
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 /**
@@ -47,7 +62,7 @@ export class AdminService {
    * Dashboard APIs
    */
   static async getDashboardStats(token: string | null) {
-    return this.apiCall<{ data: { stats: DashboardStats; recentUsers: any[]; recentJobs: any[]; recentCompanies: any[] } }>(
+    return this.apiCall<{ data: { stats: DashboardStats; recentUsers: DashboardItem[]; recentJobs: DashboardItem[]; recentCompanies: DashboardItem[] } }>(
       "/api/admin/dashboard/stats",
       token
     );
@@ -62,7 +77,7 @@ export class AdminService {
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.search) queryParams.append("search", params.search);
 
-    return this.apiCall<{ data: { users: AdminUser[]; pagination: any } }>(
+    return this.apiCall<{ data: { users: AdminUser[]; pagination: Pagination } }>(
       `/api/admin/users?${queryParams}`,
       token
     );
@@ -84,14 +99,14 @@ export class AdminService {
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.search) queryParams.append("search", params.search);
 
-    return this.apiCall<{ data: { jobseekers: any[]; pagination: any } }>(
+    return this.apiCall<{ data: { jobseekers: JobseekerListItem[]; pagination: Pagination } }>(
       `/api/admin/jobseekers?${queryParams}`,
       token
     );
   }
 
   static async getJobseekerById(token: string | null, jobseekerId: number) {
-    return this.apiCall<{ data: { jobseeker: any } }>(
+    return this.apiCall<{ data: { jobseeker: JobseekerDetail } }>(
       `/api/admin/jobseekers/${jobseekerId}`,
       token
     );
@@ -101,7 +116,7 @@ export class AdminService {
    * Employment Verification APIs
    */
   static async verifyEmployment(token: string | null, employmentId: string) {
-    return this.apiCall<{ data: { employment: any } }>(
+    return this.apiCall<{ data: { employment: EmploymentVerificationResult } }>(
       `/api/admin/employment/${employmentId}/verify`,
       token,
       { method: "POST" }
@@ -109,8 +124,30 @@ export class AdminService {
   }
 
   static async rejectEmployment(token: string | null, employmentId: string, reason?: string) {
-    return this.apiCall<{ data: { employment: any; reason?: string } }>(
+    return this.apiCall<{ data: { employment: EmploymentVerificationResult; reason?: string } }>(
       `/api/admin/employment/${employmentId}/reject`,
+      token,
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      }
+    );
+  }
+
+  /**
+   * Education Verification APIs
+   */
+  static async verifyEducation(token: string | null, educationId: number) {
+    return this.apiCall<{ data: { education: EducationVerificationResult } }>(
+      `/api/admin/education/${educationId}/verify`,
+      token,
+      { method: "POST" }
+    );
+  }
+
+  static async rejectEducation(token: string | null, educationId: number, reason?: string) {
+    return this.apiCall<{ data: { education: EducationVerificationResult; reason?: string } }>(
+      `/api/admin/education/${educationId}/reject`,
       token,
       {
         method: "POST",
@@ -134,7 +171,7 @@ export class AdminService {
     if (params?.search) queryParams.append("search", params.search);
     if (params?.verified !== undefined) queryParams.append("verified", params.verified.toString());
 
-    return this.apiCall<{ data: { employers: EmployerData[]; pagination: any } }>(
+    return this.apiCall<{ data: { employers: EmployerData[]; pagination: Pagination } }>(
       `/api/admin/employers?${queryParams}`,
       token
     );
@@ -181,7 +218,7 @@ export class AdminService {
     if (params?.search) queryParams.append("search", params.search);
     if (params?.verified !== undefined) queryParams.append("verified", params.verified.toString());
 
-    return this.apiCall<{ data: { companies: CompanyData[]; pagination: any } }>(
+    return this.apiCall<{ data: { companies: CompanyData[]; pagination: Pagination } }>(
       `/api/admin/companies?${queryParams}`,
       token
     );
@@ -203,7 +240,7 @@ export class AdminService {
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.search) queryParams.append("search", params.search);
 
-    return this.apiCall<{ data: { jobs: any[]; pagination: any } }>(
+    return this.apiCall<{ data: { jobs: JobItem[]; pagination: Pagination } }>(
       `/api/admin/jobs?${queryParams}`,
       token
     );

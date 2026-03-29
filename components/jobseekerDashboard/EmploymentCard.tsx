@@ -42,6 +42,7 @@ export default function EmploymentCard({
   disabled = false,
   onExitRequest,
 }: EmploymentCardProps) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState<EmploymentRecord>(employment);
   const [editError, setEditError] = React.useState<string | null>(null);
@@ -53,6 +54,8 @@ export default function EmploymentCard({
   }, [employment]);
 
   const canEditCard = employment.verificationStatus !== "verified" && !disabled;
+  const canManageDocuments =
+    employment.verificationStatus !== "verified" && !disabled;
 
   const toMonthInputValue = (value?: string) => {
     if (!value) return "";
@@ -88,9 +91,16 @@ export default function EmploymentCard({
   const saveCardChanges = () => {
     const startIndex = monthYearToIndex(draft.startDate);
     const endIndex = draft.currentlyWorking ? null : monthYearToIndex(draft.endDate);
+    const now = new Date();
+    const currentMonthIndex = now.getFullYear() * 12 + (now.getMonth() + 1);
 
     if (!startIndex) {
       setEditError("Please provide a valid start date in MM/YYYY format.");
+      return;
+    }
+
+    if (startIndex > currentMonthIndex) {
+      setEditError("Start date cannot be in the future.");
       return;
     }
 
@@ -156,6 +166,7 @@ export default function EmploymentCard({
               <div className="flex items-center gap-2 flex-wrap w-full">
                 <input
                   type="month"
+                  max={currentMonth}
                   value={toMonthInputValue(draft.startDate)}
                   onChange={(e) =>
                     setDraft((prev) => ({
@@ -293,19 +304,18 @@ export default function EmploymentCard({
             <File className="w-4 h-4 text-indigo-600" />
             Supporting Documents
           </h4>
-          <button
-            type="button"
-            onClick={() =>
-              document.getElementById(`file-input-${employment.id}`)?.click()
-            }
-            disabled={disabled}
-            className={`inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold ${
-              disabled ? "opacity-40 pointer-events-none" : ""
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            Upload Documents
-          </button>
+          {canManageDocuments && (
+            <button
+              type="button"
+              onClick={() =>
+                document.getElementById(`file-input-${employment.id}`)?.click()
+              }
+              className="inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Documents
+            </button>
+          )}
           <input
             id={`file-input-${employment.id}`}
             ref={documentInputRef}
@@ -315,7 +325,7 @@ export default function EmploymentCard({
             onChange={(e) => onDocumentUpload(employment.id, e)}
             className="hidden"
             placeholder="upload documents"
-            disabled={disabled}
+            disabled={!canManageDocuments}
           />
         </div>
 
@@ -380,17 +390,16 @@ export default function EmploymentCard({
                       Not uploaded yet
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => onDocumentRemove(employment.id, doc.id)}
-                    className={`p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-all ${
-                      disabled ? "opacity-40 pointer-events-none" : ""
-                    }`}
-                    title="Remove document"
-                    disabled={disabled}
-                  >
-                    <Trash className="w-4 h-4" />
-                  </button>
+                  {canManageDocuments && (
+                    <button
+                      type="button"
+                      onClick={() => onDocumentRemove(employment.id, doc.id)}
+                      className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
+                      title="Remove document"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

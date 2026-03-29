@@ -5,10 +5,31 @@ import { EmploymentRecord } from "@/types/jobseeker.types";
 import DigitalEmploymentPassport from "@/components/jobseekerDashboard/DigitalEmploymentPassport";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { RefreshCw } from "lucide-react";
 import { API_ENDPOINTS } from "@/constants/api";
+
+const toMonthIndex = (value?: string | null) => {
+  const raw = (value || "").trim();
+  if (!raw) return 0;
+
+  const mmYyyy = raw.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  if (mmYyyy) {
+    return Number(mmYyyy[2]) * 12 + Number(mmYyyy[1]);
+  }
+
+  const yyyyMm = raw.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+  if (yyyyMm) {
+    return Number(yyyyMm[1]) * 12 + Number(yyyyMm[2]);
+  }
+
+  if (/^\d{4}$/.test(raw)) {
+    return Number(raw) * 12 + 1;
+  }
+
+  return 0;
+};
 
 const PassportPage = () => {
   const { getToken } = useAuth();
@@ -18,25 +39,7 @@ const PassportPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchJobseekerProfile();
-    }
-    
-    // Refresh when page becomes visible
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && user?.id) {
-        fetchJobseekerProfile();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user?.id]);
-
-  const fetchJobseekerProfile = async (isManualRefresh = false) => {
+  const fetchJobseekerProfile = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
 
     if (!user?.id) {
@@ -63,12 +66,16 @@ const PassportPage = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Passport - Full API response:", data);
-        const employment = data.data?.employmentHistory || [];
+        const employment: EmploymentRecord[] = Array.isArray(
+          data?.data?.employmentHistory,
+        )
+          ? (data.data.employmentHistory as EmploymentRecord[])
+          : [];
         console.log("📊 Passport - Employment history count:", employment.length);
         console.log("📋 Passport - Employment history:", employment);
 
         // Log each employment with verification details
-        employment.forEach((emp: any, idx: number) => {
+        employment.forEach((emp: EmploymentRecord, idx: number) => {
           console.log(`Employment ${idx + 1}:`, {
             company: emp.company,
             position: emp.position,
@@ -79,9 +86,13 @@ const PassportPage = () => {
         });
 
         // Only show verified employment - check verificationStatus only
-        const verified = employment.filter((emp: any) =>
-          emp.verificationStatus === "verified"
-        );
+        const verified = employment
+          .filter((emp: EmploymentRecord) => emp.verificationStatus === "verified")
+          .sort((a: EmploymentRecord, b: EmploymentRecord) => {
+            if (a.currentlyWorking && !b.currentlyWorking) return -1;
+            if (!a.currentlyWorking && b.currentlyWorking) return 1;
+            return toMonthIndex(b.startDate || "") - toMonthIndex(a.startDate || "");
+          });
         console.log("✅ Passport - Verified employment count:", verified.length);
         console.log("✅ Passport - Verified employment:", verified);
         setVerifiedEmployment(verified);
@@ -95,7 +106,25 @@ const PassportPage = () => {
       setLoading(false);
       if (isManualRefresh) setRefreshing(false);
     }
-  };
+  }, [getToken, user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchJobseekerProfile();
+    }
+
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && user?.id) {
+        fetchJobseekerProfile();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?.id, fetchJobseekerProfile]);
 
   if (loading) {
     return (

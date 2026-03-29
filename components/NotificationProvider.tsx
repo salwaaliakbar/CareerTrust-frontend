@@ -418,6 +418,26 @@ export function NotificationProvider({
       });
     };
 
+    const handleEducationApproved = (data: any) => {
+      console.log("Education approved notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "education_verification_approved",
+        title: data.title || "Education Approved",
+        message: data.message,
+      });
+    };
+
+    const handleEducationRejected = (data: any) => {
+      console.log("Education rejected notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "education_verification_rejected",
+        title: data.title || "Education Rejected",
+        message: data.message,
+      });
+    };
+
     // Exit request handlers
     const handleExitRequestReceived = (data: any) => {
       console.log("Exit request received notification:", data);
@@ -612,6 +632,8 @@ export function NotificationProvider({
     on("application_hired", handleApplicationHired);
     on("employment_verification_approved", handleEmploymentApproved);
     on("employment_verification_rejected", handleEmploymentRejected);
+    on("education_verification_approved", handleEducationApproved);
+    on("education_verification_rejected", handleEducationRejected);
     on("exit_request_received", handleExitRequestReceived);
     on("exit_request_approved", handleExitRequestApproved);
     on("exit_request_rejected", handleExitRequestRejected);
@@ -628,6 +650,8 @@ export function NotificationProvider({
       off("application_hired", handleApplicationHired);
       off("employment_verification_approved", handleEmploymentApproved);
       off("employment_verification_rejected", handleEmploymentRejected);
+      off("education_verification_approved", handleEducationApproved);
+      off("education_verification_rejected", handleEducationRejected);
       off("exit_request_received", handleExitRequestReceived);
       off("exit_request_approved", handleExitRequestApproved);
       off("exit_request_rejected", handleExitRequestRejected);

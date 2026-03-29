@@ -28,6 +28,7 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchJobseekerProfile,
+  type FetchedProfileData,
   selectJobseekerProfile,
   selectProfileLoading,
   setEducation,
@@ -36,6 +37,7 @@ import {
   setProfilePicUrl,
   setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
+import type { AppDispatch } from "@/redux/store/store";
 import { fetchMyReviews, type JobseekerReview } from "@/services/api/myReviews.service";
 
 type ProfileApiResponseData = {
@@ -57,6 +59,25 @@ type ProfileApiResponseData = {
   resumeUrl?: string | null;
   educationHistory?: EducationRecord[];
   employmentHistory?: EmploymentRecord[];
+};
+
+type ResumeParsedData = {
+  name?: string;
+  fullName?: string;
+  email?: string;
+  headline?: string;
+  location?: string;
+  skills?: string | string[];
+  summary?: string;
+  total_experience?: string;
+  total_experience_years?: number;
+  education?: Array<Record<string, unknown>>;
+  experience?: Array<Record<string, unknown>>;
+};
+
+type ResumeMismatchInfo = {
+  name?: boolean;
+  email?: boolean;
 };
 
 function normalizeSkillsToText(skills: unknown): string {
@@ -121,6 +142,13 @@ function normalizeEducationHistory(history: EducationRecord[]) {
     degree: (edu.degree || "").trim(),
     startDate: (edu.startDate || "").trim(),
     endDate: (edu.endDate || "").trim(),
+    documents: (edu.documents || []).map((doc) => ({
+      name: (doc.name || "").trim(),
+      size: Number(doc.size || 0),
+      type: (doc.type || "").trim(),
+      url: (doc.url || "").trim(),
+      localFileName: doc.file?.name || "",
+    })),
   }));
 }
 
@@ -163,6 +191,11 @@ function monthYearToIndex(value: string): number | null {
   return Number(match[2]) * 12 + Number(match[1]);
 }
 
+function getCurrentMonthIndex(): number {
+  const now = new Date();
+  return now.getFullYear() * 12 + (now.getMonth() + 1);
+}
+
 function areEqualByJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -170,7 +203,7 @@ function areEqualByJson(a: unknown, b: unknown): boolean {
 export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
@@ -214,9 +247,16 @@ export default function ProfilePage() {
     showAddEducation,
     setShowAddEducation,
     newEducation,
+    documentInputRefs: educationDocumentInputRefs,
+    newEducationDocumentInputRef,
     handleNewEducationChange,
     addEducationRecord,
+    updateEducation,
     deleteEducation,
+    handleNewEducationDocumentUpload,
+    removeNewEducationDocument,
+    handleDocumentUpload: handleEducationDocumentUpload,
+    removeDocument: removeEducationDocument,
   } = useEducation([]);
 
   const {
@@ -299,10 +339,10 @@ export default function ProfilePage() {
 
     console.log("🔍 [Profile Page] Fetching profile for clerkId:", currentClerkId);
     setHasCheckedRedux(true);
-    dispatch(fetchJobseekerProfile(currentClerkId) as any).then((action: any) => {
+    dispatch(fetchJobseekerProfile(currentClerkId)).then((action) => {
       console.log("✅ [Profile Page] Fetch completed. Action:", action);
-      if (action.payload) {
-        const fetchedData = action.payload as ProfileApiResponseData;
+      if (fetchJobseekerProfile.fulfilled.match(action)) {
+        const fetchedData = action.payload as FetchedProfileData;
         console.log("📊 [Profile Page] Employment History Count:", fetchedData.employmentHistory?.length || 0);
         console.log("📋 [Profile Page] Employment History Data:", fetchedData.employmentHistory);
 
@@ -382,16 +422,19 @@ export default function ProfilePage() {
       sendindForm.append("fullName", form.fullName || "");
       sendindForm.append("email", form.email || "");
 
-      let parsed: any = null;
-      let mismatches: any = {};
+      let parsed: ResumeParsedData | null = null;
+      let mismatches: ResumeMismatchInfo = {};
       try {
         const resp = await axios.post("/api/resume/parse-resume", sendindForm, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        const body = resp.data;
+        const body = (resp.data || {}) as Record<string, unknown>;
         // API should return { parsed: { ... } } or parsed directly
-        parsed = body.parsed ?? body;
-        mismatches = body.mismatches;
+        parsed =
+          (body.parsed as ResumeParsedData | undefined) ||
+          (body as ResumeParsedData);
+        mismatches =
+          (body.mismatches as ResumeMismatchInfo | undefined) || {};
       } catch (e) {
         if (axios.isAxiosError(e)) {
           const status = e.response?.status;
@@ -507,6 +550,7 @@ export default function ProfilePage() {
             startDate:
               (e.start_date as string) ?? (e.startDate as string) ?? "",
             endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+            documents: [],
           } as EducationRecord;
         });
 
@@ -618,7 +662,7 @@ export default function ProfilePage() {
       const payload = new FormData();
 
       // Build a partial profile object: include only non-empty, non-null fields
-      const partialProfile: Record<string, any> = {};
+      const partialProfile: Record<string, string | number | boolean> = {};
       Object.entries(form).forEach(([key, value]) => {
         if (value === null || value === undefined) return;
         if (typeof value === "string" && value.trim() === "") return;
@@ -651,6 +695,14 @@ export default function ProfilePage() {
           if (!normalizedStartDate) {
             throw new Error(
               `Invalid start date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
+            );
+          }
+
+          const currentMonthIndex = getCurrentMonthIndex();
+          const startIndexForFuture = monthYearToIndex(normalizedStartDate);
+          if (startIndexForFuture && startIndexForFuture > currentMonthIndex) {
+            throw new Error(
+              `Start date cannot be in the future for ${emp.position || "employment"}.`,
             );
           }
 
@@ -710,7 +762,104 @@ export default function ProfilePage() {
         });
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
-        payload.append("educationHistory", JSON.stringify(educationHistory));
+        const normalizedEducationPayload = educationHistory.map((edu) => {
+          const normalizedStartDate = normalizeMonthYearForPayload(
+            edu.startDate || "",
+          );
+          const normalizedEndDate = normalizeMonthYearForPayload(
+            edu.endDate || "",
+          );
+
+          if (/^\d{4}$/.test((edu.startDate || "").trim())) {
+            if (!edu.startDate.trim()) {
+              throw new Error(
+                `Invalid start date for ${edu.degree || "education"}.`,
+              );
+            }
+          } else if (!normalizedStartDate) {
+            throw new Error(
+              `Invalid start date for ${edu.degree || "education"}. Use YYYY or MM/YYYY format.`,
+            );
+          }
+
+          if (
+            edu.endDate &&
+            !/^\d{4}$/.test((edu.endDate || "").trim()) &&
+            !normalizedEndDate
+          ) {
+            throw new Error(
+              `Invalid end date for ${edu.degree || "education"}. Use YYYY or MM/YYYY format.`,
+            );
+          }
+
+          const normalizedStartForComparison = /^\d{4}$/.test(
+            (edu.startDate || "").trim(),
+          )
+            ? `01/${edu.startDate.trim()}`
+            : normalizedStartDate;
+          const normalizedEndForComparison = /^\d{4}$/.test(
+            (edu.endDate || "").trim(),
+          )
+            ? `01/${edu.endDate.trim()}`
+            : normalizedEndDate;
+
+          const startIndex = normalizedStartForComparison
+            ? monthYearToIndex(normalizedStartForComparison)
+            : null;
+          const endIndex = normalizedEndForComparison
+            ? monthYearToIndex(normalizedEndForComparison)
+            : null;
+          const currentMonthIndex = getCurrentMonthIndex();
+
+          if (startIndex && startIndex > currentMonthIndex) {
+            throw new Error(
+              `Start date cannot be in the future for ${edu.degree || "education"}.`,
+            );
+          }
+
+          if (startIndex && endIndex && endIndex < startIndex) {
+            throw new Error(
+              `End date cannot be before start date for ${edu.degree || "education"}.`,
+            );
+          }
+
+          return {
+            ...edu,
+            documents: (edu.documents || []).map((doc) => ({
+              id: doc.id,
+              name: doc.name,
+              size: Number(doc.size || 0),
+              type: doc.type || "application/octet-stream",
+              uploadedAt: doc.uploadedAt,
+              url: doc.url,
+            })),
+            startDate: /^\d{4}$/.test((edu.startDate || "").trim())
+              ? edu.startDate.trim()
+              : normalizedStartDate || "",
+            endDate: /^\d{4}$/.test((edu.endDate || "").trim())
+              ? edu.endDate.trim()
+              : normalizedEndDate || "",
+          };
+        });
+
+        payload.append(
+          "educationHistory",
+          JSON.stringify(normalizedEducationPayload),
+        );
+
+        educationHistory.forEach((edu) => {
+          if (edu.documents && Array.isArray(edu.documents)) {
+            edu.documents.forEach((doc) => {
+              if (doc.file instanceof File) {
+                const fieldName = `educationDoc_${edu.id}_${doc.id}`;
+                payload.append(fieldName, doc.file);
+              }
+            });
+          }
+        });
+      } else if (educationChanged) {
+        // Persist explicit clear when user removed all education records.
+        payload.append("educationHistory", JSON.stringify([]));
       }
 
       // Files: append if selected
@@ -810,7 +959,15 @@ export default function ProfilePage() {
         }
       } else if (Array.isArray(data.errors) && data.errors.length > 0) {
         userMessage = data.errors
-          .map((e: any) => e?.message || JSON.stringify(e))
+          .map((e: unknown) => {
+            if (typeof e === "object" && e !== null && "message" in e) {
+              const msg = (e as { message?: unknown }).message;
+              if (typeof msg === "string" && msg.trim()) {
+                return msg;
+              }
+            }
+            return JSON.stringify(e);
+          })
           .join("; ");
       }
 
@@ -861,10 +1018,14 @@ export default function ProfilePage() {
           text: String(message),
         });
       } else {
+        const fallbackMessage =
+          err instanceof Error && err.message
+            ? err.message
+            : "An unexpected error occurred.";
         Swal.fire({
           icon: "error",
           title: "Save Failed",
-          text: "An unexpected error occurred.",
+          text: fallbackMessage,
         });
       }
       logger.error("Profile save error:", err);
@@ -984,6 +1145,9 @@ export default function ProfilePage() {
                   <AddEducationForm
                     newEducation={newEducation}
                     onChange={handleNewEducationChange}
+                    onDocumentUpload={handleNewEducationDocumentUpload}
+                    onDocumentRemove={removeNewEducationDocument}
+                    documentInputRef={newEducationDocumentInputRef}
                     onAdd={addEducationRecord}
                     onCancel={() => setShowAddEducation(false)}
                     disabled={!isEditing}
@@ -994,7 +1158,13 @@ export default function ProfilePage() {
                   educationHistory={educationHistory}
                   showAddEducation={showAddEducation}
                   onToggleAdd={() => setShowAddEducation(!showAddEducation)}
+                  onUpdate={updateEducation}
                   onDelete={deleteEducation}
+                  onDocumentUpload={handleEducationDocumentUpload}
+                  onDocumentRemove={removeEducationDocument}
+                  documentInputRef={(educationId, el) => {
+                    educationDocumentInputRefs.current[String(educationId)] = el;
+                  }}
                   disabled={!isEditing}
                 />
 

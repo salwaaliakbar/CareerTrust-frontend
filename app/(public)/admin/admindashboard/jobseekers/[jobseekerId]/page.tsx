@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AdminService } from "@/services/api/admin.service";
 import Swal from "sweetalert2";
+import { useSocket } from "@/hooks/useSocket";
 
 interface JobseekerDetailData {
   jobseekerId: number;
@@ -41,14 +42,115 @@ interface JobseekerDetailData {
   isProfileComplete: boolean;
   createdAt: string;
   updatedAt: string;
-  employmentHistory: any[];
-  educationHistory: any[];
-  skills: any[];
-  applications: any[];
+  employmentHistory: EmploymentRecord[];
+  educationHistory: EducationRecord[];
+  skills: SkillRecord[];
+  applications: ApplicationRecord[];
+}
+
+interface EmploymentDocumentRecord {
+  id: string;
+  name: string;
+  size: number;
+  uploadedAt: string;
+  url?: string;
+}
+
+interface EmploymentRecord {
+  id: string;
+  company: string;
+  position: string;
+  location?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  currentlyWorking?: boolean;
+  description?: string | null;
+  verified?: boolean;
+  verificationStatus?: string | null;
+  rejectionReason?: string | null;
+  verifiedAt?: string | null;
+  documents?: EmploymentDocumentRecord[];
+}
+
+interface EducationRecord {
+  id: number;
+  institution: string;
+  degree: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  verified?: boolean;
+  verificationStatus?: string | null;
+  rejectionReason?: string | null;
+  verifiedAt?: string | null;
+  documents?: EmploymentDocumentRecord[];
+}
+
+interface SkillRecord {
+  id: number;
+  skillName: string;
+}
+
+interface ApplicationRecord {
+  id: number;
+}
+
+interface JobseekerHistoryUpdatedEvent {
+  jobseekerId?: number;
+  clerkId?: string;
+  employmentHistoryChanged?: boolean;
+  educationHistoryChanged?: boolean;
+  updatedAt?: string;
+}
+
+function toMonthIndex(value?: string | null): number {
+  const raw = (value || "").trim();
+  if (!raw) return 0;
+
+  const monthYear = raw.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  if (monthYear) {
+    return Number(monthYear[2]) * 12 + Number(monthYear[1]);
+  }
+
+  const yearMonth = raw.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+  if (yearMonth) {
+    return Number(yearMonth[1]) * 12 + Number(yearMonth[2]);
+  }
+
+  if (/^\d{4}$/.test(raw)) {
+    return Number(raw) * 12 + 1;
+  }
+
+  return 0;
+}
+
+function getStatusRank(status?: string | null, verified?: boolean): number {
+  const normalized = status || (verified ? "verified" : "pending");
+  if (normalized === "pending") return 0;
+  if (normalized === "verified") return 1;
+  if (normalized === "rejected") return 2;
+  return 3;
+}
+
+function sortByVerificationPriorityAndDate<T extends {
+  startDate?: string | null;
+  verificationStatus?: string | null;
+  verified?: boolean;
+}>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const rankA = getStatusRank(a.verificationStatus, a.verified);
+    const rankB = getStatusRank(b.verificationStatus, b.verified);
+
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    return toMonthIndex(b.startDate) - toMonthIndex(a.startDate);
+  });
 }
 
 export default function JobseekerDetailPage() {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const params = useParams();
   const jobseekerId = params?.jobseekerId as string;
@@ -58,24 +160,25 @@ export default function JobseekerDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (jobseekerId) {
-      fetchJobseekerDetails();
-    }
-  }, [jobseekerId]);
+  const { on, off } = useSocket({
+    clerkId: user?.id,
+    role: "admin",
+  });
 
-  const fetchJobseekerDetails = async (isManualRefresh = false) => {
+  const fetchJobseekerDetails = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
 
     try {
       const token = await getToken();
       const response = await AdminService.getJobseekerById(token, parseInt(jobseekerId));
-      console.log("Jobseeker data:", response.data.jobseeker);
-      console.log("Employment history:", response.data.jobseeker?.employmentHistory);
-      response.data.jobseeker?.employmentHistory?.forEach((emp: any, idx: number) => {
+      const jobseekerData =
+        response.data.jobseeker as unknown as JobseekerDetailData;
+      console.log("Jobseeker data:", jobseekerData);
+      console.log("Employment history:", jobseekerData?.employmentHistory);
+      (jobseekerData?.employmentHistory || []).forEach((emp: EmploymentRecord, idx: number) => {
         console.log(`Employment ${idx + 1} documents:`, emp.documents);
       });
-      setJobseeker(response.data.jobseeker);
+      setJobseeker(jobseekerData);
     } catch (error) {
       console.error("Error fetching jobseeker:", error);
       Swal.fire({
@@ -88,7 +191,30 @@ export default function JobseekerDetailPage() {
       setLoading(false);
       if (isManualRefresh) setRefreshing(false);
     }
-  };
+  }, [getToken, jobseekerId]);
+
+  useEffect(() => {
+    if (jobseekerId) {
+      fetchJobseekerDetails();
+    }
+  }, [jobseekerId, fetchJobseekerDetails]);
+
+  useEffect(() => {
+    const targetJobseekerId = Number.parseInt(jobseekerId, 10);
+
+    const onJobseekerHistoryUpdated = (payload?: JobseekerHistoryUpdatedEvent) => {
+      if (!payload?.jobseekerId) return;
+      if (Number(payload.jobseekerId) !== targetJobseekerId) return;
+
+      fetchJobseekerDetails();
+    };
+
+    on("jobseeker_profile_history_updated", onJobseekerHistoryUpdated);
+
+    return () => {
+      off("jobseeker_profile_history_updated", onJobseekerHistoryUpdated);
+    };
+  }, [on, off, fetchJobseekerDetails, jobseekerId]);
 
   const handleVerifyEmployment = async (employmentId: string, company: string) => {
     const result = await Swal.fire({
@@ -182,6 +308,98 @@ export default function JobseekerDetailPage() {
     }
   };
 
+  const handleVerifyEducation = async (educationId: number, degree: string) => {
+    const result = await Swal.fire({
+      title: "Verify Education?",
+      text: `This will mark ${degree} as verified.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#10B981",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, verify",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        const token = await getToken();
+        await AdminService.verifyEducation(token, educationId);
+
+        await Swal.fire({
+          icon: "success",
+          title: "Verified!",
+          text: "Education has been verified successfully.",
+          confirmButtonColor: "#10B981",
+        });
+
+        fetchJobseekerDetails();
+      } catch (error) {
+        console.error("Error verifying education:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to verify education",
+          confirmButtonColor: "#0C2B4E",
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  const handleRejectEducation = async (educationId: number, degree: string) => {
+    const result = await Swal.fire({
+      title: "Reject Education?",
+      html: `
+        <p>This will mark <strong>${degree}</strong> as rejected.</p>
+        <p class="text-gray-600 text-sm mt-2">The jobseeker will see your reason and can update the record.</p>
+      `,
+      icon: "warning",
+      input: "textarea",
+      inputLabel: "Rejection Reason (Required)",
+      inputPlaceholder: "e.g., Degree name mismatch, incomplete details, invalid date range...",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, reject",
+      cancelButtonText: "Cancel",
+      inputValidator: (value) => {
+        if (!value || value.trim() === "") {
+          return "Please provide a reason for rejection!";
+        }
+        return null;
+      },
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        const token = await getToken();
+        await AdminService.rejectEducation(token, educationId, result.value);
+
+        await Swal.fire({
+          icon: "success",
+          title: "Rejected!",
+          text: "Education has been rejected. Jobseeker will be notified.",
+          confirmButtonColor: "#0C2B4E",
+        });
+
+        fetchJobseekerDetails();
+      } catch (error) {
+        console.error("Error rejecting education:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to reject education",
+          confirmButtonColor: "#0C2B4E",
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
   const getVerificationBadge = (status: string, verified: boolean) => {
     if (status === "verified" && verified) {
       return (
@@ -240,6 +458,11 @@ export default function JobseekerDetailPage() {
   const verifiedCount = jobseeker.employmentHistory.filter(e => e.verified).length;
   const pendingCount = jobseeker.employmentHistory.filter(e => e.verificationStatus === "pending").length;
   const rejectedCount = jobseeker.employmentHistory.filter(e => e.verificationStatus === "rejected").length;
+  const verifiedEducationCount = jobseeker.educationHistory.filter((e) => e.verificationStatus === "verified" || e.verified).length;
+  const pendingEducationCount = jobseeker.educationHistory.filter((e) => (e.verificationStatus || "pending") === "pending").length;
+  const rejectedEducationCount = jobseeker.educationHistory.filter((e) => e.verificationStatus === "rejected").length;
+  const sortedEmploymentHistory = sortByVerificationPriorityAndDate(jobseeker.employmentHistory);
+  const sortedEducationHistory = sortByVerificationPriorityAndDate(jobseeker.educationHistory);
 
   return (
     <div className="relative">
@@ -298,7 +521,7 @@ export default function JobseekerDetailPage() {
       </div>
 
       {/* Verification Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 fade-in animation-delay-100">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8 fade-in animation-delay-100">
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -333,6 +556,15 @@ export default function JobseekerDetailPage() {
               <p className="text-2xl font-bold text-red-600">{rejectedCount}</p>
             </div>
             <XCircle className="w-8 h-8 text-red-600/20" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border border-amber-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Pending Education</p>
+              <p className="text-2xl font-bold text-amber-600">{pendingEducationCount}</p>
+            </div>
+            <GraduationCap className="w-8 h-8 text-amber-600/20" />
           </div>
         </div>
       </div>
@@ -409,7 +641,7 @@ export default function JobseekerDetailPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {jobseeker.employmentHistory.map((employment: any, index: number) => (
+                {sortedEmploymentHistory.map((employment) => (
                   <div
                     key={employment.id}
                     className="border border-gray-200 rounded-xl p-5 hover:border-[#0C2B4E]/30 transition-all"
@@ -465,7 +697,7 @@ export default function JobseekerDetailPage() {
                       </p>
                       {employment.documents && employment.documents.length > 0 ? (
                         <div className="space-y-2">
-                          {employment.documents.map((doc: any) => (
+                          {employment.documents.map((doc) => (
                             <div key={doc.id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
                               <div className="flex items-center gap-3">
                                 <FileText className="w-5 h-5 text-gray-400" />
@@ -546,7 +778,7 @@ export default function JobseekerDetailPage() {
             </div>
             {jobseeker.skills.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {jobseeker.skills.map((skill: any) => (
+                {jobseeker.skills.map((skill) => (
                   <span
                     key={skill.id}
                     className="px-3 py-1.5 bg-[#0C2B4E]/10 text-[#0C2B4E] rounded-lg text-sm font-medium"
@@ -566,17 +798,109 @@ export default function JobseekerDetailPage() {
               <div className="w-10 h-10 rounded-xl bg-[#0C2B4E]/10 flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-[#0C2B4E]" />
               </div>
-              <h2 className="text-xl font-bold text-[#0C2B4E]">Education</h2>
+              <div>
+                <h2 className="text-xl font-bold text-[#0C2B4E]">Education</h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Verified: {verifiedEducationCount} • Pending: {pendingEducationCount} • Rejected: {rejectedEducationCount}
+                </p>
+              </div>
             </div>
             {jobseeker.educationHistory.length > 0 ? (
               <div className="space-y-4">
-                {jobseeker.educationHistory.map((edu: any) => (
+                {sortedEducationHistory.map((edu) => (
                   <div key={edu.id} className="pb-4 border-b border-gray-200 last:border-0 last:pb-0">
-                    <p className="font-semibold text-gray-900">{edu.degree}</p>
-                    <p className="text-[#0C2B4E] text-sm mb-1">{edu.institution}</p>
-                    <p className="text-gray-600 text-xs">
-                      {edu.startDate} - {edu.endDate || "Present"}
-                    </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{edu.degree}</p>
+                        <p className="text-[#0C2B4E] text-sm mb-1">{edu.institution}</p>
+                        <p className="text-gray-600 text-xs">
+                          {edu.startDate || "N/A"} - {edu.endDate || "Present"}
+                        </p>
+                      </div>
+                      <div>
+                        {getVerificationBadge(
+                          edu.verificationStatus || "pending",
+                          Boolean(edu.verified),
+                        )}
+                      </div>
+                    </div>
+
+                    {(edu.verificationStatus === "rejected" ||
+                      edu.verificationStatus === "pending") &&
+                      edu.rejectionReason && (
+                      <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-red-900 mb-1">
+                          {edu.verificationStatus === "pending"
+                            ? "Previous Rejection Reason"
+                            : "Rejection Reason"}
+                        </p>
+                        <p className="text-xs text-red-700">{edu.rejectionReason}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <p className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-xs">
+                        <FileText className="w-4 h-4" />
+                        Supporting Documents ({edu.documents?.length || 0})
+                      </p>
+                      {edu.documents && edu.documents.length > 0 ? (
+                        <div className="space-y-2">
+                          {edu.documents.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center justify-between bg-white p-2 rounded border border-gray-200"
+                            >
+                              <div>
+                                <p className="text-xs font-medium text-gray-900">{doc.name}</p>
+                                <p className="text-[11px] text-gray-500">
+                                  {(doc.size / 1024).toFixed(1)} KB
+                                </p>
+                              </div>
+                              {doc.url && (
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 rounded-lg bg-[#0C2B4E]/10 text-[#0C2B4E] hover:bg-[#0C2B4E] hover:text-white transition-colors"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500">No documents uploaded for this education.</p>
+                      )}
+                    </div>
+
+                    {edu.verificationStatus !== "verified" && (
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => handleVerifyEducation(edu.id, edu.degree)}
+                          disabled={actionLoading}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Verify
+                        </button>
+                        <button
+                          onClick={() => handleRejectEducation(edu.id, edu.degree)}
+                          disabled={actionLoading}
+                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {edu.verified && edu.verifiedAt && (
+                      <div className="mt-3 text-xs text-gray-600 flex items-center gap-1">
+                        <Award className="w-3.5 h-3.5 text-green-600" />
+                        Verified on {new Date(edu.verifiedAt).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

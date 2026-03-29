@@ -18,6 +18,8 @@ export default function AddEmploymentForm({
   onCancel,
   disabled = false,
 }: AddEmploymentFormProps) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
   const toMonthInputValue = (value?: string) => {
     if (!value) return "";
 
@@ -70,6 +72,7 @@ export default function AddEmploymentForm({
             <label className="text-xs font-bold text-[0C2A4E] px-1">Start Date</label>
             <input
               type="month"
+              max={currentMonth}
               value={toMonthInputValue(newEmployment.startDate || "")}
               onChange={(e) =>
                 onChange("startDate", fromMonthInputValue(e.target.value))

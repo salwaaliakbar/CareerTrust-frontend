@@ -11,7 +11,7 @@ export function getVerificationBadge(status: VerificationStatus) {
       );
     case "pending":
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-linear-to-r from-blue-50 to-blue-100 px-3 py-1.5 rounded-full border border-blue-200 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-linear-to-r from-amber-50 to-amber-100 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
           <Clock className="w-3.5 h-3.5" /> Pending Review
         </span>
       );

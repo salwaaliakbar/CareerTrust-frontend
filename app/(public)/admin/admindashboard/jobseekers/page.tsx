@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Users, Search, Filter, Mail, Phone, Briefcase, GraduationCap, MapPin } from "lucide-react";
 import { AdminService } from "@/services/api/admin.service";
+import { useSocket } from "@/hooks/useSocket";
 
 interface JobSeekerData {
   jobseekerId: number;
@@ -18,8 +19,10 @@ interface JobSeekerData {
   highestDegree: string | null;
   isProfileComplete: boolean;
   pendingExperiencesCount?: number;
+  pendingEducationCount?: number;
   createdAt: string;
   employmentHistory?: Array<{ verificationStatus?: string }>;
+  educationHistory?: Array<{ verificationStatus?: string }>;
 }
 
 const getPendingCount = (jobseeker: JobSeekerData) => {
@@ -36,8 +39,23 @@ const getPendingCount = (jobseeker: JobSeekerData) => {
   return 0;
 };
 
+const getPendingEducationCount = (jobseeker: JobSeekerData) => {
+  if (typeof jobseeker.pendingEducationCount === "number") {
+    return jobseeker.pendingEducationCount;
+  }
+
+  if (Array.isArray(jobseeker.educationHistory)) {
+    return jobseeker.educationHistory.filter(
+      (edu) => edu.verificationStatus === "pending",
+    ).length;
+  }
+
+  return 0;
+};
+
 export default function JobSeekersPage() {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [jobseekers, setJobseekers] = useState<JobSeekerData[]>([]);
   const [filteredJobseekers, setFilteredJobseekers] = useState<JobSeekerData[]>([]);
@@ -45,20 +63,18 @@ export default function JobSeekersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterComplete, setFilterComplete] = useState<string>("all");
 
-  useEffect(() => {
-    fetchJobseekers();
-  }, []);
+  const { on, off } = useSocket({
+    clerkId: user?.id,
+    role: "admin",
+  });
 
-  useEffect(() => {
-    filterData();
-  }, [searchQuery, filterComplete, jobseekers]);
-
-  const fetchJobseekers = async () => {
+  const fetchJobseekers = useCallback(async () => {
     try {
       const token = await getToken();
       const response = await AdminService.getAllJobseekers(token);
-      setJobseekers(response.data.jobseekers || []);
-      setFilteredJobseekers(response.data.jobseekers || []);
+      const incoming = (response.data.jobseekers || []) as unknown as JobSeekerData[];
+      setJobseekers(incoming);
+      setFilteredJobseekers(incoming);
     } catch (error) {
       console.error("Error fetching jobseekers:", error);
       setJobseekers([]);
@@ -66,9 +82,13 @@ export default function JobSeekersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getToken]);
 
-  const filterData = () => {
+  useEffect(() => {
+    fetchJobseekers();
+  }, [fetchJobseekers]);
+
+  const filterData = useCallback(() => {
     let filtered = [...jobseekers];
 
     // Search filter
@@ -90,7 +110,23 @@ export default function JobSeekersPage() {
     }
 
     setFilteredJobseekers(filtered);
-  };
+  }, [searchQuery, filterComplete, jobseekers]);
+
+  useEffect(() => {
+    filterData();
+  }, [filterData]);
+
+  useEffect(() => {
+    const onJobseekerHistoryUpdated = () => {
+      fetchJobseekers();
+    };
+
+    on("jobseeker_profile_history_updated", onJobseekerHistoryUpdated);
+
+    return () => {
+      off("jobseeker_profile_history_updated", onJobseekerHistoryUpdated);
+    };
+  }, [on, off, fetchJobseekers]);
 
   if (loading) {
     return (
@@ -116,7 +152,7 @@ export default function JobSeekersPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 border border-gray-200/60 shadow-md hover:shadow-lg transition-all duration-300 fade-in">
           <div className="flex items-center justify-between">
             <div>
@@ -173,6 +209,23 @@ export default function JobSeekersPage() {
             </div>
           </div>
         </div>
+
+        <div className="bg-white rounded-2xl p-6 border border-sky-200/80 shadow-md hover:shadow-lg transition-all duration-300 fade-in animation-delay-300">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-1">Pending Education</p>
+              <p className="text-3xl font-bold text-sky-600">
+                {jobseekers.reduce(
+                  (sum, js) => sum + getPendingEducationCount(js),
+                  0,
+                )}
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-xl bg-sky-500/10 flex items-center justify-center">
+              <GraduationCap className="w-7 h-7 text-sky-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters & Search */}
@@ -219,13 +272,14 @@ export default function JobSeekersPage() {
                 <th className="px-6 py-4 text-left text-sm font-semibold">Education</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Pending Experiences</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold">Pending Education</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredJobseekers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                     <p className="text-lg font-medium">No job seekers found</p>
                     <p className="text-sm">Try adjusting your search or filters</p>
@@ -307,6 +361,17 @@ export default function JobSeekersPage() {
                         }`}
                       >
                         {getPendingCount(jobseeker)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                          getPendingEducationCount(jobseeker) > 0
+                            ? "bg-sky-100 text-sky-800 border-sky-300"
+                            : "bg-gray-100 text-gray-700 border-gray-200"
+                        }`}
+                      >
+                        {getPendingEducationCount(jobseeker)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
