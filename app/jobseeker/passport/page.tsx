@@ -85,9 +85,14 @@ const PassportPage = () => {
           });
         });
 
-        // Only show verified employment - check verificationStatus only
+        // Show records approved by legacy or current verification flow.
+        // Some rows are stored as "approved" and some as "verified".
         const verified = employment
-          .filter((emp: EmploymentRecord) => emp.verificationStatus === "verified")
+          .filter(
+            (emp: EmploymentRecord) =>
+              emp.verificationStatus === "verified" ||
+              emp.verificationStatus === "approved",
+          )
           .sort((a: EmploymentRecord, b: EmploymentRecord) => {
             if (a.currentlyWorking && !b.currentlyWorking) return -1;
             if (!a.currentlyWorking && b.currentlyWorking) return 1;

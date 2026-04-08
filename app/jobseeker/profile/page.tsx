@@ -172,21 +172,80 @@ function normalizeEmploymentHistory(history: EmploymentRecord[]) {
 function normalizeMonthYearForPayload(value: string): string | null {
   const trimmed = (value || "").trim();
   if (!trimmed) return null;
+  
+  const monthNameMap: Record<string, string> = {
+    jan: "01",
+    january: "01",
+    feb: "02",
+    february: "02",
+    mar: "03",
+    march: "03",
+    apr: "04",
+    april: "04",
+    may: "05",
+    jun: "06",
+    june: "06",
+    jul: "07",
+    july: "07",
+    aug: "08",
+    august: "08",
+    sep: "09",
+    sept: "09",
+    september: "09",
+    oct: "10",
+    october: "10",
+    nov: "11",
+    november: "11",
+    dec: "12",
+    december: "12",
+  };
 
-  const mmYyyy = trimmed.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
-  if (mmYyyy) return trimmed;
+  const mmYyyy = trimmed.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
+  if (mmYyyy) {
+    const month = mmYyyy[1].padStart(2, "0");
+    return `${month}/${mmYyyy[2]}`;
+  }
 
-  const yyyyMm = trimmed.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
-  if (yyyyMm) return `${yyyyMm[2]}/${yyyyMm[1]}`;
+  const mmYyyyDashOrDot = trimmed.match(/^(0?[1-9]|1[0-2])[-.](\d{4})$/);
+  if (mmYyyyDashOrDot) {
+    const month = mmYyyyDashOrDot[1].padStart(2, "0");
+    return `${month}/${mmYyyyDashOrDot[2]}`;
+  }
 
-  const yyyyMmDd = trimmed.match(/^(\d{4})-(0[1-9]|1[0-2])-\d{2}$/);
-  if (yyyyMmDd) return `${yyyyMmDd[2]}/${yyyyMmDd[1]}`;
+  const yyyyMm = trimmed.match(/^(\d{4})-(0?[1-9]|1[0-2])$/);
+  if (yyyyMm) {
+    const month = yyyyMm[2].padStart(2, "0");
+    return `${month}/${yyyyMm[1]}`;
+  }
+
+  const yyyyMmSlash = trimmed.match(/^(\d{4})\/(0?[1-9]|1[0-2])$/);
+  if (yyyyMmSlash) {
+    const month = yyyyMmSlash[2].padStart(2, "0");
+    return `${month}/${yyyyMmSlash[1]}`;
+  }
+
+  const yyyyMmDd = trimmed.match(/^(\d{4})-(0?[1-9]|1[0-2])-\d{1,2}$/);
+  if (yyyyMmDd) {
+    const month = yyyyMmDd[2].padStart(2, "0");
+    return `${month}/${yyyyMmDd[1]}`;
+  }
+
+  const monthNameYyyy = trimmed.match(/^([A-Za-z]{3,9})\s+(\d{4})$/);
+  if (monthNameYyyy) {
+    const normalizedMonth = monthNameMap[monthNameYyyy[1].toLowerCase()];
+    if (normalizedMonth) {
+      return `${normalizedMonth}/${monthNameYyyy[2]}`;
+    }
+  }
 
   return null;
 }
 
 function monthYearToIndex(value: string): number | null {
-  const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  const normalized = normalizeMonthYearForPayload(value);
+  if (!normalized) return null;
+
+  const match = normalized.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
   if (!match) return null;
   return Number(match[2]) * 12 + Number(match[1]);
 }
@@ -706,11 +765,16 @@ export default function ProfilePage() {
             );
           }
 
-          const normalizedEndDate = emp.currentlyWorking
+          const isPresentEndDate = /^(present|current|ongoing)$/i.test(
+            (emp.endDate || "").trim(),
+          );
+          const isCurrentlyWorking = Boolean(emp.currentlyWorking) || isPresentEndDate;
+
+          const normalizedEndDate = isCurrentlyWorking
             ? ""
             : normalizeMonthYearForPayload(emp.endDate || "");
 
-          if (!emp.currentlyWorking && emp.endDate && !normalizedEndDate) {
+          if (!isCurrentlyWorking && emp.endDate && !normalizedEndDate) {
             throw new Error(
               `Invalid end date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
             );
@@ -722,7 +786,7 @@ export default function ProfilePage() {
             : null;
 
           if (
-            !emp.currentlyWorking &&
+            !isCurrentlyWorking &&
             startIndex &&
             endIndex &&
             endIndex < startIndex
@@ -734,8 +798,9 @@ export default function ProfilePage() {
 
           return {
             ...emp,
+            currentlyWorking: isCurrentlyWorking,
             startDate: normalizedStartDate,
-            endDate: emp.currentlyWorking ? "" : normalizedEndDate || "",
+            endDate: isCurrentlyWorking ? "" : normalizedEndDate || "",
           };
         });
 
