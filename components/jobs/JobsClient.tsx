@@ -80,9 +80,9 @@ export default function JobsClient() {
 
   const filteredJobs = useMemo(() => {
     let filtered = jobs.filter((job) => {
-      // Recommended filter - only show jobs with matchPercentage > 50% if toggle is on
+      // Recommended filter - show jobs with matchPercentage >= 50% if toggle is on
       if (recommendedOnly) {
-        if (getMatchPercentage(job) <= 50) return false;
+        if (getMatchPercentage(job) < 50) return false;
       }
 
       const matchesSearch =
