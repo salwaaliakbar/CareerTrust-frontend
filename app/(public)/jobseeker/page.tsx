@@ -6,29 +6,36 @@ import JobseekerCTA from "@/components/jobseeker/JobseekerCTA";
 import TrustStats from "@/components/jobseeker/TrustStats";
 import FeaturedJobs from "@/components/jobseeker/FeaturedJobs";
 import MoveToLoginCTA from "@/components/jobseeker/MoveToLoginCTA";
+import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
 
 export default function JobseekerPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f4f8fc]">
       <Header />
 
-      {/* Jobseeker hero (search + filters) */}
-      <HeroSection />
+      <ScrollRevealSection threshold={0.08} rootMargin="0px 0px -8% 0px">
+        <HeroSection />
+      </ScrollRevealSection>
 
-      {/* Steps carousel explaining job seeker flow */}
-      <StepsCarousel />
+      <ScrollRevealSection threshold={0.14}>
+        <TrustStats />
+      </ScrollRevealSection>
 
-      {/* Trust statistics */}
-      <TrustStats />
+      <ScrollRevealSection threshold={0.14}>
+        <StepsCarousel />
+      </ScrollRevealSection>
 
-      {/* Jobseeker-specific CTA: quick link to job listings */}
-      <JobseekerCTA />
+       <ScrollRevealSection threshold={0.14}>
+        <JobseekerCTA />
+      </ScrollRevealSection>
 
-       {/* Featured jobs - show opportunities right after hero */}
-      <FeaturedJobs />
+      <ScrollRevealSection threshold={0.14}>
+        <FeaturedJobs />
+      </ScrollRevealSection>
 
-      {/* Login/Signup CTA */}
-      <MoveToLoginCTA />
+      <ScrollRevealSection threshold={0.14}>
+        <MoveToLoginCTA />
+      </ScrollRevealSection>
 
       <Footer />
     </div>

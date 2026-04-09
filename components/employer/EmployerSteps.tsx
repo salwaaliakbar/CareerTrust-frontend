@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { CheckCircle, Briefcase, Users, Handshake, Award } from "lucide-react";
+import Link from "next/link";
 import styles from "./EmployerSteps.module.css";
 import EMPLOYER_STEPS, { StepData } from "../../data/employer/steps";
 
@@ -20,23 +21,20 @@ export default function EmployerSteps() {
   );
 
   return (
-  <section aria-labelledby="employer-steps" className="relative pt-14 overflow-hidden bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/3 to-white">
+  <section aria-labelledby="employer-steps" className="relative py-16 md:py-20 overflow-hidden bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/3 to-white">
       {/* Background decoration */}
       <div className="absolute inset-0" />
   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/10 via-[#1A3D64]/8 to-[#1D546C]/6 pointer-events-none" />
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-20 fade-in">
+        <div className="text-center mb-16 md:mb-20 fade-in">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6 fade-in animation-delay-100">
             <div className="w-2 h-2 rounded-full bg-[#0C2B4E] animate-pulse" />
             <span className="text-sm font-medium text-[#0C2B4E]">Simple Process</span>
           </div>
           
-          <h3
-            id="employer-steps"
-            className="text-4xl sm:text-5xl font-bold mb-5 text-[#0C2B4E]"
-          >
+          <h3 id="employer-steps" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 text-[#0C2B4E]">
             How it works for employers
           </h3>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
@@ -50,7 +48,7 @@ export default function EmployerSteps() {
           <div className={`hidden lg:block absolute top-24 h-1 bg-linear-to-r from-blue-200 via-teal-200 to-emerald-200 rounded-full ${styles.connectionLine}`} />
             <div className={`hidden lg:block absolute top-24 h-1 bg-linear-to-r from-[#1A3D64]/20 via-[#1D546C]/20 to-[#0C2B4E]/20 rounded-full ${styles.connectionLine}`} />
           
-          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 list-none relative">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 list-none relative">
             {steps.map((s, i) => {
               const Icon = ICONS[s.iconName as keyof typeof ICONS] || Briefcase;
               const isActive = activeStep === i;
@@ -74,10 +72,10 @@ export default function EmployerSteps() {
                   </div>
 
                   {/* Card */}
-                  <div className={`relative mt-8 h-full bg-white rounded-2xl p-6 border transition-all duration-300 ${
+                  <div className={`relative mt-8 h-full bg-white/95 backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300 ${
                     isActive 
                       ? 'border-blue-300 shadow-xl shadow-blue-100/50 -translate-y-2' 
-                      : 'border-slate-200 shadow-lg hover:border-blue-200 hover:shadow-xl'
+                      : 'border-slate-200 shadow-lg hover:border-blue-200 hover:shadow-xl hover:-translate-y-1'
                   }`}>
                     {/* Gradient accent */}
                       <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${s.color} rounded-t-2xl transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
@@ -123,11 +121,11 @@ export default function EmployerSteps() {
         </div>
 
         {/* CTA */}
-        <div className="text-center mt-25">
-          <button className="inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30">
+        <div className="text-center mt-14 md:mt-16">
+          <Link href="/employer/post-job" className="inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30">
             <Briefcase className="w-5 h-5" />
             Get Started Now
-          </button>
+          </Link>
         </div>
       </div>
 

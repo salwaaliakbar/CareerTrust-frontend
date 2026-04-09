@@ -90,13 +90,21 @@ const sampleJobs: Job[] = [
   },
 ];
 
-function FeaturedJobCard({ job }: { job: Job }) {
+function FeaturedJobCard({ job, index }: { job: Job; index: number }) {
   const companyName = typeof job.company === "object" ? job.company.name : job.company;
+  const delayClass = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+    "animation-delay-600",
+  ];
   
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="group bg-white rounded-2xl border border-gray-200 p-6 shadow-md hover:shadow-2xl hover:border-[#1D546C]/40 transition-all duration-300 hover:-translate-y-2 block relative overflow-hidden hover:glow"
+      className={`group bg-white rounded-2xl border border-gray-200 p-6 shadow-md hover:shadow-2xl hover:border-[#1D546C]/40 transition-all duration-500 hover:-translate-y-2 block relative overflow-hidden fade-in-up ${delayClass[index % delayClass.length]}`}
     >
       {/* Hover gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-br from-transparent to-transparent group-hover:from-transparent group-hover:to-transparent transition-all duration-300 pointer-events-none" />
@@ -191,20 +199,20 @@ export default function FeaturedJobs() {
   }, []);
 
   return (
-    <section className="pb-20 pt-10 bg-linear-to-b from-white via-[#1D546C]/20 to-white">
+    <section className="pb-20 pt-12 bg-linear-to-b from-white via-[#1D546C]/20 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-[#1D546C]/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
+          <div className="inline-flex items-center gap-2 bg-[#1D546C]/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4 fade-in-up">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-[#0C2B4E] text-sm font-medium">
               Top Opportunities
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4 fade-in-down animation-delay-100">
             Featured Jobs
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto fade-in animation-delay-200">
             Discover hand-picked opportunities from verified employers. These positions are in high demand.
           </p>
         </div>
@@ -239,8 +247,8 @@ export default function FeaturedJobs() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job) => (
-              <FeaturedJobCard key={job.id} job={job} />
+            {jobs.map((job, idx) => (
+              <FeaturedJobCard key={job.id} job={job} index={idx} />
             ))}
           </div>
         )}
@@ -249,7 +257,7 @@ export default function FeaturedJobs() {
         <div className="text-center mt-12">
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-2 bg-[#0C2B4E] text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-[#1D546C]/90 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 bg-[#0C2B4E] text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-[#1D546C]/90 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 fade-in-up animation-delay-300"
           >
             Browse All Jobs
             <ArrowRight className="w-5 h-5" />

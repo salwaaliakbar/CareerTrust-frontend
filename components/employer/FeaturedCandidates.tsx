@@ -17,16 +17,16 @@ export default function FeaturedCandidates({
   return (
     <section
       aria-labelledby="featured-candidates"
-      className="relative overflow-hidden"
+      className="relative overflow-hidden py-16 md:py-20"
     >
       {/* Ambient background effects */}
       <div className="absolute inset-0 bg-grid-slate-200/50 pb-24"/>
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0C2B4E]/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-[#0C2B4E]/10 rounded-full blur-3xl" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-14 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6">
             <Sparkles className="w-4 h-4 text-[#0C2B4E]" />
             <span className="text-sm font-medium text-[#0C2B4E]">
@@ -34,10 +34,7 @@ export default function FeaturedCandidates({
             </span>
           </div>
 
-          <h3
-            id="featured-candidates"
-            className="text-4xl sm:text-5xl font-bold mb-4 bg-[#0C2B4E] bg-clip-text text-transparent"
-          >
+          <h3 id="featured-candidates" className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-[#0C2B4E] bg-clip-text text-transparent">
             Featured Candidates
           </h3>
 
@@ -58,7 +55,7 @@ export default function FeaturedCandidates({
           {candidates.map((c) => (
             <article
               key={c.id}
-              className="group relative"
+              className="group relative h-full"
               role="article"
               aria-labelledby={`candidate-${c.id}`}
             >
@@ -68,7 +65,7 @@ export default function FeaturedCandidates({
               />
 
               {/* Card */}
-              <div className="relative h-full bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/60 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-300/50 hover:border-blue-200/60 transition-all duration-300">
+              <div className="relative h-full bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/60 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-300/50 hover:border-blue-200/60 hover:-translate-y-1 transition-all duration-300">
                 {/* Profile Header */}
                 <div className="flex items-start gap-4 mb-6">
                   <div className="relative">
@@ -124,7 +121,7 @@ export default function FeaturedCandidates({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <div className="flex gap-3 pt-4 border-t border-slate-100 mt-auto">
                   <button
                     type="button"
                     className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30"

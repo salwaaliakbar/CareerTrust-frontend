@@ -7,32 +7,18 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
-  const containerRef = useRef<HTMLElement | null>(null);
-  const [inView, setInView] = useState(false);
+  const stepDelayClass = [
+    "animation-delay-100",
+    "animation-delay-300",
+    "animation-delay-500",
+    "animation-delay-700",
+  ];
 
   useEffect(() => {
     startTimer();
     return stopTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setInView(true);
-            obs.disconnect();
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   function startTimer() {
     stopTimer();
@@ -70,17 +56,17 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
   }
 
   return (
-    <section ref={containerRef} className="py-16 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/8 to-white relative overflow-hidden">
+    <section className="py-16 px-4 bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/8 to-white relative overflow-hidden">
         {/* subtle brand orb */}
-        <div className="absolute -right-20 -top-16 w-[480px] h-[480px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/12 via-[#1A3D64]/10 to-transparent pointer-events-none -z-10" />
+        <div className="absolute -right-20 -top-16 w-120 h-120 rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/12 via-[#1A3D64]/10 to-transparent pointer-events-none -z-10" />
         {/* left blue overlay stripe for stronger tint */}
         <div className="absolute inset-0 pointer-events-none -z-10">
           <div className="absolute left-0 top-0 w-1/3 h-full bg-linear-to-r from-[#0C2B4E]/8 via-[#1A3D64]/6 to-transparent" />
         </div>
         <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E]">Making your job search easier</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-[#0C2B4E] fade-in-down">Making your job search easier</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto fade-in animation-delay-100">
             {"Personalized job recommendations tailored to our skills and preferences."}
           </p>
         </div>
@@ -126,7 +112,7 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
                   key={i}
                   onClick={() => goTo(i)}
                   aria-label={`Go to step ${i + 1}`}
-                  aria-pressed={i === index ? "true" : "false"}
+                  aria-pressed={i === index}
                   className={`w-3 h-3 rounded-full ${i === index ? "bg-[#0C2B4E]" : "bg-gray-300"}`}
                 />
               ))}
@@ -136,18 +122,14 @@ export default function StepsCarousel({ intervalMs = 6000 }: { intervalMs?: numb
           <nav className="md:w-1/2 px-8">
             <div className="flex flex-col md:gap-4">
               {STEPS.map((s, i) => {
-                const base = 320;
-                const stepDelay = 220;
-                const delay = base + i * stepDelay;
                 return (
                   <button
                     type="button"
                     key={s.id}
                     onClick={() => goTo(i)}
-                    style={{ animationDelay: `${delay}ms` }}
                     className={`text-left p-4 rounded-lg mb-2 w-full flex items-center gap-4 transition shadow-sm ${
                       i === index ? "bg-white shadow-lg" : "bg-white/60"
-                    } ${inView ? "slide-in-right opacity-100" : "opacity-0 translate-x-6"}`}
+                    } slide-in-right ${stepDelayClass[i % stepDelayClass.length]}`}
                     aria-current={i === index ? "true" : undefined}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${i === index ? "bg-[#0C2B4E] text-white" : "bg-sky-100 text-[#0C2B4E]"}`}>
