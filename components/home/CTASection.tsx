@@ -4,7 +4,7 @@ import Link from "next/link";
 function CTASection() {
   return (
     <section className="py-22 px-4 bg-[#f4f8fc] relative overflow-hidden text-white">
-      <div className="max-w-7xl mx-auto relative rounded-4xl overflow-hidden border border-[#1f4f74]/40 shadow-[0_28px_70px_-30px_rgba(7,26,46,0.8)] bg-linear-to-br from-[#0b253f] via-[#0f3558] to-[#1d546c]">
+      <div className="max-w-7xl mx-auto relative rounded-4xl overflow-hidden border border-[#1f4f74]/40 shadow-[0_28px_70px_-30px_rgba(7,26,46,0.8)] bg-linear-to-br from-[#0b253f] via-[#0f3558] to-[#1d546c] animate-gradient">
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-10 right-12 w-64 h-64 bg-[#8ad2ff] rounded-full blur-3xl float" />
           <div className="absolute bottom-8 left-8 w-72 h-72 bg-[#f4c56a] rounded-full blur-3xl float-delayed" />
@@ -35,7 +35,7 @@ function CTASection() {
               <Link
                 href="/signup"
                 aria-label="Get started free"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 font-semibold bg-[#f4c56a] text-[#102e4c] shadow-lg hover:bg-[#ffd689] hover:shadow-xl transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c56a]/50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 font-semibold bg-[#f4c56a] text-[#102e4c] shadow-lg hover:bg-[#ffd689] hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c56a]/50"
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5" />
@@ -43,7 +43,7 @@ function CTASection() {
               <Link
                 href="/about"
                 aria-label="Learn more about CareerTrust"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-7 py-3.5 font-semibold border border-white/45 text-white bg-transparent hover:bg-white/12 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-7 py-3.5 font-semibold border border-white/45 text-white bg-transparent hover:bg-white/12 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
               >
                 Learn More
               </Link>

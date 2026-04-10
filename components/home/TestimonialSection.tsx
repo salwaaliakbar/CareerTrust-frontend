@@ -11,7 +11,7 @@ const getInitials = (name: string) =>
     .join("")
     .toUpperCase();
 
-const delayClass = ["animation-delay-100", "animation-delay-300", "animation-delay-500"];
+const delayClass = ["animation-delay-100", "animation-delay-250", "animation-delay-400"];
 
 const TestimonialSection = () => {
   return (
@@ -38,7 +38,7 @@ const TestimonialSection = () => {
           {testimonials.map((testimonial: Testimonial, index: number) => (
             <div
               key={testimonial.name}
-              className={`bg-white rounded-2xl p-8 shadow-[0_20px_45px_-26px_rgba(10,34,63,0.55)] border border-[#d9e6f2] relative fade-in-up hover:-translate-y-1 hover:shadow-[0_26px_54px_-26px_rgba(10,34,63,0.58)] transition-all duration-500 ${delayClass[index % delayClass.length]}`}
+              className={`bg-white rounded-2xl p-8 shadow-[0_20px_45px_-26px_rgba(10,34,63,0.55)] border border-[#d9e6f2] relative smooth-enter hover:-translate-y-1 hover:shadow-[0_26px_54px_-26px_rgba(10,34,63,0.58)] transition-all duration-500 ${delayClass[index % delayClass.length]}`}
             >
               <Quote className="absolute top-6 right-6 w-8 h-8 text-[#b9d7ef]" />
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -13,9 +13,8 @@
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.10.1",
     "@supabase/supabase-js": "^2.80.0",
-    "@tensorflow/tfjs": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.13.2",
-    "face-api.js": "^0.20.0",
     "formidable": "^3.5.4",
     "formik": "^2.4.8",
     "html2canvas": "^1.4.1",

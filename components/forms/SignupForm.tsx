@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useEffect, useRef, useState } from "react";
+import { useReducer, useEffect, useRef, useState, useCallback } from "react";
 import RoleSelect from "./RoleSelect";
 import SignupFields from "./SignupFields";
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -12,6 +12,8 @@ import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import { ACTIONS } from "@/constants/signupActions";
 import logger from "@/lib/logger";
 import axios from "axios";
+
+const FACE_API_MODULE = "@vladmandic/face-api/dist/face-api.esm.js";
 
 type Role = typeof JOBSEEKER | typeof EMPLOYER;
 
@@ -56,6 +58,20 @@ type SignupErrorShape = {
     longMessage?: string;
     message?: string;
   }>;
+};
+
+type FaceApiModule = {
+  nets: {
+    tinyFaceDetector: {
+      isLoaded: boolean;
+      loadFromUri: (uri: string) => Promise<void>;
+    };
+  };
+  TinyFaceDetectorOptions: new (opts: { scoreThreshold: number }) => unknown;
+  detectAllFaces: (
+    input: HTMLVideoElement,
+    options: unknown,
+  ) => Promise<unknown[]>;
 };
 
 export default function SignupForm({ initialRole }: { initialRole?: Role }) {
@@ -124,7 +140,13 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   );
   const [capturedImage, setCapturedImage] = useState<File | null>(null);
   const [registrationId, setRegistrationId] = useState<string | null>(null);
+  const [faceDetectionError, setFaceDetectionError] = useState<string | null>(
+    null,
+  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const modelsLoadedRef = useRef(false);
+  const faceApiRef = useRef<FaceApiModule | null>(null);
+  const modelInitInFlightRef = useRef(false);
   // const [verifying, setVerifying] = useState(false);
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
@@ -201,23 +223,60 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
   }, [state.preview, state.stream]);
 
   useEffect(() => {
-    const loadModels = async () => {
+    modelsLoadedRef.current = state.modelsLoaded;
+  }, [state.modelsLoaded]);
+
+  const initializeFaceDetector = useCallback(async () => {
+    if (modelsLoadedRef.current) return true;
+    if (modelInitInFlightRef.current) return false;
+
+    modelInitInFlightRef.current = true;
+    try {
       const MODEL_URL = "/models";
-      // ⚡ PERFORMANCE: Load face-api only when needed (lazy loading)
-      const faceapi = await import("face-api.js");
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      const faceapi = faceApiRef.current ?? (await import(FACE_API_MODULE));
+      faceApiRef.current = faceapi;
+
+      if (!faceapi.nets.tinyFaceDetector.isLoaded) {
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      }
+
+      modelsLoadedRef.current = true;
       dispatch({ type: ACTIONS.setModelsLoaded, payload: true });
-    };
-    loadModels();
+      setFaceDetectionError(null);
+      return true;
+    } catch (error) {
+      console.error("Failed to load face detector model", error);
+      logger.error("Failed to load face detector model", error);
+      modelsLoadedRef.current = false;
+      dispatch({ type: ACTIONS.setModelsLoaded, payload: false });
+      setFaceDetectionError(
+        "Face detector could not be initialized. Face verification is blocked until detector starts.",
+      );
+      return false;
+    } finally {
+      modelInitInFlightRef.current = false;
+    }
   }, []);
+
+  useEffect(() => {
+    void initializeFaceDetector();
+  }, [initializeFaceDetector]);
 
   useEffect(() => {
     if (!state.modelsLoaded || !state.isStreaming || !videoRef.current) return;
     let isMounted = true;
     const interval = setInterval(async () => {
       if (!videoRef.current) return;
+      if (
+        videoRef.current.readyState < 2 ||
+        videoRef.current.videoWidth === 0 ||
+        videoRef.current.videoHeight === 0
+      ) {
+        return;
+      }
       try {
-        const faceapi = await import("face-api.js");
+        const faceapi = faceApiRef.current ?? (await import(FACE_API_MODULE));
+        faceApiRef.current = faceapi;
         const detections = await faceapi.detectAllFaces(
           videoRef.current as HTMLVideoElement,
           new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 }),
@@ -225,7 +284,14 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         if (isMounted)
           dispatch({ type: ACTIONS.setFaceCount, payload: detections.length });
       } catch (e) {
+        console.error("Face detection error", e);
         logger.error("Face detection error:", e);
+        if (isMounted) {
+          dispatch({ type: ACTIONS.setModelsLoaded, payload: false });
+          setFaceDetectionError(
+            "Face detector stopped unexpectedly. Please reopen camera and try again.",
+          );
+        }
       }
     }, 500);
 
@@ -598,6 +664,16 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
 
   async function openCamera() {
     try {
+      const detectorReady = await initializeFaceDetector();
+      if (!detectorReady) {
+        Swal.fire({
+          icon: "error",
+          title: "Face Detector Not Ready",
+          text: "Face detector is required. Please refresh and try again.",
+        });
+        return;
+      }
+
       const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
         audio: false,
@@ -652,6 +728,8 @@ export default function SignupForm({ initialRole }: { initialRole?: Role }) {
         videoRef={videoRef}
         isStreaming={state.isStreaming}
         faceCount={state.faceCount}
+        modelsLoaded={state.modelsLoaded}
+        faceDetectionError={faceDetectionError}
         capturedImage={capturedImage}
         onOpenCamera={openCamera}
         onStopCamera={stopCamera}

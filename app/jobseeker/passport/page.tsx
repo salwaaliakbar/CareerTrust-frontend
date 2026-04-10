@@ -140,25 +140,27 @@ const PassportPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="flex flex-col min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 smooth-enter">
       <Header />
-      <main className="flex-grow">
+      <main className="grow">
         {/* Refresh Button */}
-        <div className="container mx-auto px-4 pt-6">
+        <div className="container mx-auto px-4 pt-6 fade-in-up">
           <button
             onClick={() => fetchJobseekerProfile(true)}
             disabled={refreshing}
-            className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh Verified Employment'}
           </button>
         </div>
         
-        <DigitalEmploymentPassport
-          verifiedEmployment={verifiedEmployment}
-          allEmployment={allEmployment}
-        />
+        <div className="smooth-enter animation-delay-100">
+          <DigitalEmploymentPassport
+            verifiedEmployment={verifiedEmployment}
+            allEmployment={allEmployment}
+          />
+        </div>
       </main>
       <Footer />
     </div>
