@@ -149,6 +149,14 @@ export default function ApplicationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const staggerClass = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+    "animation-delay-600",
+  ];
 
   useEffect(() => {
     if (!isLoaded || !userId) return;
@@ -218,21 +226,21 @@ export default function ApplicationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col smooth-enter">
       <Header />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
         {/* Back link */}
         <Link
           href="/jobseeker/dashboard"
-          className="inline-flex items-center gap-2 text-primary hover:text-blue-900 font-semibold mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-primary hover:text-blue-900 font-semibold mb-6 transition-colors fade-in-up"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </Link>
 
         {/* Page header */}
-        <div className="mb-6">
+        <div className="mb-6 fade-in-up animation-delay-100">
           <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
           <p className="text-gray-500 mt-1">
             Track the status of all your job applications.
@@ -241,7 +249,7 @@ export default function ApplicationsPage() {
 
         {/* Stats strip */}
         {!loading && applications.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 fade-in-up animation-delay-200">
             {(
               [
                 ["Total", applications.length, "bg-blue-50 text-blue-700"],
@@ -269,8 +277,8 @@ export default function ApplicationsPage() {
                   "bg-red-50 text-red-700",
                 ],
               ] as [string, number, string][]
-            ).map(([label, count, cls]) => (
-              <div key={label} className={`rounded-xl p-4 ${cls} text-center`}>
+            ).map(([label, count, cls], idx) => (
+              <div key={label} className={`rounded-xl p-4 ${cls} text-center fade-in-up ${staggerClass[idx % staggerClass.length]}`}>
                 <p className="text-2xl font-bold">{count}</p>
                 <p className="text-xs font-medium mt-0.5">{label}</p>
               </div>
@@ -279,7 +287,7 @@ export default function ApplicationsPage() {
         )}
 
         {/* Filters row */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 fade-in-up animation-delay-300">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -295,6 +303,8 @@ export default function ApplicationsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter applications by status"
+              title="Filter applications by status"
               className="pl-9 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 appearance-none"
             >
               <option value="all">All Statuses</option>
@@ -344,10 +354,10 @@ export default function ApplicationsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((app) => (
+            {filtered.map((app, idx) => (
               <div
                 key={app.id}
-                className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                className={`bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200 fade-in-up ${staggerClass[idx % staggerClass.length]}`}
               >
                 <div className="flex items-start gap-4">
                   <CompanyLogo job={app.job} />

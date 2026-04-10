@@ -49,6 +49,13 @@ export default function JobseekerReviewsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const staggerClass = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -148,8 +155,8 @@ export default function JobseekerReviewsPage() {
       <Header />
       <div className="h-1 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-purple-500" />
       <main className="min-h-screen bg-[#F4F6FB] pt-8 pb-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 space-y-8">
-          <div className="relative overflow-hidden rounded-3xl shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 space-y-8 smooth-enter">
+          <div className="relative overflow-hidden rounded-3xl shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)] fade-in-up">
             <div className="absolute inset-0 bg-[#0B1F45]" />
             <div className="absolute inset-0 opacity-60 bg-[radial-gradient(ellipse_at_20%_50%,#1e40af44_0%,transparent_60%),radial-gradient(ellipse_at_80%_20%,#7c3aed33_0%,transparent_55%),radial-gradient(ellipse_at_60%_80%,#0ea5e922_0%,transparent_50%)]" />
             <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] bg-size-[40px_40px]" />
@@ -170,7 +177,7 @@ export default function JobseekerReviewsPage() {
                   </p>
                 </div>
 
-                <div className="grid w-full grid-cols-3 gap-3 md:w-auto md:min-w-[360px]">
+                <div className="grid w-full grid-cols-3 gap-3 md:w-auto md:min-w-90">
                   <div className="rounded-xl border border-white/20 bg-white/10 px-3 py-3 text-center backdrop-blur-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-100/80">
                       Eligible
@@ -226,13 +233,13 @@ export default function JobseekerReviewsPage() {
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
-              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:col-span-7">
+              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:col-span-7 fade-in-up animation-delay-100">
                 <div className="border-b border-slate-100 bg-linear-to-r from-slate-50 to-blue-50/40 px-6 py-4">
                   <h2 className="text-lg font-bold text-slate-900">Software House Information</h2>
                   <p className="text-sm text-slate-500">Select a company to write or update your review</p>
                 </div>
                 <div className="space-y-4 p-4">
-                  {companies.map((item) => {
+                  {companies.map((item, idx) => {
                     const isSelected = item.company.id === selectedCompanyId;
                     return (
                       <button
@@ -243,7 +250,7 @@ export default function JobseekerReviewsPage() {
                           isSelected
                             ? "border-blue-300 ring-2 ring-blue-100 shadow-[0_8px_22px_-14px_rgba(37,99,235,0.35)]"
                             : "border-slate-200 hover:border-blue-200 hover:shadow-md"
-                        }`}
+                        } fade-in-up ${staggerClass[idx % staggerClass.length]}`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-4">
@@ -306,7 +313,7 @@ export default function JobseekerReviewsPage() {
                 </div>
               </section>
 
-              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:col-span-5 lg:sticky lg:top-24">
+              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:col-span-5 lg:sticky lg:top-24 fade-in-up animation-delay-200">
                 <div className="p-6">
                 {selectedCompany ? (
                   <>

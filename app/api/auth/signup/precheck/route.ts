@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
     if (rateLimitError) return rateLimitError;
 
     const body = await request.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const backendResponse = await fetch(API_ENDPOINTS.USERS_PRECHECK, {
       method: "POST",
       headers: {
@@ -27,12 +29,29 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${process.env.BACKEND_API_KEY || ""}`,
       },
       body: JSON.stringify(body),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
-    const data = await backendResponse.json();
+    const responseText = await backendResponse.text();
+    let data: unknown = {};
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = { message: responseText };
+      }
+    }
     return NextResponse.json(data, { status: backendResponse.status });
   } catch (error) {
     logger.error({ error }, "BFF signup precheck failed");
+
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json(
+        { message: "Signup precheck timed out. Please try again." },
+        { status: 504 },
+      );
+    }
+
     return NextResponse.json(
       { message: "Failed to complete signup precheck" },
       { status: 500 },

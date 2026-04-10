@@ -30,6 +30,13 @@ const ExitRequestPage = () => {
 
   const [employments, setEmployments] = useState<EmploymentRecord[]>([]);
   const [exitRequests, setExitRequests] = useState<ExitRequest[]>([]);
+  const staggerClass = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+  ];
   const [loading, setLoading] = useState(true);
   const [selectedEmployment, setSelectedEmployment] =
     useState<EmploymentRecord | null>(null);
@@ -81,10 +88,10 @@ const ExitRequestPage = () => {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pt-20 pb-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50 pt-20 pb-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 smooth-enter">
           {/* Page Header */}
-          <div className="mb-8">
+          <div className="mb-8 fade-in-up">
             <div className="mb-2">
               <Link
                 href="/jobseeker/profile"
@@ -94,7 +101,7 @@ const ExitRequestPage = () => {
               </Link>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-linear-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
                 <LogOut className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -110,12 +117,12 @@ const ExitRequestPage = () => {
 
           {/* Submitted Exit Requests */}
           {exitRequests.length > 0 && (
-            <div className="mb-10">
+            <div className="mb-10 fade-in-up animation-delay-100">
               <h2 className="text-lg font-semibold text-slate-800 mb-4">
                 My Submitted Requests
               </h2>
               <div className="space-y-3">
-                {exitRequests.map((req) => {
+                {exitRequests.map((req, idx) => {
                   const statusConfig = {
                     pending: {
                       icon: <Clock className="w-4 h-4 text-amber-500" />,
@@ -136,7 +143,7 @@ const ExitRequestPage = () => {
                   return (
                     <div
                       key={req.id}
-                      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5"
+                      className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-5 fade-in-up ${staggerClass[idx % staggerClass.length]}`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
@@ -212,22 +219,22 @@ const ExitRequestPage = () => {
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 fade-in-up animation-delay-200">
               <p className="text-sm text-slate-500 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-500" />
                 Select a current (active) employment below to submit an exit
                 request.
               </p>
 
-              {employments.map((emp) => (
+              {employments.map((emp, idx) => (
                 <div
                   key={emp.id}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 p-6"
+                  className={`bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 p-6 fade-in-up ${staggerClass[idx % staggerClass.length]}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                       {/* Icon */}
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 bg-linear-to-br from-blue-50 to-indigo-100 rounded-xl flex items-center justify-center shrink-0">
                         <Building2 className="w-6 h-6 text-blue-600" />
                       </div>
 
@@ -268,13 +275,13 @@ const ExitRequestPage = () => {
                     {emp.currentlyWorking ? (
                       <button
                         onClick={() => setSelectedEmployment(emp)}
-                        className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-semibold rounded-xl shadow hover:from-red-600 hover:to-orange-600 transition-all duration-200"
+                        className="shrink-0 flex items-center gap-2 px-4 py-2 bg-linear-to-r from-red-500 to-orange-500 text-white text-sm font-semibold rounded-xl shadow hover:from-red-600 hover:to-orange-600 transition-all duration-200"
                       >
                         <LogOut className="w-4 h-4" />
                         Request Exit
                       </button>
                     ) : (
-                      <span className="flex-shrink-0 px-4 py-2 text-xs text-slate-400 border border-slate-200 rounded-xl bg-slate-50">
+                      <span className="shrink-0 px-4 py-2 text-xs text-slate-400 border border-slate-200 rounded-xl bg-slate-50">
                         Not active
                       </span>
                     )}

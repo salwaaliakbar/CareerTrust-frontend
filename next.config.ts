@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   experimental: {
     // Enable optimized package imports to reduce bundle size
-    optimizePackageImports: ["lucide-react", "@tensorflow/tfjs", "face-api.js"],
+    optimizePackageImports: ["lucide-react"],
   },
   // Ensure Turbopack uses this project root (prevents picking parent lockfiles)
   turbopack: {
