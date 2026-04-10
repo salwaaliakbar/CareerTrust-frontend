@@ -7,10 +7,10 @@ import { STEPS } from "@/data/home/steps";
 
 const steps = STEPS;
 const stepDelayClass = [
+  "animation-delay-100",
+  "animation-delay-300",
   "animation-delay-500",
   "animation-delay-700",
-  "animation-delay-900",
-  "animation-delay-1000",
 ];
 
 function HowItWorksSection() {
@@ -77,7 +77,7 @@ function HowItWorksSection() {
               {steps.map((step, idx) => {
                 const palettes = [
                   { bg: "bg-[#d8efff]", text: "text-[#0c2b4e]", ring: "ring-[#9acaf0]", border: "border-[#9acaf0]" },
-                  { bg: "bg-[#fbe6be]", text: "text-[#8c5a0b]", ring: "ring-[#edc274]", border: "border-[#edc274]" },
+                  { bg: "bg-[#e4e8ff]", text: "text-[#3d4b95]", ring: "ring-[#bcc5f3]", border: "border-[#bcc5f3]" },
                   { bg: "bg-[#d8f2e7]", text: "text-[#1f5b45]", ring: "ring-[#9fd8c0]", border: "border-[#9fd8c0]" },
                   { bg: "bg-[#e4e8ff]", text: "text-[#3d4b95]", ring: "ring-[#bcc5f3]", border: "border-[#bcc5f3]" },
                 ];
@@ -87,7 +87,7 @@ function HowItWorksSection() {
                   <div
                     key={step.number}
                     className={`p-6 bg-white rounded-2xl border border-[#d6e5f3] border-l-4 ${pal.border} shadow-[0_16px_38px_-30px_rgba(8,34,61,0.7)] hover:shadow-[0_22px_42px_-26px_rgba(8,34,61,0.72)] transition-all duration-500 hover:-translate-y-1 ${stepDelayClass[idx % stepDelayClass.length]} ${
-                      inView ? "slide-in-right opacity-100" : "opacity-0 translate-x-6"
+                      inView ? "smooth-enter-right opacity-100" : "opacity-0 translate-x-6"
                     }`}
                   >
                     <div className="flex items-start gap-4">

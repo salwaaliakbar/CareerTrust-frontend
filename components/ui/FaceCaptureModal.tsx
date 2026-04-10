@@ -11,6 +11,8 @@ type Props = {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   isStreaming: boolean;
   faceCount: number;
+  modelsLoaded: boolean;
+  faceDetectionError: string | null;
   capturedImage: File | null;
   onOpenCamera: () => Promise<void> | void;
   onStopCamera: () => void;
@@ -27,6 +29,8 @@ export default function FaceCaptureModal({
   videoRef,
   isStreaming,
   faceCount,
+  modelsLoaded,
+  faceDetectionError,
   capturedImage,
   onOpenCamera,
   onStopCamera,
@@ -70,6 +74,11 @@ export default function FaceCaptureModal({
             <p className="text-sm text-gray-600">
               Please capture a clear photo of your face. Make sure you are in a well-lit area and looking directly at the camera.
             </p>
+            {faceDetectionError && (
+              <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                {faceDetectionError}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -89,6 +98,12 @@ export default function FaceCaptureModal({
                   <span className={`text-sm font-medium ${faceCount === 1 ? 'text-green-600' : 'text-orange-600'}`}>
                     {faceCount === 1 ? '✓ One face detected' : `⚠ ${faceCount} faces detected`}
                   </span>
+                </div>
+              )}
+
+              {isStreaming && !modelsLoaded && !faceDetectionError && (
+                <div className="mt-2 text-center text-sm text-blue-700">
+                  Initializing face detector...
                 </div>
               )}
 
@@ -115,15 +130,26 @@ export default function FaceCaptureModal({
 
                     <button
                       type="button"
-                      disabled={!isStreaming || faceCount !== 1 || isProcessing}
+                      disabled={
+                        !isStreaming ||
+                        !modelsLoaded ||
+                        faceCount !== 1 ||
+                        isProcessing
+                      }
                       className={`flex-1 px-4 py-2 rounded-lg transition ${
-                        faceCount !== 1 || isProcessing
+                        (!modelsLoaded || faceCount !== 1 || isProcessing)
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : 'bg-green-600 text-white hover:bg-green-700'
                       }`}
                       onClick={onCapturePhoto}
                     >
-                      {faceCount === 0 ? 'No face detected' : faceCount > 1 ? 'Multiple faces' : 'Capture Photo'}
+                      {!modelsLoaded
+                        ? 'Detector not ready'
+                        : faceCount === 0
+                          ? 'No face detected'
+                          : faceCount > 1
+                            ? 'Multiple faces'
+                            : 'Capture Photo'}
                     </button>
                   </>
                 )}

@@ -2,12 +2,12 @@ import { FEATURE } from "@/data/home/featuredData";
 
 function FeaturesSection() {
   const delayClass = [
+    "animation-delay-100",
+    "animation-delay-200",
     "animation-delay-300",
     "animation-delay-400",
     "animation-delay-500",
     "animation-delay-600",
-    "animation-delay-700",
-    "animation-delay-800",
   ];
 
   return (
@@ -36,29 +36,24 @@ function FeaturesSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURE.map((feature, index) => {
             const Icon = feature.icon;
-            const isAccent = feature.colorClass.includes("accent");
-            
-            const bgClass = isAccent ? "bg-[#fbe6be]" : "bg-[#d8efff]";
-            const textClass = isAccent ? "text-[#8c5a0b]" : "text-[#0c2b4e]";
-            const borderColor = isAccent ? "border-[#edc274]" : "border-[#9fcff1]";
+
+            const bgClass = "bg-[#d8efff]";
+            const textClass = "text-[#0c2b4e]";
+            const borderColor = "border-[#9fcff1]";
 
             return (
               <div
                 key={index}
-                className={`group relative bg-white rounded-2xl p-7 border-l-4 ${borderColor} border border-[#d9e6f2] transition-all duration-500 fade-in ${
+                className={`group relative bg-white rounded-2xl p-7 border-l-4 ${borderColor} border border-[#d9e6f2] transition-all duration-500 fade-in-up ${
                   "shadow-[0_16px_36px_-28px_rgba(11,34,58,0.75)] hover:shadow-[0_24px_50px_-24px_rgba(11,34,58,0.78)] hover:-translate-y-1"
                 } ${delayClass[index % delayClass.length]}`}
               >
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${
-                  isAccent
-                    ? "from-transparent via-[#d2a24e] to-transparent"
-                    : "from-transparent via-[#0c2b4e] to-transparent"
-                } rounded-t-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-100`} />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-transparent via-[#0c2b4e] to-transparent rounded-t-2xl transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
 
                 <div className="relative mb-6">
                   <div className={`absolute -inset-2 rounded-xl ${bgClass} opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm`} />
 
-                  <div className={`relative w-14 h-14 rounded-xl ${bgClass} border border-[#d8e5f3] flex items-center justify-center ${textClass} shadow-sm transition-all duration-300`}>
+                  <div className={`relative w-14 h-14 rounded-xl ${bgClass} border border-[#d9e6f2] flex items-center justify-center ${textClass} shadow-sm transition-all duration-300`}>
                     <Icon className="w-7 h-7" />
                   </div>
                 </div>

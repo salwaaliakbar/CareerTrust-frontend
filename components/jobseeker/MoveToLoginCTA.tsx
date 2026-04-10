@@ -7,14 +7,14 @@ const MoveToLoginCTA = () => {
       {/* Background Effects */}
       <div className="max-w-7xl mx-auto bg-linear-to-br from-[#0b253f] via-[#123f62] to-[#1d546c] relative rounded-3xl overflow-hidden border border-[#2d6488]/30 shadow-[0_26px_70px_-34px_rgba(5,25,45,0.78)]">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-20 w-64 h-64 bg-amber-500 rounded-full blur-3xl pulse-slow" />
-          <div className="absolute bottom-10 left-20 w-80 h-80 bg-amber-500 rounded-full blur-3xl pulse-slow animation-delay-700" />
+          <div className="absolute top-10 right-20 w-64 h-64 bg-[#f4c56a] rounded-full blur-3xl pulse-slow" />
+          <div className="absolute bottom-10 left-20 w-80 h-80 bg-[#f4c56a] rounded-full blur-3xl pulse-slow animation-delay-700" />
         </div>
 
         <div className="container mx-auto px-4 py-16 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-6 fade-in-up">
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <Sparkles className="w-4 h-4 text-[#f4c56a]" />
               <span className="text-[#F4F4F4]/90 text-sm font-medium">
                 Join CareerTrust{`'`}s fastest-growing job platform
               </span>
@@ -32,7 +32,7 @@ const MoveToLoginCTA = () => {
               <Link
                 href="/login"
                 aria-label="Sign in to your account"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold bg-amber-500 text-white shadow-lg hover:bg-amber-600 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold bg-[#f4c56a] text-[#0c2b4e] shadow-lg hover:bg-[#f4c56a]/90 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c56a]/40"
               >
                 Sign In Now
                 <ArrowRight className="w-5 h-5" />
@@ -40,7 +40,7 @@ const MoveToLoginCTA = () => {
               <Link
                 href="/signup"
                 aria-label="Create a free account"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-3 font-semibold border-2 border-amber-500/50 text-amber-500 bg-transparent hover:bg-amber-500/10 transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-6 py-3 font-semibold border-2 border-[#f4c56a] text-[#f4c56a] bg-transparent hover:bg-[#f4c56a]/10 transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c56a]/30"
               >
                 Create Free Account
               </Link>
