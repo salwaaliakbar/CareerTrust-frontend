@@ -1,18 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
-import { getAllJobs, type Job } from "@/redux/store/slices/jobsSlice";
-import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getJobLocations } from "@/redux/store/slices/jobsSlice";
 
 export default function JobSearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("");
   const dispatch = useAppDispatch();
-  const { items: jobs } = useAppSelector((state) => state.jobs);
+  const { locations } = useAppSelector((state) => state.jobs);
+
+  useEffect(() => {
+    dispatch(getJobLocations());
+  }, [dispatch]);
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -23,10 +25,6 @@ export default function JobSearchBar() {
     const url = `/jobs${params.toString() ? `?${params.toString()}` : ""}`;
     router.push(url);
   };
-
-  const locations = useMemo(() => {
-      return Array.from(new Set(jobs.map((j) => j.location))).sort();
-    }, [jobs]);
 
   return (
     <form onSubmit={handleSearch} className="max-w-4xl mx-auto">

@@ -3,11 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation";
-import { LogOut, User, DoorOpen, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  LogOut,
+  User,
+  DoorOpen,
+  MessageSquare,
+  Menu,
+  X,
+  Star,
+} from "lucide-react";
 import { useNotificationState } from "@/hooks/useNotificationState";
 import NotificationSidebar from "@/components/ui/NotificationSidebar";
-import HomeDropdown from "../ui/HomeDropdown";
+import NavDropdown from "./NavDropdown";
 import Swal from "sweetalert2";
 // import { LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,7 +30,6 @@ function Header() {
   const { signOut } = useClerk();
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const pathname = usePathname();
   const {
     notifications,
     markAllAsRead,
@@ -32,6 +39,7 @@ function Header() {
   } = useNotificationState();
   const [showSidebar, setShowSidebar] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const unreadCount = notifications.filter((n) => !n.read).length;
   const latestNotificationKey = notifications[0]?.id || "no-notification";
@@ -90,16 +98,17 @@ function Header() {
     }
   };
 
-  const userRole = user?.unsafeMetadata?.role as string;
-  const isActiveRoute = (match: string) =>
-    pathname === match || pathname.startsWith(`${match}/`);
+  const userRole = user?.unsafeMetadata?.role as string | undefined;
+  const isEmployer = isSignedIn && userRole === "employer";
+  const isJobseeker = isSignedIn && userRole === "jobseeker";
+  const logoHref = isEmployer ? "/employer" : isJobseeker ? "/jobseeker" : "/";
 
   return (
     <header className="sticky top-0 z-50 border-b border-blue-100 bg-white/95 backdrop-blur-md shadow-[0_8px_22px_-18px_rgba(37,99,235,0.35)] transition-all duration-300">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[70px] flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-auto py-3 md:h-17.5 md:py-0 flex items-center justify-between">
         {/* Logo */}
         <Link
-          href="/"
+          href={logoHref}
           className="flex items-center gap-2 transition-transform duration-300 hover:scale-105"
         >
           <Image
@@ -111,149 +120,12 @@ function Header() {
           />
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Hidden on mobile */}
         <div className="hidden md:flex items-center gap-7">
-          {isSignedIn ? (
-            <>
-              {[
-                {
-                  href:
-                    userRole === "employer"
-                      ? "/employer/dashboard"
-                      : "/jobseeker/dashboard",
-                  label: "Dashboard",
-                  match:
-                    userRole === "employer"
-                      ? "/employer/dashboard"
-                      : "/jobseeker/dashboard",
-                  bold: true,
-                },
-                userRole === "jobseeker" && {
-                  href: "/jobs",
-                  label: "Jobs",
-                  match: "/jobs",
-                },
-                { href: "/about", label: "About", match: "/about" },
-                { href: "/features", label: "Features", match: "/features" },
-                { href: "/services", label: "Services", match: "/services" },
-                { href: "/blogs", label: "Blogs", match: "/blogs" },
-                { href: "/contact", label: "Contact", match: "/contact" },
-              ]
-                .filter(Boolean)
-                .map(({ href, label, match, bold }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                      isActiveRoute(match)
-                        ? "text-[#0A1F44] font-bold"
-                        : "text-slate-600 hover:text-blue-600 font-semibold"
-                    } ${bold ? "font-bold" : ""}`}
-                  >
-                    {label}
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                        isActiveRoute(match)
-                          ? "w-full bg-[#123560]"
-                          : "w-0 bg-transparent"
-                      }`}
-                    ></span>
-                  </Link>
-                ))}
-            </>
-          ) : (
-            <>
-              <HomeDropdown />
-              <Link
-                href="/about"
-                className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                  isActiveRoute("/about")
-                    ? "text-[#0A1F44] font-bold"
-                    : "text-slate-600 hover:text-blue-600 font-semibold"
-                }`}
-              >
-                About
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                    isActiveRoute("/about")
-                      ? "w-full bg-[#123560]"
-                      : "w-0 bg-transparent"
-                  }`}
-                ></span>
-              </Link>
-              <Link
-                href="/features"
-                className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                  isActiveRoute("/features")
-                    ? "text-[#0A1F44] font-bold"
-                    : "text-slate-600 hover:text-blue-600 font-semibold"
-                }`}
-              >
-                Features
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                    isActiveRoute("/features")
-                      ? "w-full bg-[#123560]"
-                      : "w-0 bg-transparent"
-                  }`}
-                ></span>
-              </Link>
-              <Link
-                href="/services"
-                className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                  isActiveRoute("/services")
-                    ? "text-[#0A1F44] font-bold"
-                    : "text-slate-600 hover:text-blue-600 font-semibold"
-                }`}
-              >
-                Services
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                    isActiveRoute("/services")
-                      ? "w-full bg-[#123560]"
-                      : "w-0 bg-transparent"
-                  }`}
-                ></span>
-              </Link>
-              <Link
-                href="/blogs"
-                className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                  isActiveRoute("/blogs")
-                    ? "text-[#0A1F44] font-bold"
-                    : "text-slate-600 hover:text-blue-600 font-semibold"
-                }`}
-              >
-                Blogs
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                    isActiveRoute("/blogs")
-                      ? "w-full bg-[#123560]"
-                      : "w-0 bg-transparent"
-                  }`}
-                ></span>
-              </Link>
-              <Link
-                href="/contact"
-                className={`relative py-1 text-[15px] transition-colors duration-200 ${
-                  isActiveRoute("/contact")
-                    ? "text-[#0A1F44] font-bold"
-                    : "text-slate-600 hover:text-blue-600 font-semibold"
-                }`}
-              >
-                Contact
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 rounded-full transition-all duration-200 ${
-                    isActiveRoute("/contact")
-                      ? "w-full bg-[#123560]"
-                      : "w-0 bg-transparent"
-                  }`}
-                ></span>
-              </Link>
-            </>
-          )}
+          <NavDropdown isMobile={false} />
         </div>
 
-        {/* CTA Buttons / User Menu */}
+        {/* Desktop CTA & User Menu - Hidden on mobile */}
         <div className="hidden md:flex items-center gap-3">
           {!isLoaded ? (
             <div className="flex items-center gap-3 fade-in">
@@ -312,7 +184,7 @@ function Header() {
               {/* User Dropdown Menu */}
               <div className="relative" ref={userMenuRef}>
                 <button
-                  className="flex items-center gap-2 bg-linear-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 group min-w-[120px]"
+                  className="flex items-center gap-2 bg-linear-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 group min-w-30"
                   id="user-menu-button"
                   aria-haspopup="true"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
@@ -343,111 +215,97 @@ function Header() {
                     className="absolute right-0 mt-2 w-56 min-w-56 bg-white border border-blue-100 rounded-xl shadow-[0_16px_40px_-18px_rgba(15,23,42,0.45)] z-50 animate-fade-in overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                   >
-                  <div className="flex flex-col gap-0.5 py-2">
-                    <div className="flex items-center gap-2 px-5 py-2 border-b border-blue-50 bg-blue-50 rounded-t-xl">
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded-full font-semibold tracking-wide ${userRole === "jobseeker" ? "bg-blue-200 text-blue-900" : "bg-green-200 text-green-900"}`}
+                    <div className="flex flex-col gap-0.5 py-2">
+                      <div className="flex items-center gap-2 px-5 py-2 border-b border-blue-50 bg-blue-50 rounded-t-xl">
+                        <span
+                          className={`px-2 py-0.5 text-xs rounded-full font-semibold tracking-wide ${
+                            isJobseeker
+                              ? "bg-blue-200 text-blue-900"
+                              : isEmployer
+                                ? "bg-green-200 text-green-900"
+                                : "bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          {isJobseeker
+                            ? "Job Seeker"
+                            : isEmployer
+                              ? "Employer"
+                              : "User"}
+                        </span>
+                      </div>
+                      <button
+                        className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          if (isJobseeker) {
+                            router.push("/jobseeker/profile");
+                          } else {
+                            router.push("/employer/profile");
+                          }
+                        }}
                       >
-                        {userRole === "jobseeker" ? "Job Seeker" : "Employer"}
-                      </span>
-                    </div>
-                    <button
-                      className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        if (userRole === "jobseeker") {
-                          router.push("/jobseeker/profile");
-                        } else {
-                          router.push("/employer/profile");
-                        }
-                      }}
-                    >
-                      <svg
-                        className="w-4 h-4 text-blue-700"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      My Profile
-                    </button>
-                    {userRole === "jobseeker" && (
-                      <>
+                        <svg
+                          className="w-4 h-4 text-blue-700"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        My Profile
+                      </button>
+                      {isEmployer && (
                         <button
-
-                          className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
+                          className="flex items-center gap-2 px-5 py-2.5 text-amber-600 hover:bg-amber-50 hover:text-amber-700 text-sm font-semibold transition-all duration-200"
                           onClick={() => {
                             setUserMenuOpen(false);
-                            router.push("/jobseeker/reviews");
+                            router.push("/employer/dashboard?showReputation=true");
                           }}
                         >
-                          <MessageSquare className="w-4 h-4 text-blue-700" />
-                          <span>Leave a Review</span>
+                          <Star className="w-4 h-4" />
+                          View Reputation
                         </button>
-                        <button
-                          className="flex items-center gap-2 px-5 py-2.5 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-sm font-semibold transition-all duration-200"
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            router.push("/jobseeker/exit-request");
-                          }}
-                        >
-                          <DoorOpen className="w-4 h-4" />
-                          <span>Request Job Exit</span>
-
-{/* <!--                           className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-900 text-base font-medium transition-all duration-200"
-                          onClick={() => {
-                            document
-                              .getElementById("user-dropdown-menu")
-                              ?.classList.add("hidden");
-                            router.push("/jobseeker/reviews");
-                          }}
-                        >
-                          <svg
-                            className="w-4 h-4 text-blue-700"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
+                      )}
+                      {isJobseeker && (
+                        <>
+                          <button
+                            className="flex items-center gap-2 px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-900 text-sm font-semibold transition-all duration-200"
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              router.push("/jobseeker/reviews");
+                            }}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                            />
-                          </svg>
-                          Give Company Review
-                        </button>
-                        <button
-                          className="flex items-center gap-2 px-5 py-2 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-base font-medium transition-all duration-200"
-                          onClick={() => {
-                            document
-                              .getElementById("user-dropdown-menu")
-                              ?.classList.add("hidden");
-                            router.push("/jobseeker/exit-request");
-                          }}
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Submit Exit Request --> */}
-                        </button>
-                      </>
-                    )}
-                    <button
-                      className="flex items-center gap-2 px-5 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm font-semibold border-t border-blue-50 transition-all duration-200 rounded-b-xl"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        handleSignOutWithConfirm();
-                      }}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
+                            <MessageSquare className="w-4 h-4 text-blue-700" />
+                            <span>Leave a Review</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-5 py-2.5 text-orange-600 hover:bg-orange-50 hover:text-orange-700 text-sm font-semibold transition-all duration-200"
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              router.push("/jobseeker/exit-request");
+                            }}
+                          >
+                            <DoorOpen className="w-4 h-4" />
+                            <span>Request Job Exit</span>
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className="flex items-center gap-2 px-5 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm font-semibold border-t border-blue-50 transition-all duration-200 rounded-b-xl"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          handleSignOutWithConfirm();
+                        }}
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -470,15 +328,171 @@ function Header() {
           )}
         </div>
 
-        {/* Mobile dropdown (client) */}
-        {/* <DropdownMenu
-          login={LOGIN}
-          signup={SIGNUP}
-          isSignedIn={isSignedIn}
-          user={user}
-          onSignOut={handleSignOut}
-        /> */}
+        {/* Mobile Menu Button - Shown only on mobile */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? (
+            <X className="w-6 h-6 text-slate-700" />
+          ) : (
+            <Menu className="w-6 h-6 text-slate-700" />
+          )}
+        </button>
       </nav>
+
+      {/* Mobile Menu - Shown only on mobile when open */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-blue-100 bg-white animate-fade-in">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+            {/* Mobile Navigation */}
+            <NavDropdown isMobile={true} />
+
+            {/* Mobile CTA & User Menu */}
+            {!isLoaded ? (
+              <div className="space-y-2">
+                <div className="w-full h-10 bg-gray-200 animate-pulse rounded-lg shimmer-loading"></div>
+                <div className="w-full h-10 bg-gray-200 animate-pulse rounded-lg shimmer-loading"></div>
+              </div>
+            ) : isSignedIn ? (
+              <div className="space-y-2">
+                {/* Notification Bell for Mobile */}
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-blue-50 text-blue-700 font-semibold transition-all relative"
+                  onClick={() => {
+                    setShowSidebar(true);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Profile Button for Mobile */}
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-blue-50 text-blue-700 font-semibold transition-all"
+                  onClick={() => {
+                    if (userRole === "jobseeker") {
+                      router.push("/jobseeker/profile");
+                    } else {
+                      router.push("/employer/profile");
+                    }
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <User className="w-5 h-5" />
+                  <span>My Profile</span>
+                </button>
+
+                {/* View Reputation for Mobile (Employers Only) */}
+                {isEmployer && (
+                  <button
+                    className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-amber-50 text-amber-600 font-semibold transition-all"
+                    onClick={() => {
+                      router.push("/employer/dashboard?showReputation=true");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <Star className="w-5 h-5" />
+                    <span>View Reputation</span>
+                  </button>
+                )}
+
+                {/* Leave Review for Jobseekers */}
+                {userRole === "jobseeker" && (
+                  <>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-blue-50 text-blue-700 font-semibold transition-all"
+                      onClick={() => {
+                        router.push("/jobseeker/reviews");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <MessageSquare className="w-5 h-5" />
+                      <span>Leave a Review</span>
+                    </button>
+
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-orange-50 text-orange-600 font-semibold transition-all"
+                      onClick={() => {
+                        router.push("/jobseeker/exit-request");
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <DoorOpen className="w-5 h-5" />
+                      <span>Request Job Exit</span>
+                    </button>
+                  </>
+                )}
+
+                {/* Logout Button */}
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-red-50 text-red-600 font-semibold transition-all border-t border-blue-100 mt-2"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOutWithConfirm();
+                  }}
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Link
+                  href={LOGIN}
+                  className="w-full block px-4 py-3 text-center border-2 border-[#0A1F44] text-[#123560] rounded-lg font-semibold hover:bg-blue-50 transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  href={SIGNUP}
+                  className="w-full block px-4 py-3 text-center bg-linear-to-r from-[#0A1F44] via-[#123560] to-[#1A4779] text-white rounded-lg font-semibold transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showSidebar && (
+        <NotificationSidebar
+          notifications={notifications}
+          onClose={() => setShowSidebar(false)}
+          onMarkAllRead={() => {
+            markAllAsRead();
+            setShowSidebar(false);
+          }}
+          onMarkAsRead={markAsRead}
+          onDelete={deleteNotification}
+          onOpenHiredForm={(notification) => {
+            setShowSidebar(false);
+            openHiredForm(notification);
+          }}
+        />
+      )}
     </header>
   );
 }

@@ -5,14 +5,11 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
+import { CONTACT_FAQS, CONTACT_INFO } from "@/data/contact/contactData";
 import {
   ArrowRight,
-  Clock,
   Linkedin,
-  Mail,
-  MapPin,
   MessageCircle,
-  Phone,
   Send,
   ShieldCheck,
   Twitter,
@@ -50,68 +47,6 @@ export default function ContactPage() {
     setTimeout(() => setSubmitted(false), 5000);
   };
 
-  const contactInfo = [
-    {
-      icon: Mail,
-      label: "Email",
-      value: "support@careertrust.com",
-      description: "We'll respond within 24 hours",
-      link: "mailto:support@careertrust.com",
-      delayClass: "animation-delay-100",
-    },
-    {
-      icon: Phone,
-      label: "Phone",
-      value: "+92 (300) 123-4567",
-      description: "Monday to Friday, 9AM-6PM PKT",
-      link: "tel:+923001234567",
-      delayClass: "animation-delay-200",
-    },
-    {
-      icon: MapPin,
-      label: "Office",
-      value: "Karachi, Pakistan",
-      description: "CareerTrust Headquarters",
-      link: null,
-      delayClass: "animation-delay-300",
-    },
-    {
-      icon: Clock,
-      label: "Response Time",
-      value: "Within 24 hours",
-      description: "Average response time",
-      link: null,
-      delayClass: "animation-delay-400",
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "How long does it take to verify my employment?",
-      answer: "Employment verification typically takes 2-5 business days. Both the employer and employee need to confirm the employment record.",
-    },
-    {
-      question: "Can I delete my account?",
-      answer: "Yes, you can request account deletion from your settings. Your verified employment records will remain for transparency, but personal data will be removed.",
-    },
-    {
-      question: "Is CareerTrust available outside Pakistan?",
-      answer: "Currently, CareerTrust operates in Pakistan. We're planning to expand internationally in the coming months.",
-    },
-    {
-      question: "How do I report inappropriate reviews?",
-      answer: "You can report reviews through the review page. Our moderation team reviews all reports within 48 hours.",
-    },
-    {
-      question: "What is your data privacy policy?",
-      answer: "We follow strict data protection standards. Your data is encrypted and never shared with third parties without consent.",
-    },
-    {
-      question: "How can I become a verified employer?",
-      answer: "Complete the employer verification process in your company settings. We'll verify your company through official registrations.",
-    },
-  ];
-
   const faqDelayClasses = [
     "animation-delay-100",
     "animation-delay-200",
@@ -121,13 +56,19 @@ export default function ContactPage() {
     "animation-delay-600",
   ];
 
+  const supportHighlights = [
+    { label: "Avg. Response", value: "< 24h" },
+    { label: "Resolved", value: "92%" },
+    { label: "Coverage", value: "Mon-Fri" },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f4f8fc] flex flex-col">
       <Header />
 
       <main className="flex-1 overflow-hidden">
         <ScrollRevealSection threshold={0.08} rootMargin="0px 0px -8% 0px">
-          <section className="relative overflow-hidden border-b border-white/10 bg-linear-to-br from-[#0C2B4E] via-[#123B66] to-[#1D546C] px-4 pb-20 pt-24 sm:pt-28 text-white">
+          <section className="relative overflow-hidden border-b border-white/10 bg-linear-to-br from-[#0C2B4E] via-[#123B66] to-[#1D546C] px-4 pb-20 pt-15 sm:pt-20 text-white">
             <div className="pointer-events-none absolute inset-0 z-10 bg-linear-to-b from-[#0C2B4E]/45 via-[#0C2B4E]/55 to-[#123B66]/85" />
             <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
             <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-indigo-300/20 blur-3xl" />
@@ -144,6 +85,20 @@ export default function ContactPage() {
                 Have a question about verification, hiring workflows, or your
                 profile? Our team is here to help.
               </p>
+
+              <div className="fade-in-up animation-delay-250 mx-auto mt-7 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+                {supportHighlights.map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-center backdrop-blur-sm"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-100/80">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xl font-black text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
 
               <div className="fade-in-up animation-delay-300 mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
@@ -168,7 +123,7 @@ export default function ContactPage() {
           <section className="relative border-b border-slate-200/80 bg-white py-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {contactInfo.map((info) => {
+                {CONTACT_INFO.map((info) => {
                   const Icon = info.icon;
 
                   const content = (
@@ -193,7 +148,7 @@ export default function ContactPage() {
                   return (
                     <article
                       key={info.label}
-                      className={`fade-in-up ${info.delayClass} card-base rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-sky-100/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-200/60`}
+                      className={`fade-in-up ${info.delayClass} card-base rounded-2xl border border-slate-200 bg-linear-to-br from-white via-blue-50/20 to-white p-6 shadow-[0_10px_26px_-16px_rgba(14,116,144,0.38)] transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-[0_16px_30px_-18px_rgba(14,116,144,0.55)]`}
                     >
                       {info.link ? (
                         <Link href={info.link} className="group flex items-start gap-4">
@@ -215,7 +170,8 @@ export default function ContactPage() {
             <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
                 <div className="fade-in-up lg:col-span-7 xl:col-span-8">
-                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-lg">
+                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-[0_14px_36px_-20px_rgba(30,64,175,0.4)] overflow-hidden">
+                    <div className="-mx-6 -mt-6 mb-6 h-1.5 bg-linear-to-r from-blue-500 via-indigo-500 to-sky-500 sm:-mx-7" />
                     <h2 className="fade-in-up text-2xl font-bold text-slate-900">
                       Send us a Message
                     </h2>
@@ -255,7 +211,7 @@ export default function ContactPage() {
                             value={formData.name}
                             onChange={handleChange}
                             required
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
                             placeholder="Your name"
                           />
                         </div>
@@ -274,7 +230,7 @@ export default function ContactPage() {
                             value={formData.email}
                             onChange={handleChange}
                             required
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
                             placeholder="your@email.com"
                           />
                         </div>
@@ -294,7 +250,7 @@ export default function ContactPage() {
                           value={formData.subject}
                           onChange={handleChange}
                           required
-                          className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
                           placeholder="What is this about?"
                         />
                       </div>
@@ -313,7 +269,7 @@ export default function ContactPage() {
                           onChange={handleChange}
                           required
                           rows={4}
-                          className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-sky-500"
+                          className="w-full resize-none rounded-xl border border-slate-300 bg-slate-50/60 px-3.5 py-2.5 text-slate-900 transition-all duration-300 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
                           placeholder="Tell us more about your inquiry..."
                         />
                       </div>
@@ -345,7 +301,7 @@ export default function ContactPage() {
                 </div>
 
                 <aside className="space-y-5 fade-in-up animation-delay-100 lg:col-span-5 xl:col-span-4 lg:sticky lg:top-24 lg:self-start">
-                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
+                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.45)]">
                     <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
                       <MessageCircle className="h-5 w-5 text-sky-700" />
                       Quick Links
@@ -382,7 +338,7 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
+                  <div className="card-base rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_-18px_rgba(15,23,42,0.45)]">
                     <h3 className="mb-4 font-semibold text-slate-900">Follow Us</h3>
                     <div className="space-y-3">
                       <a
@@ -434,10 +390,10 @@ export default function ContactPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {faqs.map((faq, idx) => (
+                {CONTACT_FAQS.map((faq, idx) => (
                   <article
                     key={faq.question}
-                    className={`card-base rounded-2xl border border-slate-200 bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-lg fade-in-up ${faqDelayClasses[idx] ?? "animation-delay-100"}`}
+                    className={`card-base rounded-2xl border border-slate-200 bg-linear-to-br from-white via-blue-50/15 to-white p-6 shadow-[0_10px_24px_-16px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-[0_16px_32px_-18px_rgba(14,116,144,0.45)] fade-in-up ${faqDelayClasses[idx] ?? "animation-delay-100"}`}
                   >
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">
                       {faq.question}
@@ -453,7 +409,7 @@ export default function ContactPage() {
         </ScrollRevealSection>
 
         <ScrollRevealSection threshold={0.14}>
-          <section className="relative overflow-hidden bg-[#f4f8fc] py-20 px-4">
+          <section className="relative overflow-hidden bg-[#f4f8fc] py-24 px-4">
             <div className="mx-auto max-w-7xl rounded-4xl border border-[#1f4f74]/40 bg-linear-to-br from-[#0b253f] via-[#0f3558] to-[#1d546c] shadow-[0_28px_70px_-30px_rgba(7,26,46,0.8)]">
               <div className="pointer-events-none absolute inset-0 opacity-20">
                 <div className="float absolute right-10 top-8 h-64 w-64 rounded-full bg-[#8ad2ff] blur-3xl" />
@@ -472,7 +428,7 @@ export default function ContactPage() {
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center fade-in animation-delay-300">
                   <Link
                     href="/signup?role=jobseeker"
-                    className="inline-flex items-center justify-center rounded-xl bg-[#8ad2ff] px-8 py-3 font-semibold text-[#0C2B4E] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#a1dcff]"
+                    className="inline-flex items-center justify-center rounded-xl bg-[#f4c56a] text-[#0c2b4e] shadow-lg hover:bg-[#f4c56a]/90 hover:shadow-xl] px-8 py-3 font-semibold transition-all duration-300 hover:-translate-y-0.5 "
                   >
                     Sign Up as Job Seeker
                   </Link>

@@ -21,7 +21,6 @@ export default function EmployerPage() {
           <EmployerSteps />
         </ScrollRevealSection>
 
-        {/* Featured candidates (client carousel) */}
         <ScrollRevealSection threshold={0.14}>
           <FeaturedCandidates />
         </ScrollRevealSection>

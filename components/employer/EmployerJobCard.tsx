@@ -26,7 +26,6 @@ interface EmployerJobCardProps {
   onJobDeleted: (jobId: string | number) => void;
   onJobUpdated: (job: EmployerJob) => void;
   getToken?: () => Promise<string | null>;
-  style?: React.CSSProperties;
 }
 
 export default function EmployerJobCard({
@@ -34,7 +33,6 @@ export default function EmployerJobCard({
   onJobDeleted,
   onJobUpdated,
   getToken,
-  style,
 }: EmployerJobCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -138,7 +136,6 @@ export default function EmployerJobCard({
   return (
     <div
       className="group relative bg-white rounded-2xl p-6 shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-      style={style}
     >
       {/* Status Badge */}
       <div className="absolute top-6 right-6 flex items-center gap-2">
@@ -156,6 +153,8 @@ export default function EmployerJobCard({
             onClick={() => setShowMenu(!showMenu)}
             className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
             disabled={isUpdating}
+            aria-label="Open job actions menu"
+            title="Open job actions menu"
           >
             <MoreVertical className="w-5 h-5 text-slate-600" />
           </button>
@@ -171,7 +170,7 @@ export default function EmployerJobCard({
                 <button
                   onClick={() => {
                     setShowMenu(false);
-                    router.push(`/employer/jobs/edit/${job.id}`);
+                    router.push(`/employer/postedJob/edit/${job.id}`);
                   }}
                   className="w-full px-4 py-2 text-left text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-2"
                 >
@@ -207,7 +206,7 @@ export default function EmployerJobCard({
         </div>
       </div>
 
-      <Link href={`/employer/jobs/${job.id}`} className="block">
+      <Link href={`/employer/postedJob/${job.id}`} className="block">
         {/* Job Header */}
         <div className="mb-4 pr-32">
           <h3 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">

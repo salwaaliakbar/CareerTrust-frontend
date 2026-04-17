@@ -49,6 +49,9 @@ export default function JobseekerReviewsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [failedLogoByCompanyId, setFailedLogoByCompanyId] = useState<
+    Record<number, string>
+  >({});
   const staggerClass = [
     "animation-delay-100",
     "animation-delay-200",
@@ -241,6 +244,20 @@ export default function JobseekerReviewsPage() {
                 <div className="space-y-4 p-4">
                   {companies.map((item, idx) => {
                     const isSelected = item.company.id === selectedCompanyId;
+                    const logo = item.company.logo;
+                    const logoSrc =
+                      logo && (logo.startsWith("http") || logo.startsWith("/"))
+                        ? logo
+                        : "";
+                    const companyInitials = item.company.name
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((word) => word[0])
+                      .join("")
+                      .toUpperCase();
+                    const hasValidLogo =
+                      !!logoSrc && failedLogoByCompanyId[item.company.id] !== logoSrc;
+
                     return (
                       <button
                         key={item.company.id}
@@ -254,16 +271,24 @@ export default function JobseekerReviewsPage() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-4">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
-                              {item.company.logo ? (
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-[#0A1F44] via-[#123560] to-[#1A4779]">
+                              {hasValidLogo ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
-                                  src={item.company.logo}
+                                  src={logoSrc}
                                   alt={item.company.name}
                                   className="h-full w-full object-cover"
+                                  onError={() =>
+                                    setFailedLogoByCompanyId((prev) => ({
+                                      ...prev,
+                                      [item.company.id]: logoSrc,
+                                    }))
+                                  }
                                 />
                               ) : (
-                                <Building2 className="h-7 w-7 text-slate-400" />
+                                <span className="text-sm font-bold text-white tracking-wide">
+                                  {companyInitials}
+                                </span>
                               )}
                             </div>
                             <div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import type { FormikHelpers } from "formik";
@@ -51,6 +51,7 @@ export default function LoginForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleSubmit(
     values: FormValues,
@@ -94,9 +95,14 @@ export default function LoginForm() {
 
         logger.info(`User logged in: ${values.email} as ${userRole}`);
 
-        // Redirect based on role
+        // Redirect to requested page if provided, otherwise fallback to role-based dashboard.
         setTimeout(() => {
-          if (userRole === JOBSEEKER) {
+          const requestedRedirect = searchParams.get("redirect");
+          const isValidRedirect = requestedRedirect?.startsWith("/");
+
+          if (isValidRedirect && requestedRedirect) {
+            router.push(requestedRedirect);
+          } else if (userRole === JOBSEEKER) {
             router.push("/jobseeker/dashboard");
             // router.push("/");
           } else if (userRole === EMPLOYER) {

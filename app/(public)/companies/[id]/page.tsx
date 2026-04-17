@@ -19,14 +19,13 @@ import {
   Building2,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
-import { getCompanyById } from "@/redux/store/slices/companiesSlice";
+import {
+  getCompanyById,
+  getCompanyReputationById,
+} from "@/redux/store/slices/companiesSlice";
 import { Company } from "@/types/company.types";
 import { API_ENDPOINTS } from "@/constants/api";
 import ReputationScoreCard from "@/components/companies/ReputationScoreCard";
-import {
-  fetchCompanyReputation,
-  type CompanyReputation,
-} from "@/services/api/reputation.service";
 
 interface CompanyJob {
   id: number;
@@ -50,16 +49,18 @@ export default function CompanyPage({
     selectedCompany: company,
     loading,
     lastFetchTimeById,
+    reputationById,
   } = useAppSelector((state) => state.companies);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCompany, setEditedCompany] = useState<Company | null>(null);
   const [companyJobs, setCompanyJobs] = useState<CompanyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
-  const [reputation, setReputation] = useState<CompanyReputation | null>(null);
+  const [failedLogoSrc, setFailedLogoSrc] = useState("");
 
   const companyId = Number(id);
+  const cacheKey = String(companyId);
   const CACHE_DURATION = 10 * 60 * 1000;
-  const lastFetchTime = lastFetchTimeById?.[companyId];
+  const lastFetchTime = lastFetchTimeById?.[cacheKey];
 
   const userRole = user?.unsafeMetadata?.role as string | undefined;
   const isCompanyOwner = userRole === "employer";
@@ -71,9 +72,9 @@ export default function CompanyPage({
       company?.id === companyId;
 
     if (!hasFreshCache) {
-      dispatch(getCompanyById(id));
+      dispatch(getCompanyById(cacheKey));
     }
-  }, [id, dispatch, lastFetchTime, company?.id, companyId, CACHE_DURATION]);
+  }, [cacheKey, dispatch, lastFetchTime, company?.id, companyId, CACHE_DURATION]);
 
   // Fetch real jobs for this company
   useEffect(() => {
@@ -109,40 +110,15 @@ export default function CompanyPage({
 
   useEffect(() => {
     if (!companyId) return;
+    dispatch(getCompanyReputationById(cacheKey));
+  }, [companyId, cacheKey, dispatch]);
 
-    let disposed = false;
-
-    const loadReputation = async () => {
-      const result = await fetchCompanyReputation(companyId);
-      if (!disposed) {
-        setReputation(result);
-      }
-    };
-
-    loadReputation();
-
-    return () => {
-      disposed = true;
-    };
-  }, [companyId]);
-
-  // Fetch real jobs for this company
-  useEffect(() => {
-    if (!companyId) return;
-    setJobsLoading(true);
-    fetch(`${API_ENDPOINTS.JOBS}?companyId=${companyId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setCompanyJobs(data.data ?? []);
-      })
-      .catch(() => {})
-      .finally(() => setJobsLoading(false));
-  }, [companyId]);
+  const reputation = reputationById[cacheKey] ?? null;
 
   const handleEditSuccess = (updatedCompany: Company) => {
     setEditedCompany(updatedCompany);
     setIsEditing(false);
-    dispatch(getCompanyById(id));
+    dispatch(getCompanyById(cacheKey));
   };
 
   if (loading) {
@@ -196,7 +172,8 @@ export default function CompanyPage({
   const isLogoUrl =
     currentCompany.logo &&
     (currentCompany.logo.startsWith("http") ||
-      currentCompany.logo.startsWith("/"));
+      currentCompany.logo.startsWith("/")) &&
+    failedLogoSrc !== currentCompany.logo;
 
   const companyInitials = currentCompany.name
     .split(" ")
@@ -262,6 +239,7 @@ export default function CompanyPage({
                         src={currentCompany.logo}
                         alt={currentCompany.name}
                         className="w-full h-full object-cover"
+                        onError={() => setFailedLogoSrc(currentCompany.logo)}
                       />
                     ) : (
                       <span className="text-white font-bold text-xl">

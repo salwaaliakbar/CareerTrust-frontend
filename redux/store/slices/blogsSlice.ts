@@ -1,16 +1,22 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { fetchBlogs, fetchBlogById } from '@/services/api/blogs.service';
-import { Blog, BlogDetail } from '@/types/blog.types';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { fetchBlogsPage, fetchBlogById } from '@/services/api/blogs.service';
+import { Blog, BlogDetail, PaginationMeta } from '@/types/blog.types';
 
 export interface BlogsState {
   items: Blog[];
   selectedBlog: BlogDetail | null;
-  blogsById: Record<string | number, BlogDetail>; // Cache all visited blogs
+  blogsById: Record<string | number, BlogDetail>;
   loading: boolean;
   error: string | null;
   totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
   lastFetchTime: number | null;
-  lastFetchTimeById: Record<string | number, number>; // Timestamp for each cached blog
+  lastFetchTimeById: Record<string | number, number>;
+  lastFetchKey: string | null;
+  pendingListQueryKey: string | null;
+  pendingBlogById: Record<string, boolean>;
 }
 
 const initialState: BlogsState = {
@@ -20,40 +26,123 @@ const initialState: BlogsState = {
   loading: false,
   error: null,
   totalCount: 0,
+  currentPage: 1,
+  pageSize: 12,
+  totalPages: 1,
   lastFetchTime: null,
   lastFetchTimeById: {},
+  lastFetchKey: null,
+  pendingListQueryKey: null,
+  pendingBlogById: {},
 };
 
-// Cache duration: 10 minutes
 const CACHE_DURATION = 10 * 60 * 1000;
 
-// Async thunks
+type BlogsQueryArgs = {
+  forceRefresh?: boolean;
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+};
+
+type PaginatedBlogsResult = {
+  blogs: Blog[];
+  pagination: PaginationMeta;
+  totalCount: number;
+  queryKey: string;
+};
+
+type BlogsSliceState = {
+  blogs: BlogsState;
+};
+
+const buildBlogsQueryKey = (args?: BlogsQueryArgs) =>
+  JSON.stringify({
+    page: args?.page ?? 1,
+    limit: args?.limit ?? 12,
+    search: args?.search || '',
+    category: args?.category || '',
+  });
+
 export const getAllBlogs = createAsyncThunk<
-  Blog[],
-  { forceRefresh?: boolean } | undefined
+  PaginatedBlogsResult,
+  BlogsQueryArgs | undefined
 >(
   'blogs/getAllBlogs',
-  async (args: { forceRefresh?: boolean } | undefined = {}, { getState, rejectWithValue }) => {
+  async (args: BlogsQueryArgs | undefined = {}, { getState, rejectWithValue }) => {
     try {
-      const state = (getState() as any).blogs as BlogsState;
+      const state = (getState() as BlogsSliceState).blogs;
       const now = Date.now();
-      const forceRefresh = typeof args === 'object' && args?.forceRefresh;
+      const forceRefresh = Boolean(args?.forceRefresh);
+      const queryKey = buildBlogsQueryKey(args);
 
-      // Return cached data if fresh (unless force refresh)
       if (
         !forceRefresh &&
-        state.items.length > 0 &&
+        state.lastFetchKey === queryKey &&
         state.lastFetchTime &&
         now - state.lastFetchTime < CACHE_DURATION
       ) {
-        return state.items;
+        return {
+          blogs: state.items,
+          pagination: {
+            currentPage: state.currentPage,
+            pageSize: state.pageSize,
+            totalCount: state.totalCount,
+            totalPages: state.totalPages,
+            hasNextPage: state.currentPage < state.totalPages,
+            hasPreviousPage: state.currentPage > 1,
+          },
+          totalCount: state.totalCount,
+          queryKey,
+        };
       }
 
-      const blogs = await fetchBlogs();
-      return blogs;
+      const response = await fetchBlogsPage({
+        page: args?.page,
+        limit: args?.limit,
+        search: args?.search,
+        category: args?.category,
+      });
+
+      const pagination = response.pagination || {
+        currentPage: args?.page ?? 1,
+        pageSize: args?.limit ?? 12,
+        totalCount: response.total,
+        totalPages: Math.max(1, Math.ceil(response.total / (args?.limit ?? 12))),
+      };
+
+      return {
+        blogs: response.data,
+        pagination,
+        totalCount: response.total,
+        queryKey,
+      };
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to fetch blogs');
     }
+  },
+  {
+    condition: (args: BlogsQueryArgs | undefined = {}, { getState }) => {
+      const state = (getState() as BlogsSliceState).blogs;
+      const forceRefresh = Boolean(args?.forceRefresh);
+      const queryKey = buildBlogsQueryKey(args);
+
+      if (state.pendingListQueryKey === queryKey) {
+        return false;
+      }
+
+      if (
+        !forceRefresh &&
+        state.lastFetchKey === queryKey &&
+        state.lastFetchTime &&
+        Date.now() - state.lastFetchTime < CACHE_DURATION
+      ) {
+        return false;
+      }
+
+      return true;
+    },
   }
 );
 
@@ -61,12 +150,12 @@ export const getBlogById = createAsyncThunk<BlogDetail | null, string | number>(
   'blogs/getBlogById',
   async (id: string | number, { getState, rejectWithValue }) => {
     try {
-      const state = (getState() as any).blogs as BlogsState;
+      const state = (getState() as BlogsSliceState).blogs;
       const now = Date.now();
-      const lastTime = state.lastFetchTimeById[id];
-      const cachedBlog = state.blogsById[id];
+      const cacheKey = String(id);
+      const lastTime = state.lastFetchTimeById[cacheKey];
+      const cachedBlog = state.blogsById[cacheKey];
 
-      // Return cached data if fresh - store all visited blogs
       if (cachedBlog && lastTime && now - lastTime < CACHE_DURATION) {
         return cachedBlog;
       }
@@ -76,6 +165,24 @@ export const getBlogById = createAsyncThunk<BlogDetail | null, string | number>(
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to fetch blog');
     }
+  },
+  {
+    condition: (id: string | number, { getState }) => {
+      const state = (getState() as BlogsSliceState).blogs;
+      const cacheKey = String(id);
+      const lastTime = state.lastFetchTimeById[cacheKey];
+      const cachedBlog = state.blogsById[cacheKey];
+
+      if (state.pendingBlogById[cacheKey]) {
+        return false;
+      }
+
+      if (cachedBlog && lastTime && Date.now() - lastTime < CACHE_DURATION) {
+        return false;
+      }
+
+      return true;
+    },
   }
 );
 
@@ -91,40 +198,49 @@ const blogsSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Get all blogs
     builder
-      .addCase(getAllBlogs.pending, (state) => {
+      .addCase(getAllBlogs.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.pendingListQueryKey = buildBlogsQueryKey(action.meta.arg);
       })
-      .addCase(getAllBlogs.fulfilled, (state, action: PayloadAction<Blog[]>) => {
+      .addCase(getAllBlogs.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
-        state.totalCount = action.payload.length;
+        state.items = action.payload.blogs;
+        state.totalCount = action.payload.totalCount;
+        state.currentPage = action.payload.pagination.currentPage;
+        state.pageSize = action.payload.pagination.pageSize;
+        state.totalPages = action.payload.pagination.totalPages;
         state.lastFetchTime = Date.now();
+        state.lastFetchKey = action.payload.queryKey;
+        state.pendingListQueryKey = null;
       })
       .addCase(getAllBlogs.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.pendingListQueryKey = null;
       });
 
-    // Get blog by ID
     builder
-      .addCase(getBlogById.pending, (state) => {
+      .addCase(getBlogById.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.pendingBlogById[String(action.meta.arg)] = true;
       })
-      .addCase(getBlogById.fulfilled, (state, action: PayloadAction<BlogDetail | null>) => {
+      .addCase(getBlogById.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload) {
           state.selectedBlog = action.payload;
-          state.blogsById[action.payload.id] = action.payload;
-          state.lastFetchTimeById[action.payload.id] = Date.now();
+          const cacheKey = String(action.payload.id);
+          state.blogsById[cacheKey] = action.payload;
+          state.lastFetchTimeById[cacheKey] = Date.now();
         }
+        delete state.pendingBlogById[String(action.meta.arg)];
       })
       .addCase(getBlogById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        delete state.pendingBlogById[String(action.meta.arg)];
       });
   },
 });

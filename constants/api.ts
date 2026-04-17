@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   // Jobs (Node.js Backend API)
   JOBS: `${BACKEND_API_URL}/jobs`,
   JOB_BY_ID: (id: string | number) => `${BACKEND_API_URL}/jobs/${id}`,
+  JOB_LOCATIONS: `${BACKEND_API_URL}/jobs/locations`,
 
   // Companies (Node.js Backend API)
   COMPANIES: `${BACKEND_API_URL}/companies`,

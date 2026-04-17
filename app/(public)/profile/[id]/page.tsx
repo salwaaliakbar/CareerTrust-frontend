@@ -23,10 +23,10 @@ import {
   Clock,
   Building2,
   TrendingUp,
-  Star,
   CheckCircle2,
   XCircle,
   UserX,
+  Sparkles,
 } from "lucide-react";
 
 // Helper function to calculate duration between two dates
@@ -180,10 +180,12 @@ export default function PublicProfilePage() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
-            <p className="text-gray-600 font-medium">Loading profile...</p>
+        <div className="min-h-screen bg-[linear-gradient(135deg,#EEF4FF_0%,#F8FAFF_45%,#ECF2FF_100%)] flex items-center justify-center px-4">
+          <div className="rounded-2xl border border-slate-200 bg-white/90 px-8 py-9 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.5)] backdrop-blur">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-[#0C2B4E]" />
+              <p className="font-semibold text-slate-700">Loading profile...</p>
+            </div>
           </div>
         </div>
         <Footer />
@@ -195,12 +197,12 @@ export default function PublicProfilePage() {
     return (
       <>
         <Header />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">
+        <div className="min-h-screen bg-[linear-gradient(135deg,#EEF4FF_0%,#F8FAFF_45%,#ECF2FF_100%)] flex items-center justify-center px-4">
+          <div className="max-w-md rounded-2xl border border-red-200 bg-white p-8 shadow-[0_18px_45px_-30px_rgba(239,68,68,0.55)]">
+            <h2 className="mb-3 text-2xl font-black text-red-600">
               Profile Not Found
             </h2>
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               {error || "The requested profile could not be found."}
             </p>
           </div>
@@ -213,19 +215,22 @@ export default function PublicProfilePage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 py-12">
-        <div className="max-w-6xl mx-auto px-4">
+      <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(140deg,#EEF4FF_0%,#F7FAFF_40%,#EBF1FD_100%)] py-12">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(12,43,78,0.10),transparent_45%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(26,71,121,0.08),transparent_50%)]" />
+        <div className="relative mx-auto max-w-6xl px-4">
           {/* Profile Header with Background Banner */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-3xl h-32 relative">
-            <div className="absolute -bottom-16 left-8">
+          <div className="relative z-20 h-36 rounded-t-3xl bg-linear-to-r from-[#0C2B4E] via-[#123560] to-[#1D546C]">
+            <div className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,rgba(255,255,255,0.28)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.28)_1px,transparent_1px)] bg-size-[26px_26px]" />
+            <div className="absolute -bottom-16 left-8 z-30">
               {profile.profilePicUrl ? (
                 <img
                   src={profile.profilePicUrl}
                   alt={profile.fullName || "Profile"}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
+                  className="h-32 w-32 rounded-full border-4 border-white object-cover shadow-xl"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-xl">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white bg-linear-to-br from-[#0C2B4E] to-[#1D546C] text-4xl font-black text-white shadow-xl">
                   {profile.fullName?.charAt(0).toUpperCase() || "?"}
                 </div>
               )}
@@ -233,16 +238,16 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Main Profile Card */}
-          <div className="bg-white rounded-b-3xl shadow-xl pt-20 pb-8 px-8 mb-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
+          <div className="relative z-10 mb-6 rounded-b-3xl border border-slate-100 bg-white/95 px-8 pb-8 pt-20 shadow-[0_24px_55px_-34px_rgba(15,23,42,0.45)] backdrop-blur">
+            <div className="flex flex-col items-start justify-between gap-6 lg:flex-row">
               {/* Profile Info */}
-              <div className="flex-grow">
-                <h1 className="text-4xl font-black text-gray-900 mb-2">
+              <div className="grow">
+                <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-900">
                   {profile.fullName || "Unknown"}
                 </h1>
                 {profile.headline && (
-                  <p className="text-xl text-gray-600 font-semibold mb-4 flex items-center gap-2">
-                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                  <p className="mb-4 flex items-center gap-2 text-xl font-semibold text-slate-600">
+                    <Sparkles className="h-5 w-5 text-[#0C2B4E]" />
                     {profile.headline}
                   </p>
                 )}
@@ -251,25 +256,25 @@ export default function PublicProfilePage() {
                 <div className="mb-6 flex flex-wrap gap-3">
                   {/* Auto-generated: Employed / Not Employed based on experience */}
                   {isCurrentlyEmployed ? (
-                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-orange-100 border-2 border-orange-300 rounded-xl shadow-sm">
-                      <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse"></div>
+                    <div className="inline-flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-sm">
+                      <div className="h-3 w-3 animate-pulse rounded-full bg-amber-500" />
                       <div>
-                        <div className="font-black text-sm text-orange-800">
+                        <div className="text-sm font-black text-amber-900">
                           Employed
                         </div>
-                        <div className="text-xs text-gray-600 mt-0.5">
+                        <div className="mt-0.5 text-xs text-slate-600">
                           Currently working — based on experience
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-gray-100 border-2 border-gray-300 rounded-xl shadow-sm">
-                      <UserX className="w-4 h-4 text-gray-500" />
+                    <div className="inline-flex items-center gap-3 rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 shadow-sm">
+                      <UserX className="h-4 w-4 text-slate-500" />
                       <div>
-                        <div className="font-black text-sm text-gray-700">
+                        <div className="text-sm font-black text-slate-700">
                           Not Employed
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className="mt-0.5 text-xs text-slate-500">
                           No active employment in experience
                         </div>
                       </div>
@@ -279,25 +284,25 @@ export default function PublicProfilePage() {
                   {/* User-controlled: Open / Not Open for Opportunities */}
                   {profile.employmentStatus === "open" ||
                   !profile.employmentStatus ? (
-                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-green-100 border-2 border-green-300 rounded-xl shadow-sm">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <div className="inline-flex items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 shadow-sm">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                       <div>
-                        <div className="font-black text-sm text-green-800">
+                        <div className="text-sm font-black text-emerald-800">
                           Open for Opportunities
                         </div>
-                        <div className="text-xs text-gray-600 mt-0.5">
+                        <div className="mt-0.5 text-xs text-slate-600">
                           Actively seeking new roles
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="inline-flex items-center gap-3 px-4 py-3 bg-red-50 border-2 border-red-200 rounded-xl shadow-sm">
-                      <XCircle className="w-4 h-4 text-red-500" />
+                    <div className="inline-flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
+                      <XCircle className="h-4 w-4 text-rose-500" />
                       <div>
-                        <div className="font-black text-sm text-red-700">
+                        <div className="text-sm font-black text-rose-700">
                           Not Open for Opportunities
                         </div>
-                        <div className="text-xs text-gray-600 mt-0.5">
+                        <div className="mt-0.5 text-xs text-slate-600">
                           Not actively seeking new roles
                         </div>
                       </div>
@@ -305,32 +310,32 @@ export default function PublicProfilePage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                   {profile.location && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <MapPin className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-2 text-slate-700">
+                      <MapPin className="h-5 w-5 text-[#0C2B4E]" />
                       <span className="font-medium">{profile.location}</span>
                     </div>
                   )}
                   {effectiveTotalExperience && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Briefcase className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-2 text-slate-700">
+                      <Briefcase className="h-5 w-5 text-[#0C2B4E]" />
                       <span className="font-medium">
                         {effectiveTotalExperience} of experience
                       </span>
                     </div>
                   )}
                   {profile.highestDegree && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <GraduationCap className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-2 text-slate-700">
+                      <GraduationCap className="h-5 w-5 text-[#0C2B4E]" />
                       <span className="font-medium">
                         {profile.highestDegree}
                       </span>
                     </div>
                   )}
                   {profile.createdAt && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+                    <div className="flex items-center gap-2 text-slate-700">
+                      <Calendar className="h-5 w-5 text-[#0C2B4E]" />
                       <span className="font-medium">
                         Member since{" "}
                         {new Date(profile.createdAt).toLocaleDateString(
@@ -343,26 +348,26 @@ export default function PublicProfilePage() {
                 </div>
 
                 {/* Contact Information - Prominent for Employers */}
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                  <h3 className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-700">
                     Contact Information
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {profile.email && (
                       <a
                         href={`mailto:${profile.email}`}
-                        className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition group"
+                        className="group flex items-center gap-2 text-slate-700 transition hover:text-[#0C2B4E]"
                       >
-                        <Mail className="w-5 h-5 text-blue-600 group-hover:scale-110 transition" />
+                        <Mail className="h-5 w-5 text-[#0C2B4E] transition group-hover:scale-110" />
                         <span className="font-medium">{profile.email}</span>
                       </a>
                     )}
                     {profile.phone && (
                       <a
                         href={`tel:${profile.phone}`}
-                        className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition group"
+                        className="group flex items-center gap-2 text-slate-700 transition hover:text-[#0C2B4E]"
                       >
-                        <Phone className="w-5 h-5 text-blue-600 group-hover:scale-110 transition" />
+                        <Phone className="h-5 w-5 text-[#0C2B4E] transition group-hover:scale-110" />
                         <span className="font-medium">{profile.phone}</span>
                       </a>
                     )}
@@ -372,14 +377,14 @@ export default function PublicProfilePage() {
                 {/* Availability Information for Employers */}
                 <div className="mt-4">
                   {isCurrentlyEmployed && (
-                    <div className="bg-orange-50 rounded-xl p-4 border-l-4 border-orange-500">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                       <div className="flex items-start gap-3">
-                        <TrendingUp className="w-5 h-5 text-orange-600 mt-0.5 shrink-0" />
+                        <TrendingUp className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
                         <div>
-                          <h4 className="font-bold text-orange-900 text-sm mb-1">
+                          <h4 className="mb-1 text-sm font-bold text-amber-900">
                             ⚠️ Currently Employed
                           </h4>
-                          <p className="text-sm text-orange-800">
+                          <p className="text-sm text-amber-800">
                             This candidate is currently employed. They may
                             require a notice period before joining. Please
                             discuss availability and joining timeline during the
@@ -390,14 +395,14 @@ export default function PublicProfilePage() {
                     </div>
                   )}
                   {!isCurrentlyEmployed && (
-                    <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                       <div className="flex items-start gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
                         <div>
-                          <h4 className="font-bold text-green-900 text-sm mb-1">
+                          <h4 className="mb-1 text-sm font-bold text-emerald-900">
                             ✓ Not Currently Employed
                           </h4>
-                          <p className="text-sm text-green-800">
+                          <p className="text-sm text-emerald-800">
                             This candidate is not currently employed based on
                             their experience section.
                           </p>
@@ -410,14 +415,14 @@ export default function PublicProfilePage() {
 
               {/* Resume Download - Prominent CTA */}
               {profile.resumeUrl && (
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <a
                     href={profile.resumeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="inline-flex items-center gap-3 rounded-xl bg-linear-to-r from-[#0C2B4E] via-[#123560] to-[#1D546C] px-8 py-4 font-bold text-white shadow-[0_14px_30px_-16px_rgba(15,23,42,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-16px_rgba(15,23,42,0.72)]"
                   >
-                    <Download className="w-6 h-6" />
+                    <Download className="h-6 w-6" />
                     <div className="text-left">
                       <div className="text-sm opacity-90">Download</div>
                       <div className="text-base">Full Resume</div>
@@ -429,17 +434,17 @@ export default function PublicProfilePage() {
           </div>
 
           {/* Quick Stats/Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-22px_rgba(15,23,42,0.55)]">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Briefcase className="w-7 h-7 text-blue-600" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#E7EEF8]">
+                  <Briefcase className="h-7 w-7 text-[#0C2B4E]" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-gray-900">
+                  <div className="text-2xl font-black text-slate-900">
                     {profile.employmentHistory.length}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-sm font-medium text-slate-600">
                     Work Experience
                     {profile.employmentHistory.length !== 1 ? "s" : ""}
                   </div>
@@ -447,16 +452,16 @@ export default function PublicProfilePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-22px_rgba(15,23,42,0.55)]">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center">
-                  <GraduationCap className="w-7 h-7 text-green-600" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100">
+                  <GraduationCap className="h-7 w-7 text-emerald-700" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-gray-900">
+                  <div className="text-2xl font-black text-slate-900">
                     {profile.educationHistory.length}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-sm font-medium text-slate-600">
                     Education Record
                     {profile.educationHistory.length !== 1 ? "s" : ""}
                   </div>
@@ -464,16 +469,16 @@ export default function PublicProfilePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_14px_30px_-22px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-22px_rgba(15,23,42,0.55)]">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Award className="w-7 h-7 text-purple-600" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-100">
+                  <Award className="h-7 w-7 text-cyan-700" />
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-gray-900">
+                  <div className="text-2xl font-black text-slate-900">
                     {profile.skills.length}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
+                  <div className="text-sm font-medium text-slate-600">
                     Professional Skill{profile.skills.length !== 1 ? "s" : ""}
                   </div>
                 </div>
@@ -483,16 +488,16 @@ export default function PublicProfilePage() {
 
           {/* Professional Summary */}
           {profile.summary && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_20px_42px_-30px_rgba(15,23,42,0.45)]">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E7EEF8]">
+                  <FileText className="h-6 w-6 text-[#0C2B4E]" />
                 </div>
-                <h2 className="text-2xl font-black text-gray-900">
+                <h2 className="text-2xl font-black text-slate-900">
                   Professional Summary
                 </h2>
               </div>
-              <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
+              <p className="whitespace-pre-wrap text-lg leading-relaxed text-slate-700">
                 {profile.summary}
               </p>
             </div>
@@ -500,16 +505,16 @@ export default function PublicProfilePage() {
 
           {/* Skills */}
           {profile.skills.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-purple-600" />
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_20px_42px_-30px_rgba(15,23,42,0.45)]">
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100">
+                  <Award className="h-6 w-6 text-cyan-700" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">
+                  <h2 className="text-2xl font-black text-slate-900">
                     Skills & Expertise
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-600">
                     Core competencies and technical skills
                   </p>
                 </div>
@@ -518,7 +523,7 @@ export default function PublicProfilePage() {
                 {profile.skills.map((skill) => (
                   <span
                     key={skill.id}
-                    className="px-5 py-2.5 bg-gradient-to-r from-purple-50 to-blue-50 text-gray-800 rounded-xl font-semibold text-sm border-2 border-purple-200 hover:border-purple-400 transition-all hover:scale-105 shadow-sm"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm font-semibold text-slate-800 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1D546C]/40 hover:bg-[#EAF1FA]"
                   >
                     {skill.skillName}
                   </span>
@@ -529,16 +534,16 @@ export default function PublicProfilePage() {
 
           {/* Work Experience */}
           {sortedEmploymentHistory.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-gray-100">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Briefcase className="w-6 h-6 text-blue-600" />
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_20px_42px_-30px_rgba(15,23,42,0.45)]">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E7EEF8]">
+                  <Briefcase className="h-6 w-6 text-[#0C2B4E]" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">
+                  <h2 className="text-2xl font-black text-slate-900">
                     Work Experience
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-600">
                     Professional employment history • Newest first
                   </p>
                 </div>
@@ -553,19 +558,19 @@ export default function PublicProfilePage() {
                   return (
                     <div
                       key={job.id}
-                      className={`relative ${index > 0 ? "border-t pt-8" : ""}`}
+                      className={`relative rounded-xl border border-slate-100 bg-slate-50/70 p-5 ${index > 0 ? "" : ""}`}
                     >
-                      <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
-                        <div className="flex-grow">
-                          <div className="flex items-start gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
-                              <Building2 className="w-6 h-6 text-blue-600" />
+                      <div className="mb-4 flex flex-col items-start justify-between gap-4 md:flex-row">
+                        <div className="grow">
+                          <div className="mb-2 flex items-start gap-3">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-[#E7EEF8] to-[#DCE8F9]">
+                              <Building2 className="h-6 w-6 text-[#0C2B4E]" />
                             </div>
                             <div>
-                              <h3 className="text-xl font-black text-gray-900">
+                              <h3 className="text-xl font-black text-slate-900">
                                 {job.position}
                               </h3>
-                              <p className="text-lg text-blue-600 font-bold">
+                              <p className="text-lg font-bold text-[#1D546C]">
                                 {job.company}
                               </p>
                             </div>
@@ -574,17 +579,17 @@ export default function PublicProfilePage() {
 
                         <div className="flex flex-col items-end gap-2">
                           {job.currentlyWorking && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg font-bold text-sm border border-green-300">
-                              <CheckCircle2 className="w-4 h-4" />
+                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-sm font-bold text-emerald-700">
+                              <CheckCircle2 className="h-4 w-4" />
                               Current Position
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-4 mb-2 text-sm text-gray-600">
+                      <div className="mb-2 flex flex-wrap items-center gap-4 text-sm text-slate-600">
                         <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="h-4 w-4 text-slate-400" />
                           <span className="font-medium">
                             {formatDate(job.startDate)} -{" "}
                             {job.currentlyWorking
@@ -594,13 +599,13 @@ export default function PublicProfilePage() {
                         </div>
                       </div>
 
-                      <p className="text-sm font-semibold text-blue-600 mb-4">
+                      <p className="mb-4 text-sm font-semibold text-[#0C2B4E]">
                         {duration}
                       </p>
 
                       {job.description && (
-                        <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        <div className="rounded-xl border border-slate-200 bg-white p-5">
+                          <p className="whitespace-pre-wrap leading-relaxed text-slate-700">
                             {job.description}
                           </p>
                         </div>
@@ -614,16 +619,16 @@ export default function PublicProfilePage() {
 
           {/* Education */}
           {sortedEducationHistory.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-green-600" />
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-[0_20px_42px_-30px_rgba(15,23,42,0.45)]">
+              <div className="mb-8 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+                  <GraduationCap className="h-6 w-6 text-emerald-700" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-gray-900">
+                  <h2 className="text-2xl font-black text-slate-900">
                     Education
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-slate-600">
                     Academic qualifications and certifications • Newest first
                   </p>
                 </div>
@@ -638,22 +643,22 @@ export default function PublicProfilePage() {
                   return (
                     <div
                       key={edu.id}
-                      className={`relative ${index > 0 ? "border-t pt-6" : ""}`}
+                      className={`relative rounded-xl border border-slate-100 bg-slate-50/70 p-5 ${index > 0 ? "" : ""}`}
                     >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center flex-shrink-0">
-                          <GraduationCap className="w-6 h-6 text-green-600" />
+                      <div className="mb-3 flex items-start gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-emerald-100 to-teal-100">
+                          <GraduationCap className="h-6 w-6 text-emerald-700" />
                         </div>
-                        <div className="flex-grow">
-                          <h3 className="text-xl font-black text-gray-900">
+                        <div className="grow">
+                          <h3 className="text-xl font-black text-slate-900">
                             {edu.degree}
                           </h3>
-                          <p className="text-lg text-green-600 font-bold mb-2">
+                          <p className="mb-2 text-lg font-bold text-emerald-700">
                             {edu.institution}
                           </p>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
                             <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <Calendar className="h-4 w-4 text-slate-400" />
                               <span className="font-medium">
                                 {formatDate(edu.startDate)} -{" "}
                                 {formatDate(edu.endDate)}
@@ -661,8 +666,8 @@ export default function PublicProfilePage() {
                             </div>
                             {duration && (
                               <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium text-green-600">
+                                <Clock className="h-4 w-4 text-slate-400" />
+                                <span className="font-medium text-emerald-700">
                                   {duration}
                                 </span>
                               </div>

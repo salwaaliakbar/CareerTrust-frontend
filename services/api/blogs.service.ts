@@ -1,17 +1,51 @@
 import { API_ENDPOINTS } from '@/constants/api';
-import { Blog, BlogDetail, BlogsResponse, BlogDetailResponse } from '@/types/blog.types';
+import {
+  Blog,
+  BlogDetail,
+  BlogsResponse,
+  BlogDetailResponse,
+  PaginationMeta,
+} from '@/types/blog.types';
+
+type FetchBlogsPageParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+};
+
+type BlogsPageResult = {
+  data: Blog[];
+  total: number;
+  pagination?: PaginationMeta;
+};
+
+function getServerFetchUrl(url: string): string {
+  if (typeof window === 'undefined') {
+    return url.replace('http://localhost:', 'http://127.0.0.1:');
+  }
+  return url;
+}
 
 /**
- * Fetch all blogs
- * @param category - Optional category filter
+ * Fetch paginated blogs (card fields only)
  */
-export async function fetchBlogs(category?: string): Promise<Blog[]> {
+export async function fetchBlogsPage(params: FetchBlogsPageParams = {}): Promise<BlogsPageResult> {
   try {
-    const url = category 
-      ? `${API_ENDPOINTS.BLOGS}?category=${encodeURIComponent(category)}`
-      : API_ENDPOINTS.BLOGS;
+    let url = API_ENDPOINTS.BLOGS;
+    const searchParams = new URLSearchParams();
 
-    console.log('[Blog Service] Fetching from URL:', url);
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.search) searchParams.set('search', params.search);
+    if (params.category) searchParams.set('category', params.category);
+
+    const query = searchParams.toString();
+    if (query) {
+      url += `?${query}`;
+    }
+
+    url = getServerFetchUrl(url);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -21,28 +55,41 @@ export async function fetchBlogs(category?: string): Promise<Blog[]> {
       cache: 'no-store',
     });
 
-    console.log('[Blog Service] Response status:', response.status, response.statusText);
-
     if (!response.ok) {
-      console.error(`[Blog Service] Failed to fetch. Status: ${response.status} ${response.statusText}`);
-      // Return empty array if backend is down, don't throw error
-      return [];
+      return { data: [], total: 0 };
     }
 
     const data: BlogsResponse = await response.json();
-    
     if (!data.success) {
-      console.warn('[Blog Service] API returned success: false', data.error);
-      return [];
+      return { data: [], total: 0 };
     }
 
-    console.log('[Blog Service] Successfully fetched blogs:', data.data.length);
-    return data.data;
-  } catch (error) {
-    console.error('[Blog Service] Error fetching blogs:', error);
-    // Return empty array on error instead of throwing
-    return [];
+    const payload = data.data;
+    if (Array.isArray(payload)) {
+      return {
+        data: payload,
+        total: data.total ?? payload.length,
+        pagination: data.pagination,
+      };
+    }
+
+    return {
+      data: payload.items,
+      total: payload.totalCount,
+      pagination: payload.pagination,
+    };
+  } catch {
+    return { data: [], total: 0 };
   }
+}
+
+/**
+ * Fetch all blogs
+ * @param category - Optional category filter
+ */
+export async function fetchBlogs(category?: string): Promise<Blog[]> {
+  const response = await fetchBlogsPage({ category });
+  return response.data;
 }
 
 /**
@@ -51,7 +98,7 @@ export async function fetchBlogs(category?: string): Promise<Blog[]> {
  */
 export async function fetchBlogById(id: string | number): Promise<BlogDetail | null> {
   try {
-    const url = API_ENDPOINTS.BLOG_BY_ID(id);
+    const url = getServerFetchUrl(API_ENDPOINTS.BLOG_BY_ID(id));
 
     console.log('[Blog Service] Fetching blog by ID:', id, 'URL:', url);
 
@@ -77,7 +124,6 @@ export async function fetchBlogById(id: string | number): Promise<BlogDetail | n
       return null;
     }
 
-    console.log('[Blog Service] Successfully fetched blog:', data.data.id);
     return data.data;
   } catch (error) {
     console.error('[Blog Service] Error fetching blog by ID:', error);

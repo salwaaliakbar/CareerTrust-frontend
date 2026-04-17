@@ -20,16 +20,16 @@ export default function EmployerSteps() {
     (s) => ({ ...s, iconComponent: ICONS[s.iconName as keyof typeof ICONS] || Briefcase })
   );
 
-  return (
-  <section aria-labelledby="employer-steps" className="relative py-16 md:py-20 overflow-hidden bg-linear-to-b from-[#F4F4F4] via-[#0C2B4E]/3 to-white">
+    return (
+    <section aria-labelledby="employer-steps" className="relative pt-16 md:pt-20 overflow-hidden bg-[#F4F6FB]">
       {/* Background decoration */}
-      <div className="absolute inset-0" />
-  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/10 via-[#1A3D64]/8 to-[#1D546C]/6 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(30,64,175,0.06),transparent_52%)]" />
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 rounded-full blur-3xl bg-linear-to-br from-[#0C2B4E]/6 via-[#1A3D64]/5 to-[#1D546C]/4 pointer-events-none" />
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16 md:mb-20 fade-in">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0C2B4E]/10 backdrop-blur-sm border border-[#0C2B4E]/50 mb-6 fade-in animation-delay-100">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 mb-6 fade-in animation-delay-100 shadow-sm">
             <div className="w-2 h-2 rounded-full bg-[#0C2B4E] animate-pulse" />
             <span className="text-sm font-medium text-[#0C2B4E]">Simple Process</span>
           </div>
@@ -62,7 +62,7 @@ export default function EmployerSteps() {
                 >
                   {/* Step number indicator */}
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center justify-center">
-                    <div className={`relative z-10 w-14 h-14 rounded-2xl bg-linear-to-br ${s.color} p-0.5 shadow-lg transition-all duration-300 ${isActive ? 'scale-110 shadow-xl' : ''}`}>
+                    <div className={`relative z-10 w-14 h-14 rounded-2xl bg-linear-to-br ${s.color} p-0.5 shadow-md transition-all duration-300 ${isActive ? 'scale-105 shadow-lg' : ''}`}>
                       <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
                         <span className="text-xl font-bold bg-linear-to-br from-slate-700 to-slate-900 bg-clip-text text-transparent">
                           {i + 1}
@@ -72,11 +72,11 @@ export default function EmployerSteps() {
                   </div>
 
                   {/* Card */}
-                  <div className={`relative mt-8 h-full bg-white/95 backdrop-blur-sm rounded-2xl p-6 border transition-all duration-300 ${
+                  <div className={`relative mt-8 h-full bg-white rounded-2xl p-6 border transition-all duration-300 ${
                     isActive 
-                      ? 'border-blue-300 shadow-xl shadow-blue-100/50 -translate-y-2' 
-                      : 'border-slate-200 shadow-lg hover:border-blue-200 hover:shadow-xl hover:-translate-y-1'
-                  }`}>
+                      ? 'border-blue-200 shadow-[0_14px_28px_-20px_rgba(15,23,42,0.35)] -translate-y-1' 
+                      : 'border-slate-200 shadow-[0_8px_18px_-14px_rgba(15,23,42,0.22)] hover:border-blue-100 hover:shadow-[0_12px_24px_-16px_rgba(15,23,42,0.28)] hover:-translate-y-0.5'
+                  } fade-in-up` }>
                     {/* Gradient accent */}
                       <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${s.color} rounded-t-2xl transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
                     
@@ -89,7 +89,7 @@ export default function EmployerSteps() {
                     <div>
                       <h4 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
                         {s.title}
-                        <CheckCircle className={`w-5 h-5 text-emerald-500 transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
+                        <CheckCircle className={`w-5 h-5 text-emerald-500 transition-all duration-300 ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} />
                       </h4>
                       <p className="text-sm text-slate-600 leading-relaxed">
                         {s.desc}
@@ -97,7 +97,7 @@ export default function EmployerSteps() {
                     </div>
 
                     {/* Bottom indicator */}
-            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${s.color} rounded-b-2xl transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`} />
+            <div className={`absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r ${s.color} rounded-b-2xl transition-all duration-300 ${isActive ? 'opacity-90' : 'opacity-0'}`} />
                   </div>
 
                   {/* Connecting arrow - only between steps on desktop */}
@@ -122,7 +122,7 @@ export default function EmployerSteps() {
 
         {/* CTA */}
         <div className="text-center mt-14 md:mt-16">
-          <Link href="/employer/post-job" className="inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl bg-linear-to-r from-[#0C2B4E] to-[#1A3D64] shadow-lg shadow-[#0C2B4E]/25 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30">
+          <Link href="/employer/post-job" className="inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl bg-linear-to-r from-[#0C2B4E] via-[#123560] to-[#1A4779] shadow-[0_14px_28px_-16px_rgba(15,23,42,0.55)] hover:shadow-[0_18px_34px_-16px_rgba(15,23,42,0.65)] transform hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#1A3D64]/30">
             <Briefcase className="w-5 h-5" />
             Get Started Now
           </Link>
@@ -130,7 +130,7 @@ export default function EmployerSteps() {
       </div>
 
       <div>
-            <div className="relative h-px my-20">
+            <div className="relative h-px mt-20">
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#1A3D64]/25 to-transparent opacity-75"></div>
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#1D546C]/20 to-transparent blur-sm"></div>
           </div>

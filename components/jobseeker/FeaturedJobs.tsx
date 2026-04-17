@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Briefcase, MapPin, DollarSign, Clock, ArrowRight, Sparkles
 } from "lucide-react";
-import { API_ENDPOINTS } from "@/constants/api";
-import axios from "axios";
 import Swal from "sweetalert2";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getFeaturedJobs } from "@/redux/store/slices/jobsSlice";
 
 interface Job {
   id: number | string;
@@ -168,35 +168,39 @@ function FeaturedJobCard({ job, index }: { job: Job; index: number }) {
 }
 
 export default function FeaturedJobs() {
-  const [jobs, setJobs] = useState<Job[]>(sampleJobs);
+  const dispatch = useAppDispatch();
+  const jobs = useAppSelector((state) => state.jobs.featuredItems);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchJobs() {
+    let active = true;
+
+    const loadFeaturedJobs = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get(API_ENDPOINTS.JOBS, {
-          params: { limit: 6, featured: true },
-        });
-        
-        if (response.data?.data && response.data.data.length > 0) {
-          setJobs(response.data.data.slice(0, 6));
-        }
-      } catch (error) {
-        // Use sample jobs as fallback
+        await dispatch(getFeaturedJobs(undefined)).unwrap();
+      } catch {
         Swal.fire({
           icon: "error",
           title: "Failed to Load Featured Jobs",
           text: "We couldn't fetch the latest featured jobs.",
           confirmButtonText: "OK",
         });
-        console.log("Using sample jobs data");
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
-    fetchJobs();
-  }, []);
+    loadFeaturedJobs();
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch]);
+
+  const jobsToRender = jobs.length > 0 ? jobs : sampleJobs;
 
   return (
     <section className="pb-20 pt-12 bg-linear-to-b from-white via-[#1D546C]/20 to-white">
@@ -247,7 +251,7 @@ export default function FeaturedJobs() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job, idx) => (
+            {jobsToRender.map((job, idx) => (
               <FeaturedJobCard key={job.id} job={job} index={idx} />
             ))}
           </div>

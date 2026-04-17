@@ -332,7 +332,7 @@ export default function JobPostForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="px-8 py-4 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+          className="px-8 py-4 rounded-xl text-white font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 bg-linear-to-r from-[#0C2B4E] to-[#1D546C] hover:from-[#1A3D64] hover:to-[#2A5A7F]"
         >
           {isSubmitting ? (
             <>

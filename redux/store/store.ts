@@ -2,6 +2,7 @@ import { combineReducers, configureStore, createAction } from '@reduxjs/toolkit'
 import blogsReducer from './slices/blogsSlice';
 import jobsReducer from './slices/jobsSlice';
 import companiesReducer from './slices/companiesSlice';
+import employerCandidatesReducer from './slices/employerCandidatesSlice';
 import jobseekerProfileReducer from './slices/jobseeker/profileSlice';
 import applicationsReducer from './slices/jobseeker/applicationsSlice';
 import dashboardReducer from './slices/dashboardSlice';
@@ -13,6 +14,7 @@ const appReducer = combineReducers({
   blogs: blogsReducer,
   jobs: jobsReducer,
   companies: companiesReducer,
+  employerCandidates: employerCandidatesReducer,
   jobseekerProfile: jobseekerProfileReducer,
   applications: applicationsReducer,
   dashboard: dashboardReducer,
@@ -41,6 +43,7 @@ const rootReducer = (
       jobseekerProfile: initialState.jobseekerProfile,
       applications: initialState.applications,
       dashboard: initialState.dashboard,
+      employerCandidates: initialState.employerCandidates,
     };
   }
 

@@ -2,26 +2,86 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { Search, TrendingUp } from "lucide-react";
+import { Search, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import CompanyCard from "@/components/companies/CompanyCard";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
-import { getAllCompanies } from "@/redux/store/slices/companiesSlice";
+import {
+  getAllCompanies,
+  getCompanyReputations,
+} from "@/redux/store/slices/companiesSlice";
+import { useSearchParams, useRouter } from "next/navigation";
+
+const PAGE_SIZE = 12;
 
 export default function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const dispatch = useAppDispatch();
-  const { items: companies, loading } = useAppSelector(
-    (state) => state.companies
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const {
+    items: companies,
+    loading,
+    totalCount,
+    currentPage,
+    totalPages,
+    reputationById,
+  } = useAppSelector((state) => state.companies);
+
+  const appliedSearchTerm = searchParams.get("q") || "";
+  const appliedPage = Math.max(
+    1,
+    Number.parseInt(searchParams.get("page") || "1", 10) || 1,
   );
 
   useEffect(() => {
-    dispatch(getAllCompanies({}));
-  }, [dispatch]);
+    dispatch(
+      getAllCompanies({
+        page: appliedPage,
+        limit: PAGE_SIZE,
+        search: appliedSearchTerm,
+      }),
+    );
+  }, [dispatch, appliedPage, appliedSearchTerm]);
 
-  const filteredCompanies = companies.filter((company) =>
-    company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.industry.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    setSearchTerm(appliedSearchTerm);
+  }, [appliedSearchTerm]);
+
+  useEffect(() => {
+    if (!companies.length) return;
+    dispatch(getCompanyReputations(companies.map((company) => company.id)));
+  }, [dispatch, companies]);
+
+  const pushCompaniesRoute = (nextPage: number, nextSearch: string) => {
+    const params = new URLSearchParams();
+    if (nextSearch) params.set("q", nextSearch);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    router.push(`/companies${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  const handleSearch = () => {
+    pushCompaniesRoute(1, searchTerm);
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    router.push("/companies");
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    if (nextPage < 1 || nextPage > totalPages || nextPage === currentPage) return;
+    pushCompaniesRoute(nextPage, appliedSearchTerm);
+  };
+
+  const pageButtons = (() => {
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    const pages = [] as number[];
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+    return pages;
+  })();
 
   return (
     <div className="min-h-screen bg-[#F4F6FB] flex flex-col">
@@ -70,13 +130,14 @@ export default function CompaniesPage() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    onClick={handleSearch}
                     className="flex-1 px-4 py-2.5 bg-linear-to-r from-violet-500 via-indigo-500 to-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-200 hover:scale-[1.02] active:scale-100"
                   >
                     Search
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSearchTerm("")}
+                    onClick={handleClear}
                     className="px-3 py-2.5 bg-white/95 text-slate-700 rounded-xl border border-blue-100/70 font-medium transition-all duration-200 hover:bg-white hover:shadow-md active:scale-100"
                   >
                     Clear
@@ -101,16 +162,27 @@ export default function CompaniesPage() {
           <>
             <div className="mb-8 fade-in animation-delay-200">
               <p className="text-slate-600 text-base">
-                Showing <strong className="text-slate-900 font-bold">{filteredCompanies.length}</strong>{' '}
-                {filteredCompanies.length !== 1 ? "companies" : "company"}
+                Showing <strong className="text-slate-900 font-bold">{companies.length}</strong>{' '}
+                of <strong className="text-slate-900 font-bold">{totalCount}</strong>{' '}
+                {totalCount !== 1 ? "companies" : "company"}
+              </p>
+              <p className="text-slate-500 text-sm mt-1">
+                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
               </p>
             </div>
 
-            {filteredCompanies.length > 0 ? (
+            {companies.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCompanies.map((company) => (
+                {companies.map((company) => (
                   <div key={company.id} className="fade-in animation-delay-100">
-                    <CompanyCard company={company} />
+                    <CompanyCard
+                      company={{
+                        ...company,
+                        rating:
+                          reputationById[String(company.id)]?.reputationScore ??
+                          company.rating,
+                      }}
+                    />
                   </div>
                 ))}
               </div>
@@ -119,6 +191,45 @@ export default function CompaniesPage() {
                 <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                 <p className="text-slate-600 text-lg font-semibold">No companies found matching your search</p>
                 <p className="text-slate-500 text-sm mt-2">Try adjusting your search terms</p>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 disabled:opacity-40"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {pageButtons.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => handlePageChange(page)}
+                    className={`h-9 min-w-9 px-2 rounded-lg border text-sm font-semibold ${
+                      page === currentPage
+                        ? "bg-sky-700 border-sky-700 text-white"
+                        : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 disabled:opacity-40"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
               </div>
             )}
           </>

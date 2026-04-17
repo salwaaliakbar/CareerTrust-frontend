@@ -14,10 +14,26 @@ export interface BlogDetail extends Blog {
   content: string;
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}
+
+export interface BlogsListPayload {
+  items: Blog[];
+  pagination: PaginationMeta;
+  totalCount: number;
+}
+
 export interface BlogsResponse {
   success: boolean;
-  data: Blog[];
-  total: number;
+  data: Blog[] | BlogsListPayload;
+  total?: number;
+  pagination?: PaginationMeta;
   error?: string;
 }
 
