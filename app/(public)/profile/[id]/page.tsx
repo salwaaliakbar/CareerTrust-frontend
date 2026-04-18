@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   getPublicProfile,
   JobseekerPublicProfile,
 } from "@/services/api/profile.service";
+import { getCompanyProfile } from "@/services/api/employerCompany.service";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import {
@@ -91,10 +92,14 @@ export default function PublicProfilePage() {
   const params = useParams();
   const clerkId = params.id as string;
   const { getToken } = useAuth();
+  const { user } = useUser();
 
   const [profile, setProfile] = useState<JobseekerPublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentEmployerCompanyName, setCurrentEmployerCompanyName] = useState<
+    string | null
+  >(null);
 
   // isCurrentlyEmployed is maintained server-side on JobseekerProfile
   const isCurrentlyEmployed = profile?.isCurrentlyEmployed ?? false;
@@ -105,20 +110,22 @@ export default function PublicProfilePage() {
     return [...profile.employmentHistory]
       .filter((job) => job.verificationStatus === "verified")
       .sort((a, b) => {
-      if (a.currentlyWorking && !b.currentlyWorking) return -1;
-      if (!a.currentlyWorking && b.currentlyWorking) return 1;
+        if (a.currentlyWorking && !b.currentlyWorking) return -1;
+        if (!a.currentlyWorking && b.currentlyWorking) return 1;
 
-      const aEnd = a.currentlyWorking
-        ? Number.MAX_SAFE_INTEGER
-        : new Date(a.endDate || a.startDate).getTime();
-      const bEnd = b.currentlyWorking
-        ? Number.MAX_SAFE_INTEGER
-        : new Date(b.endDate || b.startDate).getTime();
+        const aEnd = a.currentlyWorking
+          ? Number.MAX_SAFE_INTEGER
+          : new Date(a.endDate || a.startDate).getTime();
+        const bEnd = b.currentlyWorking
+          ? Number.MAX_SAFE_INTEGER
+          : new Date(b.endDate || b.startDate).getTime();
 
-      if (aEnd !== bEnd) return bEnd - aEnd;
+        if (aEnd !== bEnd) return bEnd - aEnd;
 
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-    });
+        return (
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+      });
   }, [profile]);
 
   const sortedEducationHistory = useMemo(() => {
@@ -135,7 +142,10 @@ export default function PublicProfilePage() {
   }, [profile]);
 
   const calculatedTotalExperience = useMemo(() => {
-    const verifiedJobs = profile?.employmentHistory.filter((j) => j.verificationStatus === "verified") ?? [];
+    const verifiedJobs =
+      profile?.employmentHistory.filter(
+        (j) => j.verificationStatus === "verified",
+      ) ?? [];
     if (verifiedJobs.length === 0) return null;
     const totalMonths = verifiedJobs.reduce((acc, job) => {
       return (
@@ -158,6 +168,25 @@ export default function PublicProfilePage() {
     return stored;
   }, [profile, calculatedTotalExperience]);
 
+  // Get the jobseeker's current company name
+  const jobseekerCurrentCompanyName = useMemo(() => {
+    if (!profile?.employmentHistory) return null;
+    const currentJob = profile.employmentHistory.find(
+      (job) => job.currentlyWorking,
+    );
+    return currentJob?.company || null;
+  }, [profile]);
+
+  // Check if current user is the employer of the jobseeker's current company
+  const shouldHideOpportunityBadge = useMemo(() => {
+    if (!currentEmployerCompanyName || !jobseekerCurrentCompanyName)
+      return false;
+    return (
+      currentEmployerCompanyName.toLowerCase().trim() ===
+      jobseekerCurrentCompanyName.toLowerCase().trim()
+    );
+  }, [currentEmployerCompanyName, jobseekerCurrentCompanyName]);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -175,6 +204,25 @@ export default function PublicProfilePage() {
       fetchProfile();
     }
   }, [clerkId, getToken]);
+
+  // Fetch current user's employer company (if they're an employer)
+  useEffect(() => {
+    const fetchEmployerCompany = async () => {
+      try {
+        if (!user) return;
+
+        const companyProfile = await getCompanyProfile(user.id, getToken);
+        if (companyProfile) {
+          setCurrentEmployerCompanyName(companyProfile.name);
+        }
+      } catch (err) {
+        console.error("Error fetching employer company:", err);
+        // Silently fail - this is optional info for employers
+      }
+    };
+
+    fetchEmployerCompany();
+  }, [user, getToken]);
 
   if (loading) {
     return (
@@ -281,32 +329,36 @@ export default function PublicProfilePage() {
                     </div>
                   )}
 
-                  {/* User-controlled: Open / Not Open for Opportunities */}
-                  {profile.employmentStatus === "open" ||
-                  !profile.employmentStatus ? (
-                    <div className="inline-flex items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 shadow-sm">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      <div>
-                        <div className="text-sm font-black text-emerald-800">
-                          Open for Opportunities
+                  {/* User-controlled: Open / Not Open for Opportunities — Hidden if viewing employer's own company employee */}
+                  {!shouldHideOpportunityBadge && (
+                    <>
+                      {profile.employmentStatus === "open" ||
+                      !profile.employmentStatus ? (
+                        <div className="inline-flex items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 shadow-sm">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <div>
+                            <div className="text-sm font-black text-emerald-800">
+                              Open for Opportunities
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-600">
+                              Actively seeking new roles
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-0.5 text-xs text-slate-600">
-                          Actively seeking new roles
+                      ) : (
+                        <div className="inline-flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
+                          <XCircle className="h-4 w-4 text-rose-500" />
+                          <div>
+                            <div className="text-sm font-black text-rose-700">
+                              Not Open for Opportunities
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-600">
+                              Not actively seeking new roles
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="inline-flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 shadow-sm">
-                      <XCircle className="h-4 w-4 text-rose-500" />
-                      <div>
-                        <div className="text-sm font-black text-rose-700">
-                          Not Open for Opportunities
-                        </div>
-                        <div className="mt-0.5 text-xs text-slate-600">
-                          Not actively seeking new roles
-                        </div>
-                      </div>
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
 
