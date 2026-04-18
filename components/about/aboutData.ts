@@ -1,74 +1,112 @@
 export const aboutStats = [
   {
     value: "50K+",
-    label:
-      "Professionals and employers connected through a trusted ecosystem.",
+    label: "Verified professionals and employers connected through CareerTrust.",
   },
   {
-    value: "100%",
-    label:
-      "Verification-first workflow for identity, employment history, and review integrity.",
+    value: "95%",
+    label: "Profile accuracy improvement with structured resume parsing and checks.",
   },
   {
     value: "AI-Powered",
-    label:
-      "Smart recommendations and sentiment intelligence to improve hiring outcomes.",
+    label: "Hiring decisions enhanced by recommendations, reputation, and trust signals.",
   },
 ];
 
-export const trustPillars = [
+export const problemPoints = [
   {
-    title: "Verified Identity & Experience",
-    text: "Every profile and employment record follows strict verification flows so hiring decisions are based on proven credibility.",
+    title: "Fake or Incomplete Profiles",
+    text: "Traditional job platforms often rely on self-declared data without strong verification, creating uncertainty for recruiters.",
   },
   {
-    title: "AI With Accountability",
-    text: "Recommendations and review insights are AI-powered but designed for transparency, fairness, and explainable outcomes.",
+    title: "Low Trust in Hiring Decisions",
+    text: "Without verified history and structured feedback, employers struggle to evaluate credibility and jobseekers struggle to stand out.",
   },
   {
-    title: "Reputation You Can Trust",
-    text: "Structured, authentic feedback gives employers and job seekers a reliable signal, not noise from fake or biased reviews.",
+    title: "No Intelligent Matching Context",
+    text: "Hiring often depends on manual screening, missing data-driven insight about fit, skills, and role relevance.",
   },
 ];
 
-export const processSteps = [
+export const solutionPoints = [
   {
-    title: "Verify",
-    detail:
-      "Validate identity and employment facts through secure proof-based checks.",
+    title: "Verification-First Profiles",
+    text: "CareerTrust adds trust signals through profile consistency, role checks, and verified employment workflows.",
   },
   {
-    title: "Analyze",
-    detail:
-      "Use AI to convert complex career and review data into actionable insight.",
+    title: "AI-Assisted Resume Intelligence",
+    text: "Resume parsing extracts skills, education, and experience into structured, actionable profile data.",
   },
   {
-    title: "Match",
-    detail:
-      "Recommend relevant roles and talent based on quality signals, not guesswork.",
+    title: "Transparent Reputation Layer",
+    text: "Review and reputation signals support fair, context-aware decisions for both employers and jobseekers.",
   },
   {
-    title: "Grow",
-    detail:
-      "Enable better career outcomes and stronger hiring decisions over time.",
+    title: "Dual Verification Hiring",
+    text: "Both employer and employee confirmations strengthen trust in employment outcomes and platform accountability.",
+  },
+];
+
+export const coreFeatures = [
+  {
+    title: "Verified Jobseekers",
+    text: "Identity-backed and workflow-validated candidate profiles help employers evaluate real talent confidently.",
+  },
+  {
+    title: "AI Resume Parsing",
+    text: "Automatically converts resume content into structured profile fields for faster and cleaner screening.",
+  },
+  {
+    title: "Smart Job Recommendations",
+    text: "AI-assisted matching suggests relevant opportunities based on profile quality and role-fit signals.",
+  },
+  {
+    title: "Secure Hiring Verification",
+    text: "Dual confirmation between employer and employee creates reliable, trusted employment records.",
+  },
+  {
+    title: "Review & Reputation System",
+    text: "Structured feedback and reputation context make hiring decisions more transparent and fair.",
+  },
+];
+
+export const whyChooseItems = [
+  {
+    title: "Trust-Focused by Default",
+    detail: "CareerTrust is designed around credibility signals, not just listing volume.",
+  },
+  {
+    title: "Dual Verification Workflow",
+    detail: "Hiring outcomes are validated by both sides to reduce misinformation and disputes.",
+  },
+  {
+    title: "AI-Powered Decision Support",
+    detail: "Recommendations and profile insights support better shortlisting and faster hiring.",
+  },
+  {
+    title: "Transparent Feedback Loop",
+    detail: "Reputation and review data add context for long-term hiring quality.",
   },
 ];
 
 export const leaders = [
   {
-    name: "Julia Holmes",
-    role: "Chief Executive Officer",
-    image: "/assets/images/office_1.jpg",
+    name: "Khalid Hussain",
+    role: "Full Stack Developer",
+    gender: "male",
+    tags: ["System Architecture", "API Integration"],
   },
   {
-    name: "Michael Chen",
-    role: "Chief Technology Officer",
-    image: "/assets/images/office_3.jpg",
+    name: "Salwa Ansari",
+    role: "AI Engineer",
+    gender: "female",
+    tags: ["Full Stack Developer", "AI Engineer", "UI/UX Designer"],
   },
   {
-    name: "David Martinez",
-    role: "Chief Finance Officer",
-    image: "/assets/images/office_2.jpg",
+    name: "Shahvez Jumani",
+    role: "Backend Developer",
+    gender: "male",
+    tags: ["Database Design", "REST APIs", "Performance Optimization"],
   },
 ];
 

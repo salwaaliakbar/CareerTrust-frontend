@@ -27,7 +27,9 @@ export default function HeroSection() {
           </h1>
 
           <p className="fade-in-up animation-delay-200 mx-auto mt-6 max-w-4xl text-base leading-7 text-sky-100 sm:text-lg">
-            CareerTrust is Pakistan&apos;s smart employment and reputation platform, designed to bring clarity to hiring through verified experience, transparent feedback, and practical AI.
+            CareerTrust is Pakistan&apos;s smart employment and review platform,
+            designed to make hiring trustworthy through verified profiles,
+            practical AI intelligence, and transparent hiring outcomes.
           </p>
 
           <div className="fade-in-up animation-delay-300 mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

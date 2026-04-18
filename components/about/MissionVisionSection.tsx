@@ -20,9 +20,8 @@ export default function MissionVisionSection() {
             </div>
             <h3 className="text-2xl font-bold text-slate-900">Our Mission</h3>
             <p className="mt-4 leading-7 text-slate-600">
-              Deliver a trusted, transparent employment platform where every
-              profile, experience, and review contributes to better decisions
-              and fairer opportunities.
+              Build trust into hiring by making profile quality, employment
+              validation, and feedback integrity reliable for every stakeholder.
             </p>
           </article>
 
@@ -32,9 +31,9 @@ export default function MissionVisionSection() {
             </div>
             <h3 className="text-2xl font-bold text-slate-900">Our Vision</h3>
             <p className="mt-4 leading-7 text-slate-600">
-              Become the benchmark for digital trust in careers, where
-              technology strengthens human potential and ethical hiring becomes
-              the default.
+              Create a smarter and transparent employment ecosystem where AI and
+              verification improve opportunities, decisions, and long-term
+              hiring outcomes.
             </p>
           </article>
         </div>

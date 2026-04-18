@@ -24,16 +24,16 @@ export default function AboutCTASection() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row fade-in animation-delay-300">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#8ad2ff] px-6 py-3 text-sm font-semibold text-[#0C2B4E] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#a1dcff]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#f4c56a] px-6 py-3 text-sm font-semibold text-[#102e4c] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ffd689] sm:w-auto"
             >
               Get Started
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/45 bg-transparent px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10"
+              href="/employer/post-job"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-white/45 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 sm:w-auto"
             >
-              Contact Us
+              Post a Job
             </Link>
           </div>
         </div>

@@ -53,7 +53,7 @@ const TestimonialSection = () => {
               </p>
 
               <div className="flex items-center gap-4 pt-6 border-t border-[#dfebf6]">
-                {testimonial.image && testimonial.image.startsWith("/") ? (
+                {testimonial.image ? (
                   <div className="w-12 h-12 relative rounded-full overflow-hidden border-2 border-[#bdddf4]">
                     <Image
                       src={testimonial.image}
