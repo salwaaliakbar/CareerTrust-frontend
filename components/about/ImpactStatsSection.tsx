@@ -5,7 +5,7 @@ const icons = [Users, ShieldCheck, Sparkles];
 
 export default function ImpactStatsSection() {
   return (
-    <section className="relative bg-linear-to-br from-[#123B66] via-[#154778] to-[#1A4F8B] pb-14 pt-4 border-b border-white/10">
+    <section className="relative smooth-enter bg-linear-to-br from-[#123B66] via-[#154778] to-[#1A4F8B] pb-14 pt-4 border-b border-white/10">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
         {aboutStats.map((item, index) => {
           const Icon = icons[index] ?? Sparkles;

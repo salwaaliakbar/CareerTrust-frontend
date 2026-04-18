@@ -15,11 +15,11 @@ export default function HeroSection() {
       <div className="relative max-w-7xl mx-auto z-20 flex items-center justify-center min-h-[48vh]">
         <div className="text-white text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-8 leading-tight mt-6">
-            Our Features
+            Our Features & Services
           </h1>
           <p className="text-xl text-sky-100 max-w-5xl mb-6">
-            Discover how CareerTrust blends technology, transparency, and trust
-            to redefine Pakistan’s job market.
+            Discover how CareerTrust blends verification, AI intelligence, and
+            transparent hiring workflows to redefine Pakistan's job market.
           </p>
         </div>
       </div>

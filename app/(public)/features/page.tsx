@@ -1,109 +1,136 @@
 "use client";
 import React from "react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HeroSection from "@/components/features/Herosection";
+import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
+import ServiceCard from "@/components/services/ServiceCard";
+import {
+  SERVICES_LIST,
+  WHY_CHOOSE_CARDS,
+} from "@/data/services/servicesData";
 
 export default function FeaturesPage() {
-  const features = [
-    {
-      icon: "📜",
-      title: "Employment Verification System",
-      description:
-        "Dual confirmation between employers and job seekers ensures verified and trusted employment records. Once validated, each record becomes part of a permanent career history that promotes credibility and confidence.",
-    },
-    {
-      icon: "⭐",
-      title: "Reputation & Review System",
-      description:
-        "CareerTrust introduces structured, verified reviews supported by AI-driven sentiment analysis. These reviews maintain fair, bias-free company reputation scores that strengthen transparency across workplaces.",
-    },
-    {
-      icon: "🤖",
-      title: "AI-Powered Job Matching",
-      description:
-        "Using artificial intelligence, the system analyzes user profiles, verified experience, and skill sets to recommend personalized job opportunities—helping candidates connect with the right employers efficiently.",
-    },
-    {
-      icon: "📄",
-      title: "Resume Parsing & Profile Builder",
-      description:
-        "Our resume parser automatically extracts data from uploaded CVs, creating structured, editable profiles. This ensures accuracy, reduces manual effort, and keeps candidate data consistent and verified.",
-    },
-    {
-      icon: "📊",
-      title: "Analytics Dashboard",
-      description:
-        "Interactive dashboards provide real-time insights into hiring patterns, company reputation trends, and sentiment analytics. Both employers and job seekers can make smarter decisions using transparent metrics.",
-    },
-    {
-      icon: "🔐",
-      title: "Secure Authentication & Role Management",
-      description:
-        "CareerTrust employs role-based authentication with JWT security, Supabase integration, and OpenCV-based face recognition. These measures guarantee identity authenticity and data protection for every user.",
-    },
+  const delays = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+    "animation-delay-600",
+    "animation-delay-700",
   ];
 
   return (
     <>
       <Header />
-      <main className="bg-gray-50 min-h-screen">
-        {/* Hero Section */}
-        <HeroSection />
+      <main className="min-h-screen overflow-hidden bg-[#f4f8fc]">
+        <ScrollRevealSection threshold={0.08} rootMargin="0px 0px -8% 0px">
+          <HeroSection />
+        </ScrollRevealSection>
 
-        {/* Features Grid */}
-        <section className="py-20 max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16 fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold text-[rgb(12,43,78)] mb-4 fade-in animation-delay-100">
-              What Makes CareerTrust Unique
-            </h2>
-            <p className="text-gray-600 max-w-3xl mx-auto text-lg fade-in animation-delay-200">
-              Each feature is built around one vision — creating an ecosystem of
-              verified, fair, and intelligent employment that benefits every
-              stakeholder.
-            </p>
-          </div>
+        <ScrollRevealSection threshold={0.14}>
+          <section className="relative border-b border-slate-200/80 bg-linear-to-b from-[#edf5fd] via-[#f7fbff] to-[#f4f8fc] py-16">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0c2b4e0a_1px,transparent_1px),linear-gradient(to_bottom,#0c2b4e0a_1px,transparent_1px)] bg-size-[44px_44px]" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 fade-in hover:-translate-y-1"
-                style={{animationDelay: `${300 + index * 100}ms`}}
-              >
-                <div className="text-[rgb(12,43,78)] text-4xl mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
+            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-10 text-center">
+                <h2 className="fade-in text-3xl font-bold text-[#0c2b4e] sm:text-4xl">
+                  Platform Features Built for Trusted Hiring
+                </h2>
+                <p className="fade-in animation-delay-100 mx-auto mt-3 max-w-3xl text-base text-[#4b627a] sm:text-lg">
+                  CareerTrust combines verification-first workflows, AI-assisted
+                  hiring support, and transparent reputation signals to connect
+                  trusted talent with trusted employers.
                 </p>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* CTA Section */}
-        <section className="bg-linear-to-br from-[rgb(12,43,78)] via-[rgb(15,52,94)] to-[rgb(18,61,110)] py-20 text-center text-white">
-          <div className="max-w-4xl mx-auto px-6 fade-in">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 fade-in animation-delay-100">
-              Building a Future of Trust and Opportunity
-            </h2>
-            <p className="text-blue-200 text-lg mb-8 fade-in animation-delay-200">
-              At CareerTrust, we believe that every verified connection creates
-              a stronger professional ecosystem. Together, we're shaping a job
-              market built on authenticity, fairness, and innovation.
-            </p>
-            <a
-              href="/signup"
-              className="inline-block bg-white text-[rgb(12,43,78)] font-semibold py-3 px-8 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-100 transition-all duration-300 hover:scale-105 active:scale-95 fade-in animation-delay-300"
-            >
-              Get Started Today
-            </a>
-          </div>
-        </section>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {SERVICES_LIST.map((service, index) => (
+                  <ServiceCard
+                    key={service.title}
+                    icon={service.icon}
+                    title={service.title}
+                    description={service.description}
+                    delayClass={delays[index % delays.length]}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        </ScrollRevealSection>
+
+        <ScrollRevealSection threshold={0.14}>
+          <section className="border-b border-slate-200 bg-white py-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-10 text-center">
+                <h2 className="fade-in text-3xl font-bold text-[#0c2b4e] sm:text-4xl">
+                  Why Choose CareerTrust
+                </h2>
+                <p className="fade-in animation-delay-100 mx-auto mt-3 max-w-3xl text-base text-[#4b627a] sm:text-lg">
+                  We make hiring more reliable with verified profiles,
+                  explainable AI recommendations, and accountability in every
+                  hiring stage.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                {WHY_CHOOSE_CARDS.map((item, index) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <article
+                      key={item.title}
+                      className={`fade-in-up rounded-2xl border border-[#dce8f5] bg-[#f8fbff] p-6 shadow-[0_12px_30px_-24px_rgba(12,43,78,0.72)] ${delays[index]}`}
+                    >
+                      <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#d9ebfb] text-[#0c2b4e]">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-[#102d4a]">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-[#546d85]">
+                        {item.description}
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </ScrollRevealSection>
+
+        <ScrollRevealSection threshold={0.14}>
+          <section className="bg-[#f4f8fc] px-4 py-18">
+            <div className="mx-auto max-w-7xl rounded-3xl border border-[#1f4f74]/35 bg-linear-to-br from-[#0b253f] via-[#0f3558] to-[#1d546c] px-6 py-14 text-white shadow-[0_28px_70px_-30px_rgba(7,26,46,0.8)] sm:px-10">
+              <div className="mx-auto max-w-4xl text-center">
+                <h2 className="fade-in text-3xl font-bold sm:text-4xl">
+                  Ready to Build a Trusted Career Journey?
+                </h2>
+                <p className="fade-in animation-delay-100 mt-4 text-base text-blue-100 sm:text-lg">
+                  Use CareerTrust to build a verified profile, discover better
+                  job matches, and make transparent hiring decisions.
+                </p>
+
+                <div className="fade-in animation-delay-200 mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Link
+                    href="/signup"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#f4c56a] px-6 py-3 text-sm font-semibold text-[#102e4c] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ffd689] sm:w-auto"
+                  >
+                    Get Started
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/employer/post-job"
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-white/45 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 sm:w-auto"
+                  >
+                    Post a Job
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        </ScrollRevealSection>
       </main>
       <Footer />
     </>

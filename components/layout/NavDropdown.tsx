@@ -63,7 +63,6 @@ const NavDropdown = ({ isMobile = false }: NavDropdownProps) => {
       : []),
     { href: "/about", label: "About" },
     { href: "/features", label: "Features" },
-    { href: "/services", label: "Services" },
     { href: "/blogs", label: "Blogs" },
     { href: "/contact", label: "Contact" },
   ];
@@ -71,7 +70,6 @@ const NavDropdown = ({ isMobile = false }: NavDropdownProps) => {
   const guestNavItems = [
     { href: "/about", label: "About" },
     { href: "/features", label: "Features" },
-    { href: "/services", label: "Services" },
     { href: "/blogs", label: "Blogs" },
     { href: "/contact", label: "Contact" },
   ];

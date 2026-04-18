@@ -7,6 +7,7 @@ import WhoWeAreSection from "@/components/about/WhoWeAreSection";
 import MissionVisionSection from "@/components/about/MissionVisionSection";
 import TrustPillarsSection from "@/components/about/TrustPillarsSection";
 import ProcessFlowSection from "@/components/about/ProcessFlowSection";
+import ImpactStatsSection from "@/components/about/ImpactStatsSection";
 import LeadershipSection from "@/components/about/LeadershipSection";
 import AboutCTASection from "@/components/about/AboutCTASection";
 import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
@@ -20,16 +21,19 @@ export default function AboutPage() {
           <HeroSection />
         </ScrollRevealSection>
         <ScrollRevealSection threshold={0.14}>
-          <WhoWeAreSection />
+          <MissionVisionSection />
         </ScrollRevealSection>
         <ScrollRevealSection threshold={0.14}>
-          <MissionVisionSection />
+          <WhoWeAreSection />
         </ScrollRevealSection>
         <ScrollRevealSection threshold={0.14}>
           <TrustPillarsSection />
         </ScrollRevealSection>
         <ScrollRevealSection threshold={0.14}>
           <ProcessFlowSection />
+        </ScrollRevealSection>
+        <ScrollRevealSection threshold={0.14}>
+          <ImpactStatsSection />
         </ScrollRevealSection>
         <ScrollRevealSection threshold={0.14}>
           <LeadershipSection />
