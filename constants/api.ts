@@ -73,6 +73,9 @@ export const API_ENDPOINTS = {
   EMPLOYER_EXIT_REQUESTS: `${BACKEND_API_URL}/employer/exit-requests`,
   EMPLOYER_EXIT_REQUEST_RESPOND: (id: number | string) =>
     `${BACKEND_API_URL}/employer/exit-requests/${id}/respond`,
+
+  // Contact (Node.js Backend API)
+  CONTACT: `${BACKEND_API_URL}/contact`,
 };
 
 export default API_ENDPOINTS;

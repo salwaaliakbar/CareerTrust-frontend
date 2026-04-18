@@ -13,3 +13,17 @@ export interface ContactFaqItem {
   question: string;
   answer: string;
 }
+
+export interface ContactFormPayload {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export interface ContactSubmissionResult {
+  id: string;
+  status: "pending" | "replied";
+  isRead: boolean;
+  message: string;
+}
