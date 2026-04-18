@@ -7,6 +7,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { API_ENDPOINTS } from "@/constants/api";
 
@@ -34,93 +35,117 @@ const toMonthIndex = (value?: string | null) => {
 const PassportPage = () => {
   const { getToken } = useAuth();
   const { user } = useUser();
-  const [verifiedEmployment, setVerifiedEmployment] = useState<EmploymentRecord[]>([]);
+  const searchParams = useSearchParams();
+  const queryClerkId = searchParams.get("clerkId");
+
+  // Use query clerkId if provided, otherwise use current user's ID
+  const targetClerkId = queryClerkId || user?.id;
+  const isViewingOwnPassport = !queryClerkId && user?.id;
+
+  const [verifiedEmployment, setVerifiedEmployment] = useState<
+    EmploymentRecord[]
+  >([]);
   const [allEmployment, setAllEmployment] = useState<EmploymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchJobseekerProfile = useCallback(async (isManualRefresh = false) => {
-    if (isManualRefresh) setRefreshing(true);
+  const fetchJobseekerProfile = useCallback(
+    async (isManualRefresh = false) => {
+      if (isManualRefresh) setRefreshing(true);
 
-    if (!user?.id) {
-      console.log("❌ Passport - No user ID available yet");
-      setLoading(false);
-      return;
-    }
+      if (!targetClerkId) {
+        console.log("❌ Passport - No user ID available yet");
+        setLoading(false);
+        return;
+      }
 
-    try {
-      const token = await getToken();
-      const url = `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`;
-      console.log("🔍 Passport - Fetching from URL:", url);
-      console.log("🔑 Passport - Current user clerkId:", user.id);
+      try {
+        const token = await getToken();
+        const url = `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(targetClerkId)}`;
+        console.log("🔍 Passport - Fetching from URL:", url);
+        console.log("🔑 Passport - Target clerkId:", targetClerkId);
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: 'no-store', // Prevent caching
-      });
-
-      console.log("📡 Passport - Response status:", response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("✅ Passport - Full API response:", data);
-        const employment: EmploymentRecord[] = Array.isArray(
-          data?.data?.employmentHistory,
-        )
-          ? (data.data.employmentHistory as EmploymentRecord[])
-          : [];
-        console.log("📊 Passport - Employment history count:", employment.length);
-        console.log("📋 Passport - Employment history:", employment);
-
-        // Log each employment with verification details
-        employment.forEach((emp: EmploymentRecord, idx: number) => {
-          console.log(`Employment ${idx + 1}:`, {
-            company: emp.company,
-            position: emp.position,
-            verified: emp.verified,
-            verificationStatus: emp.verificationStatus,
-            shouldShow: emp.verificationStatus === "verified"
-          });
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store", // Prevent caching
         });
 
-        // Show records approved by legacy or current verification flow.
-        // Some rows are stored as "approved" and some as "verified".
-        const verified = employment
-          .filter(
-            (emp: EmploymentRecord) =>
-              emp.verificationStatus === "verified" ||
-              emp.verificationStatus === "approved",
+        console.log("📡 Passport - Response status:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("✅ Passport - Full API response:", data);
+          const employment: EmploymentRecord[] = Array.isArray(
+            data?.data?.employmentHistory,
           )
-          .sort((a: EmploymentRecord, b: EmploymentRecord) => {
-            if (a.currentlyWorking && !b.currentlyWorking) return -1;
-            if (!a.currentlyWorking && b.currentlyWorking) return 1;
-            return toMonthIndex(b.startDate || "") - toMonthIndex(a.startDate || "");
+            ? (data.data.employmentHistory as EmploymentRecord[])
+            : [];
+          console.log(
+            "📊 Passport - Employment history count:",
+            employment.length,
+          );
+          console.log("📋 Passport - Employment history:", employment);
+
+          // Log each employment with verification details
+          employment.forEach((emp: EmploymentRecord, idx: number) => {
+            console.log(`Employment ${idx + 1}:`, {
+              company: emp.company,
+              position: emp.position,
+              verified: emp.verified,
+              verificationStatus: emp.verificationStatus,
+              shouldShow: emp.verificationStatus === "verified",
+            });
           });
-        console.log("✅ Passport - Verified employment count:", verified.length);
-        console.log("✅ Passport - Verified employment:", verified);
-        setVerifiedEmployment(verified);
-        setAllEmployment(employment);
-      } else {
-        console.error("❌ Passport - Failed to fetch profile. Status:", response.status);
+
+          // Show records approved by legacy or current verification flow.
+          // Some rows are stored as "approved" and some as "verified".
+          const verified = employment
+            .filter(
+              (emp: EmploymentRecord) =>
+                emp.verificationStatus === "verified" ||
+                emp.verificationStatus === "approved",
+            )
+            .sort((a: EmploymentRecord, b: EmploymentRecord) => {
+              if (a.currentlyWorking && !b.currentlyWorking) return -1;
+              if (!a.currentlyWorking && b.currentlyWorking) return 1;
+              return (
+                toMonthIndex(b.startDate || "") -
+                toMonthIndex(a.startDate || "")
+              );
+            });
+          console.log(
+            "✅ Passport - Verified employment count:",
+            verified.length,
+          );
+          console.log("✅ Passport - Verified employment:", verified);
+          setVerifiedEmployment(verified);
+          setAllEmployment(employment);
+        } else {
+          console.error(
+            "❌ Passport - Failed to fetch profile. Status:",
+            response.status,
+          );
+        }
+      } catch (error) {
+        console.error("❌ Passport - Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+        if (isManualRefresh) setRefreshing(false);
       }
-    } catch (error) {
-      console.error("❌ Passport - Error fetching profile:", error);
-    } finally {
-      setLoading(false);
-      if (isManualRefresh) setRefreshing(false);
-    }
-  }, [getToken, user?.id]);
+    },
+    [getToken, user?.id],
+  );
 
   useEffect(() => {
-    if (user?.id) {
+    if (targetClerkId) {
       fetchJobseekerProfile();
     }
 
     // Refresh when page becomes visible
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && user?.id) {
+      if (document.visibilityState === "visible" && targetClerkId) {
         fetchJobseekerProfile();
       }
     };
@@ -129,7 +154,7 @@ const PassportPage = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user?.id, fetchJobseekerProfile]);
+  }, [targetClerkId, fetchJobseekerProfile]);
 
   if (loading) {
     return (
@@ -143,18 +168,22 @@ const PassportPage = () => {
     <div className="flex flex-col min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 smooth-enter">
       <Header />
       <main className="grow">
-        {/* Refresh Button */}
-        <div className="container mx-auto px-4 pt-6 fade-in-up">
-          <button
-            onClick={() => fetchJobseekerProfile(true)}
-            disabled={refreshing}
-            className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh Verified Employment'}
-          </button>
-        </div>
-        
+        {/* Refresh Button - Only show when viewing own passport */}
+        {isViewingOwnPassport && (
+          <div className="container mx-auto px-4 pt-6 fade-in-up">
+            <button
+              onClick={() => fetchJobseekerProfile(true)}
+              disabled={refreshing}
+              className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              {refreshing ? "Refreshing..." : "Refresh Verified Employment"}
+            </button>
+          </div>
+        )}
+
         <div className="smooth-enter animation-delay-100">
           <DigitalEmploymentPassport
             verifiedEmployment={verifiedEmployment}
