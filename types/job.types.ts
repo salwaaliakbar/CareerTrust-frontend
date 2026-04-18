@@ -17,13 +17,37 @@ export interface Job {
   rating?: number;
   reviews?: number;
   match?: number;
-  postedDaysAgo?: string;
+  postedDaysAgo?: number | string;
   createdAt?: string;
   updatedAt?: string;
   employerId?: string;
   employerName?: string;
   companyId?: number;
   companyLogo?: string;
+}
+
+export interface PaginationMeta {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}
+
+export interface JobsPageResponse {
+  success: boolean;
+  data: Job[];
+  total: number;
+  pagination?: PaginationMeta;
+  error?: string;
+}
+
+export interface JobLocationsResponse {
+  success: boolean;
+  data: string[];
+  total?: number;
+  error?: string;
 }
 
 export interface JobFormData {
@@ -44,6 +68,7 @@ export interface JobsResponse {
   success: boolean;
   data: Job[];
   total: number;
+  pagination?: PaginationMeta;
   error?: string;
 }
 

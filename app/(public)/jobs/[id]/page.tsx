@@ -34,14 +34,18 @@ export default function JobDetail({
   const [saved, setSaved] = useState(false);
 
   const jobId = id;
+  const cacheKey = String(jobId);
   const CACHE_DURATION = 10 * 60 * 1000;
   const now = Date.now();
-  const lastFetchTime = lastFetchTimeById?.[jobId];
-  const isCached = lastFetchTime && now - lastFetchTime < CACHE_DURATION && job?.id === jobId;
+  const lastFetchTime = lastFetchTimeById?.[cacheKey];
+  const isCached =
+    Boolean(lastFetchTime) &&
+    now - (lastFetchTime as number) < CACHE_DURATION &&
+    String(job?.id) === cacheKey;
 
   useEffect(() => {
-    if (!isCached) dispatch(getJobById(id));
-  }, [id, isCached, dispatch]);
+    if (!isCached) dispatch(getJobById(cacheKey));
+  }, [cacheKey, isCached, dispatch]);
 
   const handleApply = async () => {
     setApplicationError(null);

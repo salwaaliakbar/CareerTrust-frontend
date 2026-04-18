@@ -79,7 +79,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user?.id) return;
-    dispatch(initializeDashboard({ clerkId: user.id, forceRefresh: true }));
+    dispatch(initializeDashboard({ clerkId: user.id, forceRefresh: false }));
   }, [user?.id, dispatch]);
 
   const displayStats: DashboardStats = {

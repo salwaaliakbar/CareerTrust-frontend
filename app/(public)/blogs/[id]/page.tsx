@@ -15,16 +15,17 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
   const { selectedBlog: blog, loading, lastFetchTimeById } = useAppSelector(state => state.blogs);
   
   const blogId = Number(id);
+  const cacheKey = String(blogId);
   const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   const now = Date.now();
-  const lastFetchTime = lastFetchTimeById?.[blogId];
+  const lastFetchTime = lastFetchTimeById?.[cacheKey];
   const isCached = lastFetchTime && now - lastFetchTime < CACHE_DURATION && blog?.id === blogId;
 
   useEffect(() => {
     if (!isCached) {
-      dispatch(getBlogById(id));
+      dispatch(getBlogById(cacheKey));
     }
-  }, [id, isCached, dispatch]);
+  }, [cacheKey, isCached, dispatch]);
 
   if (loading) {
     return (

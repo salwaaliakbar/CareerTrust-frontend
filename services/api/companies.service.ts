@@ -3,6 +3,7 @@ import {
   Company,
   CompaniesResponse,
   CompanyResponse,
+  PaginationMeta,
   UpdateCompanyRequest,
   CompanyFormData,
 } from "@/types/company.types";
@@ -12,6 +13,20 @@ interface CompanyDetailResponse {
   data: Company;
   error?: string;
 }
+
+type FetchCompaniesPageParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  industry?: string;
+  featured?: boolean;
+};
+
+type CompaniesPageResult = {
+  data: Company[];
+  total: number;
+  pagination?: PaginationMeta;
+};
 
 /**
  * Get server-side fetch URL with fallback to 127.0.0.1 if localhost fails
@@ -26,27 +41,28 @@ function getServerFetchUrl(url: string): string {
 }
 
 /**
- * Fetch all companies
- * @param industry - Optional industry filter
- * @param featured - Optional featured filter
+ * Fetch paginated companies (card fields)
  */
-export async function fetchCompanies(
-  industry?: string,
-  featured?: boolean,
-): Promise<Company[]> {
+export async function fetchCompaniesPage(
+  params: FetchCompaniesPageParams = {},
+): Promise<CompaniesPageResult> {
   try {
     let url = API_ENDPOINTS.COMPANIES;
 
-    const params = new URLSearchParams();
-    if (industry) params.append("industry", industry);
-    if (featured !== undefined) params.append("featured", String(featured));
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.append("page", String(params.page));
+    if (params.limit) searchParams.append("limit", String(params.limit));
+    if (params.search) searchParams.append("search", params.search);
+    if (params.industry) searchParams.append("industry", params.industry);
+    if (params.featured !== undefined) {
+      searchParams.append("featured", String(params.featured));
+    }
 
-    if (params.toString()) {
-      url += "?" + params.toString();
+    if (searchParams.toString()) {
+      url += "?" + searchParams.toString();
     }
 
     url = getServerFetchUrl(url);
-    console.log("[Company Service] Fetching from URL:", url);
 
     const response = await fetch(url, {
       method: "GET",
@@ -56,35 +72,35 @@ export async function fetchCompanies(
       cache: "no-store",
     });
 
-    console.log(
-      "[Company Service] Response status:",
-      response.status,
-      response.statusText,
-    );
-
     if (!response.ok) {
-      console.error(
-        `[Company Service] Failed to fetch. Status: ${response.status} ${response.statusText}`,
-      );
-      return [];
+      return { data: [], total: 0 };
     }
 
     const data: CompaniesResponse = await response.json();
 
     if (!data.success) {
-      console.warn("[Company Service] API returned success: false", data.error);
-      return [];
+      return { data: [], total: 0 };
     }
 
-    console.log(
-      "[Company Service] Successfully fetched companies:",
-      data.data.length,
-    );
-    return data.data;
-  } catch (error) {
-    console.error("[Company Service] Error fetching companies:", error);
-    return [];
+    return {
+      data: data.data,
+      total: data.total ?? data.data.length,
+      pagination: data.pagination,
+    };
+  } catch {
+    return { data: [], total: 0 };
   }
+}
+
+/**
+ * Fetch all companies (legacy wrapper)
+ */
+export async function fetchCompanies(
+  industry?: string,
+  featured?: boolean,
+): Promise<Company[]> {
+  const response = await fetchCompaniesPage({ industry, featured });
+  return response.data;
 }
 
 /**

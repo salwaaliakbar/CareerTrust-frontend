@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Briefcase, MapPin, DollarSign, Clock, ArrowRight, Sparkles
 } from "lucide-react";
-import { API_ENDPOINTS } from "@/constants/api";
-import axios from "axios";
 import Swal from "sweetalert2";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getFeaturedJobs } from "@/redux/store/slices/jobsSlice";
 
 interface Job {
   id: number | string;
@@ -90,13 +90,21 @@ const sampleJobs: Job[] = [
   },
 ];
 
-function FeaturedJobCard({ job }: { job: Job }) {
+function FeaturedJobCard({ job, index }: { job: Job; index: number }) {
   const companyName = typeof job.company === "object" ? job.company.name : job.company;
+  const delayClass = [
+    "animation-delay-100",
+    "animation-delay-200",
+    "animation-delay-300",
+    "animation-delay-400",
+    "animation-delay-500",
+    "animation-delay-600",
+  ];
   
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="group bg-white rounded-2xl border border-gray-200 p-6 shadow-md hover:shadow-2xl hover:border-[#1D546C]/40 transition-all duration-300 hover:-translate-y-2 block relative overflow-hidden hover:glow"
+      className={`group bg-white rounded-2xl border border-gray-200 p-6 shadow-md hover:shadow-2xl hover:border-[#1D546C]/40 transition-all duration-500 hover:-translate-y-2 block relative overflow-hidden fade-in-up ${delayClass[index % delayClass.length]}`}
     >
       {/* Hover gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-br from-transparent to-transparent group-hover:from-transparent group-hover:to-transparent transition-all duration-300 pointer-events-none" />
@@ -160,51 +168,55 @@ function FeaturedJobCard({ job }: { job: Job }) {
 }
 
 export default function FeaturedJobs() {
-  const [jobs, setJobs] = useState<Job[]>(sampleJobs);
+  const dispatch = useAppDispatch();
+  const jobs = useAppSelector((state) => state.jobs.featuredItems);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchJobs() {
+    let active = true;
+
+    const loadFeaturedJobs = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get(API_ENDPOINTS.JOBS, {
-          params: { limit: 6, featured: true },
-        });
-        
-        if (response.data?.data && response.data.data.length > 0) {
-          setJobs(response.data.data.slice(0, 6));
-        }
-      } catch (error) {
-        // Use sample jobs as fallback
+        await dispatch(getFeaturedJobs(undefined)).unwrap();
+      } catch {
         Swal.fire({
           icon: "error",
           title: "Failed to Load Featured Jobs",
           text: "We couldn't fetch the latest featured jobs.",
           confirmButtonText: "OK",
         });
-        console.log("Using sample jobs data");
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
-    fetchJobs();
-  }, []);
+    loadFeaturedJobs();
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch]);
+
+  const jobsToRender = jobs.length > 0 ? jobs : sampleJobs;
 
   return (
-    <section className="pb-20 pt-10 bg-linear-to-b from-white via-[#1D546C]/20 to-white">
+    <section className="pb-20 pt-12 bg-linear-to-b from-white via-[#1D546C]/20 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-[#1D546C]/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
+          <div className="inline-flex items-center gap-2 bg-[#1D546C]/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4 fade-in-up">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span className="text-[#0C2B4E] text-sm font-medium">
               Top Opportunities
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0C2B4E] mb-4 fade-in-down animation-delay-100">
             Featured Jobs
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto fade-in animation-delay-200">
             Discover hand-picked opportunities from verified employers. These positions are in high demand.
           </p>
         </div>
@@ -239,8 +251,8 @@ export default function FeaturedJobs() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job) => (
-              <FeaturedJobCard key={job.id} job={job} />
+            {jobsToRender.map((job, idx) => (
+              <FeaturedJobCard key={job.id} job={job} index={idx} />
             ))}
           </div>
         )}
@@ -249,7 +261,7 @@ export default function FeaturedJobs() {
         <div className="text-center mt-12">
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-2 bg-[#0C2B4E] text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-[#1D546C]/90 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-2 bg-[#0C2B4E] text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:bg-[#1D546C]/90 hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 fade-in-up animation-delay-300"
           >
             Browse All Jobs
             <ArrowRight className="w-5 h-5" />

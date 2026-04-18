@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { EmploymentRecord, DocumentFile, VerificationStatus } from "@/types/jobseeker.types";
+import { EmploymentRecord, DocumentFile } from "@/types/jobseeker.types";
+import Swal from "sweetalert2";
 
 export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
   const [employmentHistory, setEmploymentHistory] = useState<EmploymentRecord[]>(initialEmployment);
@@ -14,14 +15,68 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     currentlyWorking: false,
     description: "",
     verified: false,
-    verificationStatus: "draft",
+    verificationStatus: "pending",
     documents: [],
   });
 
   const documentInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  const isValidMonthYear = (value: string) => /^(0[1-9]|1[0-2])\/\d{4}$/.test(value);
+
+  const monthYearToIndex = (value: string) => {
+    const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+    if (!match) return null;
+
+    const month = Number(match[1]);
+    const year = Number(match[2]);
+    return year * 12 + month;
+  };
+
+  const currentMonthIndex = () => {
+    const now = new Date();
+    return now.getFullYear() * 12 + (now.getMonth() + 1);
+  };
+
   const addEmploymentRecord = () => {
-    if (newEmployment.company && newEmployment.position && newEmployment.startDate) {
+    if (
+      newEmployment.company &&
+      newEmployment.position &&
+      newEmployment.startDate &&
+      isValidMonthYear(newEmployment.startDate)
+    ) {
+      const currentlyWorking = newEmployment.currentlyWorking || false;
+      const validEndDate =
+        currentlyWorking ||
+        !newEmployment.endDate ||
+        isValidMonthYear(newEmployment.endDate);
+
+      if (!validEndDate) {
+        return;
+      }
+
+      const startIndex = monthYearToIndex(newEmployment.startDate);
+      const endIndex = newEmployment.endDate
+        ? monthYearToIndex(newEmployment.endDate)
+        : null;
+
+      if (startIndex && startIndex > currentMonthIndex()) {
+        return;
+      }
+
+      if (
+        !currentlyWorking &&
+        startIndex &&
+        endIndex &&
+        endIndex < startIndex
+      ) {
+        Swal.fire({
+          icon: "warning",
+          title: "Invalid Date Range",
+          text: "Employment end date cannot be before start date.",
+        });
+        return;
+      }
+
       const record: EmploymentRecord = {
         id: Date.now().toString(),
         company: newEmployment.company,
@@ -31,7 +86,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
         currentlyWorking: newEmployment.currentlyWorking || false,
         description: newEmployment.description || "",
         verified: false,
-        verificationStatus: "draft",
+        verificationStatus: "pending",
         documents: [],
       };
       setEmploymentHistory((prev) => [record, ...prev]);
@@ -43,15 +98,49 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
         currentlyWorking: false,
         description: "",
         verified: false,
-        verificationStatus: "draft",
+        verificationStatus: "pending",
         documents: [],
       });
       setShowAddEmployment(false);
     }
   };
 
-  const deleteEmployment = (id: string) => {
-    setEmploymentHistory((prev) => prev.filter((emp) => emp.id !== id));
+  const deleteEmployment = async (id: string) => {
+    const target = employmentHistory.find((emp) => String(emp.id) === String(id));
+
+    if (!target) return;
+
+    if (target.verificationStatus === "verified") {
+      await Swal.fire({
+        icon: "info",
+        title: "Cannot Delete Verified Experience",
+        text: "Approved employment records cannot be deleted.",
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Delete Work Experience?",
+      text: "This will remove the experience and its attached documents after you save profile changes.",
+      showCancelButton: true,
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setEmploymentHistory((prev) => prev.filter((emp) => String(emp.id) !== String(id)));
+  };
+
+  const updateEmployment = (updatedEmployment: EmploymentRecord) => {
+    setEmploymentHistory((prev) =>
+      prev.map((emp) =>
+        String(emp.id) === String(updatedEmployment.id) ? updatedEmployment : emp,
+      ),
+    );
   };
 
   const handleDocumentUpload = (empId: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,16 +158,11 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
 
     setEmploymentHistory((prev) =>
       prev.map((emp) => {
-        if (emp.id === empId) {
+        if (String(emp.id) === String(empId)) {
           const updatedDocs = [...emp.documents, ...newDocs];
-          const newStatus =
-            emp.verificationStatus === "draft" && updatedDocs.length > 0
-              ? "pending"
-              : emp.verificationStatus;
           return {
             ...emp,
             documents: updatedDocs,
-            verificationStatus: newStatus as VerificationStatus,
           };
         }
         return emp;
@@ -93,16 +177,11 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
   const removeDocument = (empId: string, docId: string) => {
     setEmploymentHistory((prev) =>
       prev.map((emp) => {
-        if (emp.id === empId) {
+        if (String(emp.id) === String(empId)) {
           const updatedDocs = emp.documents.filter((doc) => doc.id !== docId);
-          const newStatus =
-            updatedDocs.length === 0 && emp.verificationStatus === "pending"
-              ? "draft"
-              : emp.verificationStatus;
           return {
             ...emp,
             documents: updatedDocs,
-            verificationStatus: newStatus as VerificationStatus,
           };
         }
         return emp;
@@ -130,6 +209,7 @@ export function useEmployment(initialEmployment: EmploymentRecord[] = []) {
     setNewEmployment,
     documentInputRefs,
     addEmploymentRecord,
+    updateEmployment,
     deleteEmployment,
     handleDocumentUpload,
     handleNewEmploymentChange,

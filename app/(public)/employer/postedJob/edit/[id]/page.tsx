@@ -11,7 +11,11 @@ import { updateJob, fetchJobById } from "@/services/api/jobs.service";
 import Swal from "sweetalert2";
 import logger from "@/lib/logger";
 import { EMPLOYER } from "@/constants/constant";
-import { Loader2 } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function EditJobPage() {
   const router = useRouter();
@@ -23,10 +27,7 @@ export default function EditJobPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [initialData, setInitialData] = useState<JobFormData | null>(null);
   const [employerId, setEmployerId] = useState<string | null>(null);
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
 
-  // Check if user is an employer and fetch job data
   useEffect(() => {
     async function loadJobData() {
       if (isLoaded && user) {
@@ -42,12 +43,10 @@ export default function EditJobPage() {
           return;
         }
 
-        // Use Clerk ID — numeric employerId is not stored in metadata
         setEmployerId(user.id);
 
         try {
           setIsLoading(true);
-          // Fetch existing job data
           const job = await fetchJobById(jobId);
 
           if (!job) {
@@ -60,11 +59,6 @@ export default function EditJobPage() {
             return;
           }
 
-          // Store logo for header display
-          if (job.companyLogo) setCompanyLogo(job.companyLogo);
-          if (job.company) setCompanyName(job.company);
-
-          // Convert job data to form format
           const formData: JobFormData = {
             title: job.title,
             description: job.description,
@@ -114,19 +108,16 @@ export default function EditJobPage() {
     try {
       logger.info("Updating job:", jobId, data);
 
-      // Prepare job data with employerId, exclude company field (it's read-only)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { company, ...jobDataWithoutCompany } = data;
       const jobData: JobFormData = {
         ...jobDataWithoutCompany,
       };
 
-      // Submit to API (skills will be converted to array in the service)
       const result = await updateJob(jobId, jobData, getToken);
 
       logger.info("Job updated successfully:", result);
 
-      // Show success message
       await Swal.fire({
         icon: "success",
         title: "Job Updated Successfully!",
@@ -138,7 +129,7 @@ export default function EditJobPage() {
         cancelButtonColor: "#6b7280",
       }).then((result) => {
         if (result.isConfirmed) {
-          router.push(`/employer/jobs/${jobId}`);
+          router.push(`/employer/postedJob/${jobId}`);
         } else {
           router.push("/employer/dashboard");
         }
@@ -180,10 +171,10 @@ export default function EditJobPage() {
 
   if (!isLoaded || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
-        <div className="text-center">
-          <Loader2 className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Loading job data...</p>
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950">
+        <div className="text-center rounded-3xl border border-white/10 bg-white/5 px-8 py-10 shadow-2xl backdrop-blur-xl">
+          <Loader2 className="animate-spin h-12 w-12 text-cyan-300 mx-auto mb-4" />
+          <p className="text-slate-200 font-medium">Loading job data...</p>
         </div>
       </div>
     );
@@ -194,55 +185,72 @@ export default function EditJobPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <div className="min-h-screen bg-[#F4F6FB]">
       <Header />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Page Header */}
-        <div className="text-center mb-12 animate-fade-in-up">
-          {/* Company logo / fallback icon */}
-          <div className="flex justify-center mb-5">
-            {companyLogo &&
-            (companyLogo.startsWith("http") || companyLogo.startsWith("/")) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={companyLogo}
-                alt={companyName ?? "Company"}
-                className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-xl ring-4 ring-blue-100"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xl ring-4 ring-blue-100">
-                {companyName ? (
-                  <span className="text-white font-black text-2xl">
-                    {companyName
-                      .split(" ")
-                      .slice(0, 2)
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                ) : (
-                  <Loader2 className="w-10 h-10 text-white/60" />
-                )}
-              </div>
-            )}
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
-            Edit Job Posting
-          </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Update your job posting details and save changes
-          </p>
-        </div>
+      <main className="px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <section className="relative overflow-hidden rounded-3xl shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)]">
+            <div className="absolute inset-0 bg-[#0B1F45]" />
+            <div className="absolute inset-0 opacity-60 bg-[radial-gradient(ellipse_at_20%_50%,#1e40af44_0%,transparent_60%),radial-gradient(ellipse_at_80%_20%,#7c3aed33_0%,transparent_55%),radial-gradient(ellipse_at_60%_80%,#0ea5e922_0%,transparent_50%)]" />
+            <div className="absolute inset-0 opacity-[0.05] bg-size-[40px_40px] bg-[linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)]" />
 
-        {/* Job Post Form */}
-        <JobPostForm
-          initialData={initialData}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isSubmitting={isSubmitting}
-          isEditMode={true}
-        />
+            <div className="relative z-10 px-7 py-12 sm:px-10 sm:py-15">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-3xl">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <Sparkles className="h-4 w-4 text-cyan-300/80" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/80">
+                      Edit Posted Job
+                    </span>
+                  </div>
+                  <h1 className="text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">
+                    Update Job Details
+                  </h1>
+                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-blue-200/85 sm:text-base">
+                    Refine the job title, requirements, and visibility while keeping the posting consistent with your employer dashboard.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                  <Link
+                    href={`/employer/postedJob/${jobId}`}
+                    className="inline-flex min-w-40 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-6 py-4 text-base font-bold text-white shadow-lg shadow-black/20 backdrop-blur-sm transition hover:bg-white/20"
+                  >
+                    View Job
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <section className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-[0_18px_45px_-28px_rgba(12,43,78,0.35)]">
+              <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Job Form
+                    </p>
+                    <h2 className="mt-1 text-2xl font-black text-slate-900">
+                      Update the posting
+                    </h2>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                <JobPostForm
+                  initialData={initialData}
+                  onSubmit={handleSubmit}
+                  onCancel={handleCancel}
+                  isSubmitting={isSubmitting}
+                  isEditMode={true}
+                />
+              </div>
+            </section>
+          </section>
+        </div>
       </main>
 
       <Footer />

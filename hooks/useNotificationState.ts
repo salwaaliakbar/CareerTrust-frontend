@@ -2,11 +2,16 @@ import { createContext, useContext } from "react";
 
 export type NotificationType =
   | "job_recommendation"
+  | "application_received"
   | "application_reviewing"
   | "application_shortlisted"
   | "application_interviewed"
   | "application_rejected"
   | "application_hired"
+  | "employment_verification_approved"
+  | "employment_verification_rejected"
+  | "education_verification_approved"
+  | "education_verification_rejected"
   | "offer_response"
   | "exit_request_received"
   | "exit_request_approved"

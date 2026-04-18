@@ -8,7 +8,7 @@ type Company = {
   name: string;
   industry: string;
   location: string;
-  rating: number;
+  rating?: number;
   reviews: number;
   employees: number;
   openJobs: number;
@@ -90,9 +90,9 @@ export default function CompanyCard({ company }: { company: Company }) {
           <div className="flex flex-col items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50/40 transition-all duration-200">
             <div className="flex items-center gap-0.5 mb-0.5">
               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span className="text-sm font-bold text-slate-800">{company.rating}</span>
+              <span className="text-sm font-bold text-slate-800">{Number(company.rating || 0).toFixed(1)}</span>
             </div>
-            <span className="text-xs text-slate-400">{company.reviews} reviews</span>
+            <span className="text-xs text-slate-400">reputation</span>
           </div>
 
           <div className="flex flex-col items-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 group-hover:border-blue-100 group-hover:bg-blue-50/40 transition-all duration-200">

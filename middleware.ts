@@ -13,6 +13,10 @@ const isPrivateRoute = createRouteMatcher([
   "/profile(.*)",
   "/settings(.*)",
   "/admin/admindashboard(.*)",
+  "/employer/post-job(.*)",
+  "/employer/candidates(.*)",
+  "/employer/dashboard(.*)",
+  "/employer/profile(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
@@ -28,6 +32,8 @@ export default clerkMiddleware(async (auth, request) => {
   if (!userId && isPrivate) {
     console.log("Redirecting to login - no user");
     const loginUrl = new URL("/login", request.url);
+    const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    loginUrl.searchParams.set("redirect", destination);
     return NextResponse.redirect(loginUrl);
   }
 

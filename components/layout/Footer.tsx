@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, Linkedin, Twitter } from "lucide-react";
-import Test from "@/app/Test";
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -172,7 +171,6 @@ function Footer() {
           </div>
         </div>
       </div>
-      <Test />
     </footer>
   );
 }

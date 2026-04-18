@@ -7,8 +7,9 @@ export interface Company {
   name: string;
   industry: string;
   location: string;
-  rating: number;
-  reviews: number;
+  rating?: number;
+  reviews?: number;
+  reviewCount?: number;
   employees: number;
   openJobs: number;
   description: string;
@@ -49,9 +50,19 @@ export interface CompanyResponse {
   error?: string;
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+}
+
 export interface CompaniesResponse {
   success: boolean;
   data: Company[];
+  pagination?: PaginationMeta;
   total: number;
   error?: string;
 }

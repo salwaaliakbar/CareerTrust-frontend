@@ -350,6 +350,52 @@ export interface CandidatesResponse {
 }
 
 /**
+ * Fetch featured candidates preview cards (top 3)
+ */
+export async function fetchFeaturedCandidates(
+  getToken?: () => Promise<string | null>,
+): Promise<CandidatesResponse["data"] | null> {
+  try {
+    const url = `${EMPLOYER_API_URL}/candidates/featured`;
+
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+
+    if (getToken) {
+      const token = await getToken();
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error(
+        `[Employer Service] Failed to fetch featured candidates. Status: ${response.status}`,
+      );
+      return null;
+    }
+
+    const data: CandidatesResponse = await response.json();
+
+    if (!data.success) {
+      console.warn(
+        "[Employer Service] Featured candidates API returned success: false",
+        data.error,
+      );
+      return null;
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error("[Employer Service] Error fetching featured candidates:", error);
+    return null;
+  }
+}
+
+/**
  * Fetch all candidates (jobseeker profiles) for employer browsing
  */
 export async function fetchAllCandidates(

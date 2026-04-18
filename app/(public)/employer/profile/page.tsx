@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import {
-  ArrowLeft,
   BadgeCheck,
   Briefcase,
   Building2,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import ReputationScoreCard from "@/components/companies/ReputationScoreCard";
 import {
   checkCompanyStatus,
   getEmployerCompanyProfileDetails,
@@ -26,6 +26,8 @@ import {
 } from "@/services/api/employerCompany.service";
 import { fetchEmployerJobs } from "@/services/api/employer.service";
 import { EmployerJob } from "@/types/application.types";
+import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
+import { getCompanyReputationById } from "@/redux/store/slices/companiesSlice";
 
 const formatDate = (value?: string | null) => {
   if (!value) return "N/A";
@@ -37,6 +39,7 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function EmployerProfilePage() {
+  const dispatch = useAppDispatch();
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [profile, setProfile] = useState<EmployerCompanyProfileDetails | null>(
@@ -45,6 +48,7 @@ export default function EmployerProfilePage() {
   const [jobs, setJobs] = useState<EmployerJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const reputationById = useAppSelector((state) => state.companies.reputationById);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -86,6 +90,12 @@ export default function EmployerProfilePage() {
 
   const company = profile?.company;
   const employerMeta = profile?.employerProfile;
+  const companyReputation = company ? reputationById[String(company.id)] : null;
+
+  useEffect(() => {
+    if (!company?.id) return;
+    dispatch(getCompanyReputationById(String(company.id)));
+  }, [dispatch, company?.id]);
 
   const activeJobs = jobs.filter((j) => j.status === "active");
   const pastJobs = jobs.filter((j) => j.status !== "active");
@@ -102,40 +112,23 @@ export default function EmployerProfilePage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50 to-blue-100 pt-24 pb-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <Link
-              href="/employer/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Link>
-            {company && (
-              <Link
-                href="/employer/profile/employees"
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-              >
-                <Users className="h-4 w-4" />
-                View Employees
-              </Link>
-            )}
-          </div>
+      <div className="h-1 w-full bg-linear-to-r from-blue-500 via-indigo-500 to-cyan-500" />
+      <main className="relative min-h-screen overflow-hidden bg-[#f4f7fb] pb-16 pt-10">
 
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-10 text-center shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
               <p className="text-slate-500">Loading profile...</p>
             </div>
           ) : error ? (
-            <div className="rounded-3xl border border-red-200 bg-white p-10 shadow-sm">
+            <div className="rounded-3xl border border-red-200 bg-white p-10 shadow-[0_22px_55px_-30px_rgba(239,68,68,0.35)]">
               <h1 className="text-2xl font-bold text-slate-900">
                 Unable to load profile
               </h1>
               <p className="mt-2 text-slate-600">{error}</p>
             </div>
           ) : !company ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-10 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
               <h1 className="text-2xl font-bold text-slate-900">
                 No company profile yet
               </h1>
@@ -145,18 +138,22 @@ export default function EmployerProfilePage() {
               </p>
               <Link
                 href="/employer/company/setup"
-                className="mt-6 inline-flex rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="mt-6 inline-flex rounded-full bg-linear-to-r from-[#0C2B4E] to-[#1D546C] px-5 py-3 text-sm font-semibold text-white transition hover:from-[#1A3D64] hover:to-[#2A5A7F]"
               >
                 Complete Company Profile
               </Link>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Company header */}
-              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#f8fafc_100%)] px-8 py-10">
-                  <div className="flex gap-5">
-                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+            <div className="space-y-8">
+              <section className="relative overflow-hidden rounded-3xl shadow-2xl shadow-[#0b1f45]/25">
+                <div className="absolute inset-0 bg-[#0B1F45]" />
+                <div className="absolute inset-0 opacity-60 bg-[radial-gradient(ellipse_at_12%_45%,#1e40af40_0%,transparent_60%),radial-gradient(ellipse_at_88%_18%,#4f46e540_0%,transparent_55%),radial-gradient(ellipse_at_70%_85%,#0ea5e930_0%,transparent_50%)]" />
+                <div className="absolute inset-0 opacity-[0.06] bg-size-[38px_38px] bg-[linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)]" />
+
+                <div className="relative z-10 px-7 py-8 sm:px-10 sm:py-10">
+                  <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/25 bg-white/10 shadow-lg shadow-black/20 backdrop-blur-sm sm:h-28 sm:w-28">
                       {company.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -165,141 +162,208 @@ export default function EmployerProfilePage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <Building2 className="h-9 w-9 text-slate-400" />
+                        <Building2 className="h-11 w-11 text-blue-100/80" />
                       )}
                     </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900">
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h1 className="truncate text-3xl font-black tracking-tight text-white sm:text-4xl">
                           {company.name}
                         </h1>
                         {company.isVerified && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/50 bg-emerald-400/20 px-3 py-1 text-xs font-semibold text-emerald-50 backdrop-blur-sm">
                             <BadgeCheck className="h-3.5 w-3.5" />
                             Verified
                           </span>
                         )}
                         {company.featured && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-50 backdrop-blur-sm">
                             <Star className="h-3.5 w-3.5" />
                             Featured
                           </span>
                         )}
                       </div>
-                      <p className="mt-1.5 text-base font-medium text-slate-500">
+
+                      <p className="mt-2 text-lg font-semibold text-blue-100/85">
                         {company.industry}
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-500">
-                        <span className="inline-flex items-center gap-1.5">
-                          <MapPin className="h-4 w-4" />
+
+                      <div className="mt-4 flex flex-wrap gap-2.5 text-base text-blue-100">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm">
+                          <MapPin className="h-4 w-4 text-blue-200" />
                           {company.location}
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <Briefcase className="h-4 w-4" />
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm">
+                          <Briefcase className="h-4 w-4 text-blue-200" />
                           {activeJobs.length} active job
                           {activeJobs.length !== 1 ? "s" : ""}
                         </span>
                       </div>
+
+                      <p className="mt-5 max-w-3xl whitespace-pre-wrap text-base leading-7 text-blue-50/90 sm:text-lg">
+                        {company.description ||
+                          "Add a company description to showcase your mission, values, and culture to top candidates."}
+                      </p>
+                    </div>
+
+                    </div>
+
+                    <div className="shrink-0">
+                      <Link
+                        href="/employer/profile/employees"
+                        className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-base font-semibold text-white shadow-lg shadow-black/20 backdrop-blur-sm transition hover:bg-white/20"
+                      >
+                        <Users className="h-4 w-4" />
+                        View Employees
+                      </Link>
                     </div>
                   </div>
                 </div>
+              </section>
 
-                {company.description && (
-                  <div className="border-t border-slate-100 px-8 py-6">
-                    <p className="whitespace-pre-wrap leading-7 text-slate-600">
-                      {company.description}
+              <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+                <div className="space-y-8 lg:col-span-2">
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <h2 className="text-xl font-bold text-slate-900">Employer Details</h2>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <DetailItem
+                      icon={<User className="h-4 w-4" />}
+                      label="Name"
+                      value={employerName}
+                    />
+                    <DetailItem
+                      icon={<Mail className="h-4 w-4" />}
+                      label="Email"
+                      value={employerEmail}
+                    />
+                    <DetailItem
+                      icon={<Globe className="h-4 w-4" />}
+                      label="Company URL"
+                      value={employerMeta?.companyURL || "N/A"}
+                      href={employerMeta?.companyURL || undefined}
+                    />
+                    <DetailItem
+                      icon={<Linkedin className="h-4 w-4" />}
+                      label="LinkedIn"
+                      value={
+                        employerMeta?.linkedinUrl || company.linkedinUrl || "N/A"
+                      }
+                      href={
+                        employerMeta?.linkedinUrl ||
+                        company.linkedinUrl ||
+                        undefined
+                      }
+                    />
+                    <DetailItem
+                      icon={<Calendar className="h-4 w-4" />}
+                      label="Profile Created"
+                      value={formatDate(employerMeta?.createdAt)}
+                    />
+                  </div>
+                </section>
+
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Current Listed Jobs
+                    </h2>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+                      {activeJobs.length} active
+                    </span>
+                  </div>
+                  {activeJobs.length === 0 ? (
+                    <p className="mt-4 text-sm text-slate-500">
+                      No active jobs right now.
                     </p>
+                  ) : (
+                    <div className="mt-5 space-y-3">
+                      {activeJobs.map((job) => (
+                        <JobRow key={job.id} job={job} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-xl font-bold text-slate-900">
+                      Past Listed Jobs
+                    </h2>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
+                      {pastJobs.length} total
+                    </span>
                   </div>
-                )}
-              </section>
-
-              {/* Employer details */}
-              <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-                <h2 className="text-lg font-bold text-slate-900">
-                  Employer Details
-                </h2>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <DetailItem
-                    icon={<User className="h-4 w-4" />}
-                    label="Name"
-                    value={employerName}
-                  />
-                  <DetailItem
-                    icon={<Mail className="h-4 w-4" />}
-                    label="Email"
-                    value={employerEmail}
-                  />
-                  <DetailItem
-                    icon={<Globe className="h-4 w-4" />}
-                    label="Company URL"
-                    value={employerMeta?.companyURL || "N/A"}
-                    href={employerMeta?.companyURL || undefined}
-                  />
-                  <DetailItem
-                    icon={<Linkedin className="h-4 w-4" />}
-                    label="LinkedIn"
-                    value={
-                      employerMeta?.linkedinUrl || company.linkedinUrl || "N/A"
-                    }
-                    href={
-                      employerMeta?.linkedinUrl ||
-                      company.linkedinUrl ||
-                      undefined
-                    }
-                  />
-                  <DetailItem
-                    icon={<Calendar className="h-4 w-4" />}
-                    label="Profile Created"
-                    value={formatDate(employerMeta?.createdAt)}
-                  />
+                  {pastJobs.length === 0 ? (
+                    <p className="mt-4 text-sm text-slate-500">
+                      No past jobs found.
+                    </p>
+                  ) : (
+                    <div className="mt-5 space-y-3">
+                      {pastJobs.map((job) => (
+                        <JobRow key={job.id} job={job} />
+                      ))}
+                    </div>
+                  )}
+                </section>
                 </div>
-              </section>
 
-              {/* Current (active) jobs */}
-              <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Current Listed Jobs
+                <aside className="space-y-8 lg:col-span-1">
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Company Reputation
                   </h2>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    {activeJobs.length} active
-                  </span>
-                </div>
-                {activeJobs.length === 0 ? (
-                  <p className="mt-4 text-sm text-slate-500">
-                    No active jobs right now.
-                  </p>
-                ) : (
-                  <div className="mt-5 space-y-3">
-                    {activeJobs.map((job) => (
-                      <JobRow key={job.id} job={job} />
-                    ))}
+                  <div className="mt-5">
+                    <ReputationScoreCard
+                      reputation={companyReputation || null}
+                      variant="employer"
+                    />
                   </div>
-                )}
-              </section>
+                </section>
 
-              {/* Past jobs */}
-              <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Past Listed Jobs
-                  </h2>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                    {pastJobs.length} total
-                  </span>
-                </div>
-                {pastJobs.length === 0 ? (
-                  <p className="mt-4 text-sm text-slate-500">
-                    No past jobs found.
-                  </p>
-                ) : (
-                  <div className="mt-5 space-y-3">
-                    {pastJobs.map((job) => (
-                      <JobRow key={job.id} job={job} />
-                    ))}
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <h3 className="text-base font-bold uppercase tracking-wider text-slate-500">
+                    Snapshot
+                  </h3>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <span className="text-base font-medium text-slate-600">Employees</span>
+                      <span className="text-base font-bold text-slate-900">
+                        {profile?.currentEmployeesCount ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <span className="text-base font-medium text-slate-600">Active jobs</span>
+                      <span className="text-base font-bold text-slate-900">{activeJobs.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                      <span className="text-base font-medium text-slate-600">Past jobs</span>
+                      <span className="text-base font-bold text-slate-900">{pastJobs.length}</span>
+                    </div>
                   </div>
-                )}
-              </section>
+                  </section>
+
+                  <section className="rounded-3xl border border-slate-200/90 bg-white p-7 shadow-[0_22px_55px_-30px_rgba(12,43,78,0.35)]">
+                  <h3 className="text-base font-bold uppercase tracking-wider text-slate-500">
+                    Quick Actions
+                  </h3>
+                  <div className="mt-4 flex flex-col gap-3">
+                    <Link
+                      href="/employer/dashboard"
+                      className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2.5 text-base font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    <Link
+                      href="/employer/profile/employees"
+                      className="inline-flex items-center justify-center rounded-xl bg-linear-to-r from-[#0B1F45] to-[#1d4ed8] px-4 py-2.5 text-base font-semibold text-white transition hover:from-[#0A1A38] hover:to-[#1e40af]"
+                    >
+                      Manage Employees
+                    </Link>
+                  </div>
+                  </section>
+                </aside>
+              </div>
             </div>
           )}
         </div>
@@ -321,10 +385,10 @@ function DetailItem({
   href?: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-      <span className="mt-0.5 text-slate-400">{icon}</span>
+    <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 transition hover:border-blue-200 hover:bg-white">
+      <span className="mt-0.5 text-slate-500">{icon}</span>
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+        <p className="text-sm font-medium uppercase tracking-wide text-slate-400">
           {label}
         </p>
         {href && value !== "N/A" ? (
@@ -332,12 +396,12 @@ function DetailItem({
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="mt-0.5 block break-all text-sm font-semibold text-blue-600 hover:text-blue-800"
+            className="mt-0.5 block break-all text-base font-semibold text-[#1d4ed8] hover:text-[#0B1F45]"
           >
             {value}
           </a>
         ) : (
-          <p className="mt-0.5 break-all text-sm font-semibold text-slate-900">
+          <p className="mt-0.5 break-all text-base font-semibold text-slate-900">
             {value}
           </p>
         )}
@@ -348,18 +412,18 @@ function DetailItem({
 
 function JobRow({ job }: { job: EmployerJob }) {
   const statusColors: Record<string, string> = {
-    active: "bg-emerald-100 text-emerald-700",
-    closed: "bg-slate-100 text-slate-600",
-    draft: "bg-amber-100 text-amber-700",
+    active: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    closed: "bg-slate-100 text-slate-600 border border-slate-200",
+    draft: "bg-amber-100 text-amber-700 border border-amber-200",
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3 transition hover:border-blue-200 hover:bg-white sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-slate-900">
+        <p className="truncate text-base font-semibold text-slate-900">
           {job.title}
         </p>
-        <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
+        <div className="mt-1 flex flex-wrap gap-3 text-sm text-slate-500">
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3 w-3" />
             {job.location}
@@ -375,12 +439,12 @@ function JobRow({ job }: { job: EmployerJob }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <span className="text-xs text-slate-500">
+        <span className="text-sm text-slate-500">
           {job.applicationsCount} application
           {job.applicationsCount !== 1 ? "s" : ""}
         </span>
         <span
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusColors[job.status] ?? "bg-slate-100 text-slate-600"}`}
+          className={`rounded-full px-2.5 py-1 text-sm font-semibold capitalize ${statusColors[job.status] ?? "border border-slate-200 bg-slate-100 text-slate-600"}`}
         >
           {job.status}
         </span>

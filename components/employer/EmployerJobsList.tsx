@@ -27,7 +27,6 @@ export default function EmployerJobsList({
           onJobDeleted={onJobDeleted}
           onJobUpdated={onJobUpdated}
           getToken={getToken}
-          style={{ animationDelay: `${index * 50}ms` }}
         />
       ))}
     </div>

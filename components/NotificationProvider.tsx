@@ -337,6 +337,18 @@ export function NotificationProvider({
       });
     };
 
+    const handleApplicationReceived = (data: any) => {
+      console.log("Application received notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "application_received",
+        title: data.title || "New Job Application Received",
+        message: data.message || "A new candidate has applied to your job.",
+        applicationId: data.applicationId,
+        jobId: data.jobId,
+      });
+    };
+
     const handleApplicationShortlisted = (data: any) => {
       console.log("Application shortlisted notification:", data);
       addNotification({
@@ -383,6 +395,46 @@ export function NotificationProvider({
         requiresResponse: true,
         applicationId: data.applicationId,
         jobId: data.jobId,
+      });
+    };
+
+    const handleEmploymentApproved = (data: any) => {
+      console.log("Employment approved notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "employment_verification_approved",
+        title: data.title || "Employment Approved",
+        message: data.message,
+      });
+    };
+
+    const handleEmploymentRejected = (data: any) => {
+      console.log("Employment rejected notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "employment_verification_rejected",
+        title: data.title || "Employment Rejected",
+        message: data.message,
+      });
+    };
+
+    const handleEducationApproved = (data: any) => {
+      console.log("Education approved notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "education_verification_approved",
+        title: data.title || "Education Approved",
+        message: data.message,
+      });
+    };
+
+    const handleEducationRejected = (data: any) => {
+      console.log("Education rejected notification:", data);
+      addNotification({
+        id: data.id ? String(data.id) : undefined,
+        type: "education_verification_rejected",
+        title: data.title || "Education Rejected",
+        message: data.message,
       });
     };
 
@@ -434,6 +486,26 @@ export function NotificationProvider({
       console.log("Job recommendation ready event:", data);
       if (!user?.id) return;
 
+      // New payload shape (single broadcast): { jobId, job, recipients: [{ clerkId, matchPercentage, breakdown }] }
+      // Keep backward compatibility with old per-user payload shape.
+      let eventPayload = data;
+      if (Array.isArray(data?.recipients)) {
+        const recipient = data.recipients.find(
+          (item: any) => item?.clerkId === user.id,
+        );
+
+        // This broadcast wasn't intended for the current user.
+        if (!recipient) {
+          return;
+        }
+
+        eventPayload = {
+          ...data,
+          matchPercentage: recipient.matchPercentage,
+          breakdown: recipient.breakdown,
+        };
+      }
+
       try {
         // CRITICAL FIX #1: Cancel previous in-flight fetch to prevent race conditions
         // If multiple socket events arrive rapidly, only the latest one should update Redux
@@ -443,23 +515,23 @@ export function NotificationProvider({
         recommendationAbortControllerRef.current = controller;
 
         const eventMatchPercentage = normalizeMatchPercentage(
-          data?.matchPercentage ?? data?.score,
+          eventPayload?.matchPercentage ?? eventPayload?.score,
         );
 
         // STEP 1: Optimistic update - immediately update Redux with job data from event
-        if (data?.jobId) {
+        if (eventPayload?.jobId) {
           // Dispatch immediate recommendation update even if user is on jobs page
           dispatch(updateJobMatches([
             {
-              id: data.jobId,
+              id: eventPayload.jobId,
               matchPercentage: eventMatchPercentage,
-              ...(data?.job || {}),
+              ...(eventPayload?.job || {}),
             }
           ]));
 
           console.log(
             "Job recommendation updated optimistically in Redux:",
-            { jobId: data.jobId, matchPercentage: eventMatchPercentage }
+            { jobId: eventPayload.jobId, matchPercentage: eventMatchPercentage }
           );
         }
 
@@ -505,7 +577,7 @@ export function NotificationProvider({
         });
 
         // STEP 4: Fetch full job details in background (if not already in state)
-        if (data?.jobId && data?.job) {
+        if (eventPayload?.jobId && eventPayload?.job) {
           // Job data already in event, but optionally fetch fresh details
           // in background for any missing fields
           (async () => {
@@ -513,13 +585,13 @@ export function NotificationProvider({
               // Skip background fetch if this request was aborted
               if (controller.signal.aborted) return;
 
-              const jobRes = await fetch(`/api/jobs/${data.jobId}`);
+              const jobRes = await fetch(`/api/jobs/${eventPayload.jobId}`);
               if (jobRes.ok) {
                 const jobDetails = await jobRes.json();
                 if (jobDetails?.data) {
                   dispatch(updateJobMatches([
                     {
-                      id: data.jobId,
+                      id: eventPayload.jobId,
                       matchPercentage: eventMatchPercentage,
                       ...jobDetails.data,
                     }
@@ -537,8 +609,8 @@ export function NotificationProvider({
         addNotification({
           type: "job_recommendation",
           title: "New Job Recommendations!",
-          message: data?.job?.title 
-            ? `New match: ${data.job.title} (${eventMatchPercentage}%)`
+          message: eventPayload?.job?.title 
+            ? `New match: ${eventPayload.job.title} (${eventMatchPercentage}%)`
             : "Your recommendations were updated. Check the jobs page.",
         });
       } catch (error) {
@@ -553,10 +625,15 @@ export function NotificationProvider({
 
     // Register event listeners
     on("application_reviewing", handleApplicationReviewing);
+    on("application_received", handleApplicationReceived);
     on("application_shortlisted", handleApplicationShortlisted);
     on("application_interviewed", handleApplicationInterviewed);
     on("application_rejected", handleApplicationRejected);
     on("application_hired", handleApplicationHired);
+    on("employment_verification_approved", handleEmploymentApproved);
+    on("employment_verification_rejected", handleEmploymentRejected);
+    on("education_verification_approved", handleEducationApproved);
+    on("education_verification_rejected", handleEducationRejected);
     on("exit_request_received", handleExitRequestReceived);
     on("exit_request_approved", handleExitRequestApproved);
     on("exit_request_rejected", handleExitRequestRejected);
@@ -566,10 +643,15 @@ export function NotificationProvider({
     // Cleanup
     return () => {
       off("application_reviewing", handleApplicationReviewing);
+      off("application_received", handleApplicationReceived);
       off("application_shortlisted", handleApplicationShortlisted);
       off("application_interviewed", handleApplicationInterviewed);
       off("application_rejected", handleApplicationRejected);
       off("application_hired", handleApplicationHired);
+      off("employment_verification_approved", handleEmploymentApproved);
+      off("employment_verification_rejected", handleEmploymentRejected);
+      off("education_verification_approved", handleEducationApproved);
+      off("education_verification_rejected", handleEducationRejected);
       off("exit_request_received", handleExitRequestReceived);
       off("exit_request_approved", handleExitRequestApproved);
       off("exit_request_rejected", handleExitRequestRejected);

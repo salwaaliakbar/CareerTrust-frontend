@@ -1,6 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { fetchJobById, fetchFeaturedJobs } from "@/services/api/jobs.service";
-import { API_ENDPOINTS } from "@/constants/api";
+import {
+  fetchFeaturedJobs,
+  fetchJobById,
+  fetchJobLocations,
+  fetchJobsPage,
+} from "@/services/api/jobs.service";
 
 export interface Job {
   id: number | string;
@@ -21,7 +25,7 @@ export interface Job {
   reviews?: number;
   match?: number;
   status?: string;
-  postedDaysAgo?: string;
+  postedDaysAgo?: number | string;
   createdAt?: string;
   updatedAt?: string;
   companyId?: number;
@@ -32,85 +36,218 @@ export interface Job {
 export interface JobsState {
   items: Job[];
   featuredItems: Job[];
+  locations: string[];
   selectedJob: Job | null;
-  jobsById: Record<string | number, Job>; // Cache all visited jobs
+  jobsById: Record<string | number, Job>;
   loading: boolean;
   error: string | null;
   totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
   lastFetchTime: number | null;
   lastFetchTimeFeatured: number | null;
-  lastFetchTimeById: Record<string | number, number>; // Timestamp for each cached job
+  lastFetchTimeLocations: number | null;
+  lastFetchTimeById: Record<string | number, number>;
   lastFetchContext: "anonymous" | "personalized" | null;
+  lastFetchKey: string | null;
+  pendingListQueryKey: string | null;
+  pendingJobById: Record<string, boolean>;
 }
 
 const initialState: JobsState = {
   items: [],
   featuredItems: [],
+  locations: [],
   selectedJob: null,
   jobsById: {},
   loading: false,
   error: null,
   totalCount: 0,
+  currentPage: 1,
+  pageSize: 12,
+  totalPages: 1,
   lastFetchTime: null,
   lastFetchTimeFeatured: null,
+  lastFetchTimeLocations: null,
   lastFetchTimeById: {},
   lastFetchContext: null,
+  lastFetchKey: null,
+  pendingListQueryKey: null,
+  pendingJobById: {},
 };
 
-// Cache duration: 10 minutes
 const CACHE_DURATION = 10 * 60 * 1000;
 
-// Async thunks
-export const getAllJobs = createAsyncThunk<
-  Job[],
-  { forceRefresh?: boolean; clerkId?: string } | undefined
->(
-  "jobs/getAllJobs",
-  async (
-    args: { forceRefresh?: boolean; clerkId?: string } | undefined = {},
-    { getState, rejectWithValue },
-  ) => {
-    try {
-      const state = (getState() as any).jobs as JobsState;
-      const now = Date.now();
-      const forceRefresh = typeof args === "object" && args?.forceRefresh;
-      const clerkId = args?.clerkId;
-      const requestContext = clerkId ? "personalized" : "anonymous";
+type JobsQueryArgs = {
+  forceRefresh?: boolean;
+  clerkId?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  location?: string;
+  jobType?: string;
+  featured?: boolean;
+  companyId?: number;
+};
 
-      // Return cached data if fresh (unless force refresh)
+type PaginatedJobsResult = {
+  jobs: Job[];
+  pagination?: {
+    currentPage: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage?: boolean;
+    hasPreviousPage?: boolean;
+  };
+  totalCount: number;
+  queryKey: string;
+  context: "anonymous" | "personalized";
+};
+
+type JobsSliceState = {
+  jobs: JobsState;
+};
+
+const buildJobsQueryKey = (args?: JobsQueryArgs) =>
+  JSON.stringify({
+    clerkId: args?.clerkId || "",
+    page: args?.page ?? 1,
+    limit: args?.limit ?? 12,
+    search: args?.search || "",
+    location: args?.location || "",
+    jobType: args?.jobType || "",
+    featured: typeof args?.featured === "boolean" ? args.featured : null,
+    companyId: args?.companyId ?? null,
+  });
+
+const normalizeJobs = (jobs: Job[]) =>
+  jobs.map((job) => ({
+    ...job,
+    match: typeof job.match === "number" ? job.match : 0,
+    matchPercentage:
+      typeof job.matchPercentage === "number"
+        ? job.matchPercentage
+        : typeof job.match === "number"
+          ? job.match
+          : 0,
+  }));
+
+export const getAllJobs = createAsyncThunk<PaginatedJobsResult, JobsQueryArgs | undefined>(
+  "jobs/getAllJobs",
+  async (args: JobsQueryArgs | undefined = {}, { getState, rejectWithValue }) => {
+    try {
+      const state = (getState() as JobsSliceState).jobs;
+      const now = Date.now();
+      const forceRefresh = Boolean(args?.forceRefresh);
+      const clerkId = args?.clerkId;
+      const queryKey = buildJobsQueryKey(args);
+      const context = clerkId ? "personalized" : "anonymous";
+
       if (
         !forceRefresh &&
-        state.items.length > 0 &&
+        state.lastFetchKey === queryKey &&
         state.lastFetchTime &&
-        state.lastFetchContext === requestContext &&
+        state.lastFetchContext === context &&
         now - state.lastFetchTime < CACHE_DURATION
       ) {
-        return state.items;
+        return {
+          jobs: state.items,
+          pagination: {
+            currentPage: state.currentPage,
+            pageSize: state.pageSize,
+            totalCount: state.totalCount,
+            totalPages: state.totalPages,
+            hasNextPage: state.currentPage < state.totalPages,
+            hasPreviousPage: state.currentPage > 1,
+          },
+          totalCount: state.totalCount,
+          queryKey,
+          context,
+        };
       }
 
-      let jobs;
-      if (clerkId) {
-        // Personalized jobs with match %
-        const res = await fetch(
-          `${API_ENDPOINTS.JOBS}/recommended?clerkId=${clerkId}`,
-        );
-        const data = await res.json();
-        jobs = data.data || [];
-        // Fallback to public jobs if user has no recommendations yet
-        if (jobs.length === 0) {
-          const fallbackRes = await fetch(`${API_ENDPOINTS.JOBS}`);
-          const fallbackData = await fallbackRes.json();
-          jobs = fallbackData.data || [];
-        }
-      } else {
-        // General jobs
-        const res = await fetch(`${API_ENDPOINTS.JOBS}`);
-        const data = await res.json();
-        jobs = data.data || [];
+      const baseParams = {
+        page: args?.page,
+        limit: args?.limit,
+        search: args?.search,
+        location: args?.location,
+        jobType: args?.jobType,
+        featured: args?.featured,
+        companyId: args?.companyId,
+      };
+
+      let response = await fetchJobsPage(
+        clerkId ? { ...baseParams, clerkId } : baseParams,
+      );
+
+      if (clerkId && response.data.length === 0) {
+        response = await fetchJobsPage(baseParams);
       }
-      return jobs;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to fetch jobs");
+
+      const pagination = response.pagination || {
+        currentPage: args?.page ?? 1,
+        pageSize: args?.limit ?? 12,
+        totalCount: response.total,
+        totalPages: Math.max(1, Math.ceil(response.total / (args?.limit ?? 12))),
+      };
+
+      return {
+        jobs: normalizeJobs(response.data || []),
+        pagination,
+        totalCount: response.total,
+        queryKey,
+        context: clerkId ? "personalized" : "anonymous",
+      };
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch jobs");
+    }
+  },
+  {
+    condition: (args: JobsQueryArgs | undefined = {}, { getState }) => {
+      const state = (getState() as JobsSliceState).jobs;
+      const queryKey = buildJobsQueryKey(args);
+      const forceRefresh = Boolean(args?.forceRefresh);
+
+      if (state.pendingListQueryKey === queryKey) {
+        return false;
+      }
+
+      if (
+        !forceRefresh &&
+        state.lastFetchKey === queryKey &&
+        state.lastFetchTime &&
+        Date.now() - state.lastFetchTime < CACHE_DURATION
+      ) {
+        return false;
+      }
+
+      return true;
+    },
+  },
+);
+
+export const getJobLocations = createAsyncThunk<string[]>(
+  "jobs/getJobLocations",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = (getState() as JobsSliceState).jobs;
+      const now = Date.now();
+
+      if (
+        state.locations.length > 0 &&
+        state.lastFetchTimeLocations &&
+        now - state.lastFetchTimeLocations < CACHE_DURATION
+      ) {
+        return state.locations;
+      }
+
+      return await fetchJobLocations();
+    } catch (error: unknown) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to fetch job locations",
+      );
     }
   },
 );
@@ -119,21 +256,39 @@ export const getJobById = createAsyncThunk<Job | null, string | number>(
   "jobs/getJobById",
   async (id: string | number, { getState, rejectWithValue }) => {
     try {
-      const state = (getState() as any).jobs as JobsState;
+      const state = (getState() as JobsSliceState).jobs;
       const now = Date.now();
-      const lastTime = state.lastFetchTimeById[id];
-      const cachedJob = state.jobsById[id];
+      const cacheKey = String(id);
+      const lastTime = state.lastFetchTimeById[cacheKey];
+      const cachedJob = state.jobsById[cacheKey];
 
-      // Return cached data if fresh - store all visited jobs
       if (cachedJob && lastTime && now - lastTime < CACHE_DURATION) {
         return cachedJob;
       }
 
       const job = await fetchJobById(id);
       return job;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to fetch job");
+    } catch (error: unknown) {
+      return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch job");
     }
+  },
+  {
+    condition: (id: string | number, { getState }) => {
+      const state = (getState() as JobsSliceState).jobs;
+      const cacheKey = String(id);
+      const lastTime = state.lastFetchTimeById[cacheKey];
+      const cachedJob = state.jobsById[cacheKey];
+
+      if (state.pendingJobById[cacheKey]) {
+        return false;
+      }
+
+      if (cachedJob && lastTime && Date.now() - lastTime < CACHE_DURATION) {
+        return false;
+      }
+
+      return true;
+    },
   },
 );
 
@@ -147,11 +302,10 @@ export const getFeaturedJobs = createAsyncThunk<
     { getState, rejectWithValue },
   ) => {
     try {
-      const state = (getState() as any).jobs as JobsState;
+      const state = (getState() as JobsSliceState).jobs;
       const now = Date.now();
       const forceRefresh = typeof args === "object" && args?.forceRefresh;
 
-      // Return cached data if fresh (unless force refresh)
       if (
         !forceRefresh &&
         state.featuredItems.length > 0 &&
@@ -163,8 +317,10 @@ export const getFeaturedJobs = createAsyncThunk<
 
       const jobs = await fetchFeaturedJobs();
       return jobs;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to fetch featured jobs");
+    } catch (error: unknown) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to fetch featured jobs",
+      );
     }
   },
 );
@@ -195,45 +351,36 @@ const jobsSlice = createSlice({
 
       state.lastFetchContext = "anonymous";
     },
-    // Update job match values from recommendations
-    // FIXED: Now accepts matchPercentage (0-100 scale) instead of match
-    // Also handles merging additional job data (e.g., full job details from socket event)
     updateJobMatches: (
       state,
       action: PayloadAction<
         Array<{
           id: string | number;
           matchPercentage?: number;
-          match?: number;  // Backward compat
-          [key: string]: any;  // Allow merging other fields (title, description, etc.)
+          match?: number;
+          [key: string]: unknown;
         }>
       >,
     ) => {
       const updates = action.payload;
       updates.forEach((update) => {
         const { id, matchPercentage, match, ...otherFields } = update;
-        
-        // Normalize match percentage: prefer matchPercentage, fall back to match
-        const normalizedMatch = 
-          typeof matchPercentage === "number" 
-            ? matchPercentage 
-            : typeof match === "number" 
-            ? match 
-            : undefined;
 
-        // Update in items array
+        const normalizedMatch =
+          typeof matchPercentage === "number"
+            ? matchPercentage
+            : typeof match === "number"
+              ? match
+              : undefined;
+
         const itemJob = state.items.find((j) => j.id === id);
         if (itemJob) {
-          // Update match percentage (0-100 scale)
           if (typeof normalizedMatch === "number") {
             itemJob.matchPercentage = normalizedMatch;
-            itemJob.match = normalizedMatch;  // Keep for backward compat
+            itemJob.match = normalizedMatch;
           }
-          // Merge any other fields (title, description, company, etc.)
           Object.assign(itemJob, otherFields);
         } else if (Object.keys(otherFields).length > 0) {
-          // Job not in items array yet, so create basic entry from event data
-          // This handles case where socket event arrives before job is loaded
           state.items.push({
             id,
             title: otherFields.title || "New Job",
@@ -249,15 +396,13 @@ const jobsSlice = createSlice({
           } as Job);
         }
 
-        // Update in jobsById cache
         if (state.jobsById[id]) {
           if (typeof normalizedMatch === "number") {
             state.jobsById[id].matchPercentage = normalizedMatch;
-            state.jobsById[id].match = normalizedMatch;  // Backward compat
+            state.jobsById[id].match = normalizedMatch;
           }
           Object.assign(state.jobsById[id], otherFields);
         } else if (Object.keys(otherFields).length > 0) {
-          // Add to cache if not present
           state.jobsById[id] = {
             id,
             title: otherFields.title || "New Job",
@@ -276,79 +421,85 @@ const jobsSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Get all jobs
     builder
-      .addCase(getAllJobs.pending, (state) => {
+      .addCase(getAllJobs.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.pendingListQueryKey = buildJobsQueryKey(action.meta.arg);
       })
-      .addCase(getAllJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
-        state.loading = false;
-        const isPersonalized = Boolean(action.meta.arg?.clerkId);
-        // Ensure every job has match: 0 if not present
-        state.items = action.payload.map((job) => ({
-          ...job,
-          match: typeof job.match === "number" ? job.match : 0,
-          matchPercentage:
-            typeof (job as any).matchPercentage === "number"
-              ? (job as any).matchPercentage
-              : typeof job.match === "number"
-                ? job.match
-                : 0,
-        }));
-        state.totalCount = action.payload.length;
-        state.lastFetchTime = Date.now();
-        state.lastFetchContext = isPersonalized ? "personalized" : "anonymous";
-      })
+      .addCase(
+        getAllJobs.fulfilled,
+        (state, action) => {
+          state.loading = false;
+          state.items = action.payload.jobs;
+          state.totalCount = action.payload.totalCount;
+          state.currentPage = action.payload.pagination?.currentPage ?? 1;
+          state.pageSize = action.payload.pagination?.pageSize ?? 12;
+          state.totalPages = action.payload.pagination?.totalPages ?? 1;
+          state.lastFetchTime = Date.now();
+          state.lastFetchContext = action.payload.context;
+          state.lastFetchKey = action.payload.queryKey;
+          state.pendingListQueryKey = null;
+        },
+      )
       .addCase(getAllJobs.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.pendingListQueryKey = null;
       });
 
-    // Get job by ID
     builder
-      .addCase(getJobById.pending, (state) => {
-        state.loading = true;
+      .addCase(getJobLocations.pending, (state) => {
         state.error = null;
       })
-      .addCase(
-        getJobById.fulfilled,
-        (state, action: PayloadAction<Job | null>) => {
-          state.loading = false;
-          if (action.payload) {
-            // Ensure match: 0 if not present
-            const job = {
-              ...action.payload,
-              match:
-                typeof action.payload.match === "number"
-                  ? action.payload.match
-                  : 0,
-            };
-            state.selectedJob = job;
-            state.jobsById[job.id] = job;
-            state.lastFetchTimeById[job.id] = Date.now();
-          }
-        },
-      )
-      .addCase(getJobById.rejected, (state, action) => {
-        state.loading = false;
+      .addCase(getJobLocations.fulfilled, (state, action: PayloadAction<string[]>) => {
+        state.locations = action.payload;
+        state.lastFetchTimeLocations = Date.now();
+      })
+      .addCase(getJobLocations.rejected, (state, action) => {
         state.error = action.payload as string;
       });
 
-    // Get featured jobs
+    builder
+      .addCase(getJobById.pending, (state, action) => {
+        state.loading = true;
+        state.error = null;
+        state.pendingJobById[String(action.meta.arg)] = true;
+      })
+      .addCase(getJobById.fulfilled, (state, action) => {
+        state.loading = false;
+        const requestedId = String(action.meta.arg);
+        delete state.pendingJobById[requestedId];
+        if (action.payload) {
+          const job = {
+            ...action.payload,
+            match:
+              typeof action.payload.match === "number"
+                ? action.payload.match
+                : 0,
+          };
+          state.selectedJob = job;
+          const payloadKey = String(job.id);
+          state.jobsById[payloadKey] = job;
+          state.lastFetchTimeById[payloadKey] = Date.now();
+        }
+      })
+      .addCase(getJobById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        delete state.pendingJobById[String(action.meta.arg)];
+      });
+
     builder
       .addCase(getFeaturedJobs.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(
-        getFeaturedJobs.fulfilled,
-        (state, action: PayloadAction<Job[]>) => {
-          state.loading = false;
-          state.featuredItems = action.payload;
-          state.lastFetchTimeFeatured = Date.now();
-        },
-      )
+      .addCase(getFeaturedJobs.fulfilled, (state, action: PayloadAction<Job[]>) => {
+        state.loading = false;
+        state.featuredItems = action.payload;
+        state.lastFetchTimeFeatured = Date.now();
+      })
       .addCase(getFeaturedJobs.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -356,6 +507,11 @@ const jobsSlice = createSlice({
   },
 });
 
-export const { clearSelectedJob, clearError, updateJobMatches, stripPersonalizedJobData } =
-  jobsSlice.actions;
+export const {
+  clearSelectedJob,
+  clearError,
+  updateJobMatches,
+  stripPersonalizedJobData,
+} = jobsSlice.actions;
+
 export default jobsSlice.reducer;

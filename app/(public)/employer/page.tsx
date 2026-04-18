@@ -4,6 +4,7 @@ import HeroSection from "@/components/employer/Herosection";
 import FeaturedCandidates from "@/components/employer/FeaturedCandidates";
 import EmployerSteps from "@/components/employer/EmployerSteps";
 import CTASection from "@/components/employer/CTASection";
+import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
 
 export default function EmployerPage() {
   return (
@@ -11,15 +12,22 @@ export default function EmployerPage() {
       <Header />
 
       <main>
-        <HeroSection />s
+        <ScrollRevealSection threshold={0.08} rootMargin="0px 0px -8% 0px">
+          <HeroSection />
+        </ScrollRevealSection>
 
         {/* How it works for employers */}
-        <EmployerSteps />
+        <ScrollRevealSection threshold={0.14}>
+          <EmployerSteps />
+        </ScrollRevealSection>
 
-        {/* Featured candidates (client carousel) */}
-        <FeaturedCandidates />
+        <ScrollRevealSection threshold={0.14}>
+          <FeaturedCandidates />
+        </ScrollRevealSection>
 
-        <CTASection />
+        <ScrollRevealSection threshold={0.14}>
+          <CTASection />
+        </ScrollRevealSection>
         {/* Value props / why section */}
         {/* <EmployerWhy /> */}
       </main>

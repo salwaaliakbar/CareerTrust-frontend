@@ -8,7 +8,6 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CompanyEditForm from "@/components/companies/CompanyEditForm";
 import {
-  Star,
   Users,
   Briefcase,
   MapPin,
@@ -20,9 +19,13 @@ import {
   Building2,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
-import { getCompanyById } from "@/redux/store/slices/companiesSlice";
+import {
+  getCompanyById,
+  getCompanyReputationById,
+} from "@/redux/store/slices/companiesSlice";
 import { Company } from "@/types/company.types";
 import { API_ENDPOINTS } from "@/constants/api";
+import ReputationScoreCard from "@/components/companies/ReputationScoreCard";
 
 interface CompanyJob {
   id: number;
@@ -46,17 +49,18 @@ export default function CompanyPage({
     selectedCompany: company,
     loading,
     lastFetchTimeById,
+    reputationById,
   } = useAppSelector((state) => state.companies);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCompany, setEditedCompany] = useState<Company | null>(null);
-  const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [companyJobs, setCompanyJobs] = useState<CompanyJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
+  const [failedLogoSrc, setFailedLogoSrc] = useState("");
 
   const companyId = Number(id);
+  const cacheKey = String(companyId);
   const CACHE_DURATION = 10 * 60 * 1000;
-  const now = Date.now();
-  const lastFetchTime = lastFetchTimeById?.[companyId];
+  const lastFetchTime = lastFetchTimeById?.[cacheKey];
 
   const userRole = user?.unsafeMetadata?.role as string | undefined;
   const isCompanyOwner = userRole === "employer";
@@ -68,9 +72,9 @@ export default function CompanyPage({
       company?.id === companyId;
 
     if (!hasFreshCache) {
-      dispatch(getCompanyById(id));
+      dispatch(getCompanyById(cacheKey));
     }
-  }, [id, dispatch, lastFetchTime, company?.id, companyId, CACHE_DURATION]);
+  }, [cacheKey, dispatch, lastFetchTime, company?.id, companyId, CACHE_DURATION]);
 
   // Fetch real jobs for this company
   useEffect(() => {
@@ -104,23 +108,17 @@ export default function CompanyPage({
     };
   }, [companyId]);
 
-  // Fetch real jobs for this company
   useEffect(() => {
     if (!companyId) return;
-    setJobsLoading(true);
-    fetch(`${API_ENDPOINTS.JOBS}?companyId=${companyId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setCompanyJobs(data.data ?? []);
-      })
-      .catch(() => {})
-      .finally(() => setJobsLoading(false));
-  }, [companyId]);
+    dispatch(getCompanyReputationById(cacheKey));
+  }, [companyId, cacheKey, dispatch]);
+
+  const reputation = reputationById[cacheKey] ?? null;
 
   const handleEditSuccess = (updatedCompany: Company) => {
     setEditedCompany(updatedCompany);
     setIsEditing(false);
-    dispatch(getCompanyById(id));
+    dispatch(getCompanyById(cacheKey));
   };
 
   if (loading) {
@@ -174,7 +172,8 @@ export default function CompanyPage({
   const isLogoUrl =
     currentCompany.logo &&
     (currentCompany.logo.startsWith("http") ||
-      currentCompany.logo.startsWith("/"));
+      currentCompany.logo.startsWith("/")) &&
+    failedLogoSrc !== currentCompany.logo;
 
   const companyInitials = currentCompany.name
     .split(" ")
@@ -240,6 +239,7 @@ export default function CompanyPage({
                         src={currentCompany.logo}
                         alt={currentCompany.name}
                         className="w-full h-full object-cover"
+                        onError={() => setFailedLogoSrc(currentCompany.logo)}
                       />
                     ) : (
                       <span className="text-white font-bold text-xl">
@@ -305,16 +305,10 @@ export default function CompanyPage({
                   {/* Stats row */}
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-all duration-200">
-                    <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Rating</p>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-lg font-bold text-slate-800">
-                        {currentCompany.rating}
-                      </span>
-                      <span className="text-slate-500 text-base">
-                        ({currentCompany.reviews} reviews)
-                      </span>
-                    </div>
+                    <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Reputation Score</p>
+                    <p className="text-lg font-bold text-slate-800">
+                      {(reputation?.reputationScore ?? currentCompany.rating ?? 0).toFixed(1)} / 5
+                    </p>
                   </div>
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-blue-200 hover:bg-blue-50/40 transition-all duration-200">
                     <p className="text-xs text-slate-400 mb-1 font-bold tracking-widest uppercase">Employees</p>
@@ -340,6 +334,10 @@ export default function CompanyPage({
               </div>
 
               {/* Open Positions */}
+              <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-8">
+                <ReputationScoreCard reputation={reputation} />
+              </div>
+
               <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
                   Open Positions at {currentCompany.name}

@@ -16,6 +16,7 @@ import ExitRequestModal from "@/components/jobseekerDashboard/ExitRequestModal";
 import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
 import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
+import MyReviewsCard from "@/components/jobseeker/MyReviewsCard";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
@@ -27,6 +28,7 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchJobseekerProfile,
+  type FetchedProfileData,
   selectJobseekerProfile,
   selectProfileLoading,
   setEducation,
@@ -35,6 +37,8 @@ import {
   setProfilePicUrl,
   setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
+import type { AppDispatch } from "@/redux/store/store";
+import { fetchMyReviews, type JobseekerReview } from "@/services/api/myReviews.service";
 
 type ProfileApiResponseData = {
   fullName?: string | null;
@@ -55,6 +59,25 @@ type ProfileApiResponseData = {
   resumeUrl?: string | null;
   educationHistory?: EducationRecord[];
   employmentHistory?: EmploymentRecord[];
+};
+
+type ResumeParsedData = {
+  name?: string;
+  fullName?: string;
+  email?: string;
+  headline?: string;
+  location?: string;
+  skills?: string | string[];
+  summary?: string;
+  total_experience?: string;
+  total_experience_years?: number;
+  education?: Array<Record<string, unknown>>;
+  experience?: Array<Record<string, unknown>>;
+};
+
+type ResumeMismatchInfo = {
+  name?: boolean;
+  email?: boolean;
 };
 
 function normalizeSkillsToText(skills: unknown): string {
@@ -119,6 +142,13 @@ function normalizeEducationHistory(history: EducationRecord[]) {
     degree: (edu.degree || "").trim(),
     startDate: (edu.startDate || "").trim(),
     endDate: (edu.endDate || "").trim(),
+    documents: (edu.documents || []).map((doc) => ({
+      name: (doc.name || "").trim(),
+      size: Number(doc.size || 0),
+      type: (doc.type || "").trim(),
+      url: (doc.url || "").trim(),
+      localFileName: doc.file?.name || "",
+    })),
   }));
 }
 
@@ -139,6 +169,92 @@ function normalizeEmploymentHistory(history: EmploymentRecord[]) {
   }));
 }
 
+function normalizeMonthYearForPayload(value: string): string | null {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return null;
+  
+  const monthNameMap: Record<string, string> = {
+    jan: "01",
+    january: "01",
+    feb: "02",
+    february: "02",
+    mar: "03",
+    march: "03",
+    apr: "04",
+    april: "04",
+    may: "05",
+    jun: "06",
+    june: "06",
+    jul: "07",
+    july: "07",
+    aug: "08",
+    august: "08",
+    sep: "09",
+    sept: "09",
+    september: "09",
+    oct: "10",
+    october: "10",
+    nov: "11",
+    november: "11",
+    dec: "12",
+    december: "12",
+  };
+
+  const mmYyyy = trimmed.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
+  if (mmYyyy) {
+    const month = mmYyyy[1].padStart(2, "0");
+    return `${month}/${mmYyyy[2]}`;
+  }
+
+  const mmYyyyDashOrDot = trimmed.match(/^(0?[1-9]|1[0-2])[-.](\d{4})$/);
+  if (mmYyyyDashOrDot) {
+    const month = mmYyyyDashOrDot[1].padStart(2, "0");
+    return `${month}/${mmYyyyDashOrDot[2]}`;
+  }
+
+  const yyyyMm = trimmed.match(/^(\d{4})-(0?[1-9]|1[0-2])$/);
+  if (yyyyMm) {
+    const month = yyyyMm[2].padStart(2, "0");
+    return `${month}/${yyyyMm[1]}`;
+  }
+
+  const yyyyMmSlash = trimmed.match(/^(\d{4})\/(0?[1-9]|1[0-2])$/);
+  if (yyyyMmSlash) {
+    const month = yyyyMmSlash[2].padStart(2, "0");
+    return `${month}/${yyyyMmSlash[1]}`;
+  }
+
+  const yyyyMmDd = trimmed.match(/^(\d{4})-(0?[1-9]|1[0-2])-\d{1,2}$/);
+  if (yyyyMmDd) {
+    const month = yyyyMmDd[2].padStart(2, "0");
+    return `${month}/${yyyyMmDd[1]}`;
+  }
+
+  const monthNameYyyy = trimmed.match(/^([A-Za-z]{3,9})\s+(\d{4})$/);
+  if (monthNameYyyy) {
+    const normalizedMonth = monthNameMap[monthNameYyyy[1].toLowerCase()];
+    if (normalizedMonth) {
+      return `${normalizedMonth}/${monthNameYyyy[2]}`;
+    }
+  }
+
+  return null;
+}
+
+function monthYearToIndex(value: string): number | null {
+  const normalized = normalizeMonthYearForPayload(value);
+  if (!normalized) return null;
+
+  const match = normalized.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  if (!match) return null;
+  return Number(match[2]) * 12 + Number(match[1]);
+}
+
+function getCurrentMonthIndex(): number {
+  const now = new Date();
+  return now.getFullYear() * 12 + (now.getMonth() + 1);
+}
+
 function areEqualByJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -146,7 +262,7 @@ function areEqualByJson(a: unknown, b: unknown): boolean {
 export default function ProfilePage() {
   const { user } = useUser();
   const { getToken } = useAuth();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [form, setForm] = useState<ProfileData>({
     fullName: "",
@@ -190,9 +306,16 @@ export default function ProfilePage() {
     showAddEducation,
     setShowAddEducation,
     newEducation,
+    documentInputRefs: educationDocumentInputRefs,
+    newEducationDocumentInputRef,
     handleNewEducationChange,
     addEducationRecord,
+    updateEducation,
     deleteEducation,
+    handleNewEducationDocumentUpload,
+    removeNewEducationDocument,
+    handleDocumentUpload: handleEducationDocumentUpload,
+    removeDocument: removeEducationDocument,
   } = useEducation([]);
 
   const {
@@ -203,6 +326,7 @@ export default function ProfilePage() {
     newEmployment,
     documentInputRefs,
     addEmploymentRecord,
+    updateEmployment,
     handleNewEmploymentChange,
     deleteEmployment,
     handleDocumentUpload,
@@ -215,6 +339,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Reviews state
+  const [myReviews, setMyReviews] = useState<JobseekerReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const updateEmploymentStatus = useCallback(
     (status: "open" | "not_open") => {
@@ -268,10 +396,15 @@ export default function ProfilePage() {
     const currentClerkId = user.id;
     if (!currentClerkId) return;
 
+    console.log("🔍 [Profile Page] Fetching profile for clerkId:", currentClerkId);
     setHasCheckedRedux(true);
-    dispatch(fetchJobseekerProfile(currentClerkId) as any).then((action: any) => {
-      if (action.payload) {
-        const fetchedData = action.payload as ProfileApiResponseData;
+    dispatch(fetchJobseekerProfile(currentClerkId)).then((action) => {
+      console.log("✅ [Profile Page] Fetch completed. Action:", action);
+      if (fetchJobseekerProfile.fulfilled.match(action)) {
+        const fetchedData = action.payload as FetchedProfileData;
+        console.log("📊 [Profile Page] Employment History Count:", fetchedData.employmentHistory?.length || 0);
+        console.log("📋 [Profile Page] Employment History Data:", fetchedData.employmentHistory);
+
         setForm(mapApiProfileToForm(fetchedData));
         setEducationHistory(
           Array.isArray(fetchedData.educationHistory)
@@ -299,6 +432,25 @@ export default function ProfilePage() {
     setEducationHistory,
     setEmploymentHistory,
   ]);
+
+  // Fetch user's own reviews
+  React.useEffect(() => {
+    if (!mounted || !user) return;
+
+    const loadReviews = async () => {
+      try {
+        setReviewsLoading(true);
+        const reviews = await fetchMyReviews(getToken);
+        setMyReviews(reviews);
+      } catch (error) {
+        logger.error("Failed to load my reviews:", error);
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, [mounted, user, getToken]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
@@ -329,16 +481,19 @@ export default function ProfilePage() {
       sendindForm.append("fullName", form.fullName || "");
       sendindForm.append("email", form.email || "");
 
-      let parsed: any = null;
-      let mismatches: any = {};
+      let parsed: ResumeParsedData | null = null;
+      let mismatches: ResumeMismatchInfo = {};
       try {
         const resp = await axios.post("/api/resume/parse-resume", sendindForm, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        const body = resp.data;
+        const body = (resp.data || {}) as Record<string, unknown>;
         // API should return { parsed: { ... } } or parsed directly
-        parsed = body.parsed ?? body;
-        mismatches = body.mismatches;
+        parsed =
+          (body.parsed as ResumeParsedData | undefined) ||
+          (body as ResumeParsedData);
+        mismatches =
+          (body.mismatches as ResumeMismatchInfo | undefined) || {};
       } catch (e) {
         if (axios.isAxiosError(e)) {
           const status = e.response?.status;
@@ -454,6 +609,7 @@ export default function ProfilePage() {
             startDate:
               (e.start_date as string) ?? (e.startDate as string) ?? "",
             endDate: (e.end_date as string) ?? (e.endDate as string) ?? "",
+            documents: [],
           } as EducationRecord;
         });
 
@@ -488,7 +644,7 @@ export default function ProfilePage() {
               !((e.end_date as string) ?? (e.endDate as string)) || false,
             description: (e.description as string) ?? "",
             verified: false,
-            verificationStatus: "draft",
+            verificationStatus: "pending",
             documents: [],
           } as EmploymentRecord;
         });
@@ -557,12 +713,15 @@ export default function ProfilePage() {
       return;
     }
 
+    const formatPercent = (value: number) =>
+      `${(value * 100).toFixed(2).replace(/\.00$/, "")}%`;
+
     setSaving(true);
     try {
       const payload = new FormData();
 
       // Build a partial profile object: include only non-empty, non-null fields
-      const partialProfile: Record<string, any> = {};
+      const partialProfile: Record<string, string | number | boolean> = {};
       Object.entries(form).forEach(([key, value]) => {
         if (value === null || value === undefined) return;
         if (typeof value === "string" && value.trim() === "") return;
@@ -587,10 +746,185 @@ export default function ProfilePage() {
 
       // Only append histories if provided and non-empty
       if (Array.isArray(employmentHistory) && employmentHistory.length > 0) {
-        payload.append("employmentHistory", JSON.stringify(employmentHistory));
+        const normalizedEmploymentPayload = employmentHistory.map((emp) => {
+          const normalizedStartDate = normalizeMonthYearForPayload(
+            emp.startDate || "",
+          );
+
+          if (!normalizedStartDate) {
+            throw new Error(
+              `Invalid start date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
+            );
+          }
+
+          const currentMonthIndex = getCurrentMonthIndex();
+          const startIndexForFuture = monthYearToIndex(normalizedStartDate);
+          if (startIndexForFuture && startIndexForFuture > currentMonthIndex) {
+            throw new Error(
+              `Start date cannot be in the future for ${emp.position || "employment"}.`,
+            );
+          }
+
+          const isPresentEndDate = /^(present|current|ongoing)$/i.test(
+            (emp.endDate || "").trim(),
+          );
+          const isCurrentlyWorking = Boolean(emp.currentlyWorking) || isPresentEndDate;
+
+          const normalizedEndDate = isCurrentlyWorking
+            ? ""
+            : normalizeMonthYearForPayload(emp.endDate || "");
+
+          if (!isCurrentlyWorking && emp.endDate && !normalizedEndDate) {
+            throw new Error(
+              `Invalid end date for ${emp.position || "employment"}. Please use MM/YYYY format.`,
+            );
+          }
+
+          const startIndex = monthYearToIndex(normalizedStartDate);
+          const endIndex = normalizedEndDate
+            ? monthYearToIndex(normalizedEndDate)
+            : null;
+
+          if (
+            !isCurrentlyWorking &&
+            startIndex &&
+            endIndex &&
+            endIndex < startIndex
+          ) {
+            throw new Error(
+              `End date cannot be before start date for ${emp.position || "employment"}.`,
+            );
+          }
+
+          return {
+            ...emp,
+            currentlyWorking: isCurrentlyWorking,
+            startDate: normalizedStartDate,
+            endDate: isCurrentlyWorking ? "" : normalizedEndDate || "",
+          };
+        });
+
+        payload.append(
+          "employmentHistory",
+          JSON.stringify(normalizedEmploymentPayload),
+        );
+
+        // Append employment document files individually to FormData
+        normalizedEmploymentPayload.forEach((emp) => {
+          if (emp.documents && Array.isArray(emp.documents)) {
+            emp.documents.forEach((doc) => {
+              // Only append NEW file uploads (has file property)
+              if (doc.file instanceof File) {
+                const fieldName = `employmentDoc_${emp.id}_${doc.id}`;
+                payload.append(fieldName, doc.file);
+                console.log(
+                  `📎 Appending document: ${fieldName} (${doc.name})`,
+                );
+              }
+              // Documents with url are already uploaded - skip
+            });
+          }
+        });
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
-        payload.append("educationHistory", JSON.stringify(educationHistory));
+        const normalizedEducationPayload = educationHistory.map((edu) => {
+          const normalizedStartDate = normalizeMonthYearForPayload(
+            edu.startDate || "",
+          );
+          const normalizedEndDate = normalizeMonthYearForPayload(
+            edu.endDate || "",
+          );
+
+          if (/^\d{4}$/.test((edu.startDate || "").trim())) {
+            if (!edu.startDate.trim()) {
+              throw new Error(
+                `Invalid start date for ${edu.degree || "education"}.`,
+              );
+            }
+          } else if (!normalizedStartDate) {
+            throw new Error(
+              `Invalid start date for ${edu.degree || "education"}. Use YYYY or MM/YYYY format.`,
+            );
+          }
+
+          if (
+            edu.endDate &&
+            !/^\d{4}$/.test((edu.endDate || "").trim()) &&
+            !normalizedEndDate
+          ) {
+            throw new Error(
+              `Invalid end date for ${edu.degree || "education"}. Use YYYY or MM/YYYY format.`,
+            );
+          }
+
+          const normalizedStartForComparison = /^\d{4}$/.test(
+            (edu.startDate || "").trim(),
+          )
+            ? `01/${edu.startDate.trim()}`
+            : normalizedStartDate;
+          const normalizedEndForComparison = /^\d{4}$/.test(
+            (edu.endDate || "").trim(),
+          )
+            ? `01/${edu.endDate.trim()}`
+            : normalizedEndDate;
+
+          const startIndex = normalizedStartForComparison
+            ? monthYearToIndex(normalizedStartForComparison)
+            : null;
+          const endIndex = normalizedEndForComparison
+            ? monthYearToIndex(normalizedEndForComparison)
+            : null;
+          const currentMonthIndex = getCurrentMonthIndex();
+
+          if (startIndex && startIndex > currentMonthIndex) {
+            throw new Error(
+              `Start date cannot be in the future for ${edu.degree || "education"}.`,
+            );
+          }
+
+          if (startIndex && endIndex && endIndex < startIndex) {
+            throw new Error(
+              `End date cannot be before start date for ${edu.degree || "education"}.`,
+            );
+          }
+
+          return {
+            ...edu,
+            documents: (edu.documents || []).map((doc) => ({
+              id: doc.id,
+              name: doc.name,
+              size: Number(doc.size || 0),
+              type: doc.type || "application/octet-stream",
+              uploadedAt: doc.uploadedAt,
+              url: doc.url,
+            })),
+            startDate: /^\d{4}$/.test((edu.startDate || "").trim())
+              ? edu.startDate.trim()
+              : normalizedStartDate || "",
+            endDate: /^\d{4}$/.test((edu.endDate || "").trim())
+              ? edu.endDate.trim()
+              : normalizedEndDate || "",
+          };
+        });
+
+        payload.append(
+          "educationHistory",
+          JSON.stringify(normalizedEducationPayload),
+        );
+
+        educationHistory.forEach((edu) => {
+          if (edu.documents && Array.isArray(edu.documents)) {
+            edu.documents.forEach((doc) => {
+              if (doc.file instanceof File) {
+                const fieldName = `educationDoc_${edu.id}_${doc.id}`;
+                payload.append(fieldName, doc.file);
+              }
+            });
+          }
+        });
+      } else if (educationChanged) {
+        // Persist explicit clear when user removed all education records.
+        payload.append("educationHistory", JSON.stringify([]));
       }
 
       // Files: append if selected
@@ -673,13 +1007,13 @@ export default function ProfilePage() {
         } else if (rd?.error) {
           userMessage = String(rd.error);
         } else if (typeof rd?.similarity === "number") {
-          const pct = Math.round(rd.similarity * 100);
+          const pct = formatPercent(rd.similarity);
           userMessage = rd.error
-            ? `${rd.error} (similarity: ${pct}%)`
-            : `Verification failed (similarity: ${pct}%).`;
+            ? `${rd.error} (similarity: ${pct})`
+            : `Verification failed (similarity: ${pct}).`;
           if (typeof rd?.threshold === "number") {
-            const thresholdPct = Math.round(rd.threshold * 100);
-            userMessage += ` Required threshold: ${thresholdPct}%.`;
+            const thresholdPct = formatPercent(rd.threshold);
+            userMessage += ` Required threshold: ${thresholdPct}.`;
           }
           if (rd?.lookupSource) {
             userMessage += ` Lookup source: ${rd.lookupSource}.`;
@@ -690,7 +1024,15 @@ export default function ProfilePage() {
         }
       } else if (Array.isArray(data.errors) && data.errors.length > 0) {
         userMessage = data.errors
-          .map((e: any) => e?.message || JSON.stringify(e))
+          .map((e: unknown) => {
+            if (typeof e === "object" && e !== null && "message" in e) {
+              const msg = (e as { message?: unknown }).message;
+              if (typeof msg === "string" && msg.trim()) {
+                return msg;
+              }
+            }
+            return JSON.stringify(e);
+          })
           .join("; ");
       }
 
@@ -711,14 +1053,14 @@ export default function ProfilePage() {
           }
 
           if (typeof verifyDetails?.similarity === "number") {
-            const pct = Math.round(verifyDetails.similarity * 100);
+            const pct = formatPercent(verifyDetails.similarity);
             detailsMessage = detailsMessage
-              ? `${detailsMessage} (similarity: ${pct}%)`
-              : `Verification failed (similarity: ${pct}%).`;
+              ? `${detailsMessage} (similarity: ${pct})`
+              : `Verification failed (similarity: ${pct}).`;
 
             if (typeof verifyDetails?.threshold === "number") {
-              const thresholdPct = Math.round(verifyDetails.threshold * 100);
-              detailsMessage += ` Required threshold: ${thresholdPct}%.`;
+              const thresholdPct = formatPercent(verifyDetails.threshold);
+              detailsMessage += ` Required threshold: ${thresholdPct}.`;
             }
 
             if (verifyDetails?.lookupSource) {
@@ -741,10 +1083,14 @@ export default function ProfilePage() {
           text: String(message),
         });
       } else {
+        const fallbackMessage =
+          err instanceof Error && err.message
+            ? err.message
+            : "An unexpected error occurred.";
         Swal.fire({
           icon: "error",
           title: "Save Failed",
-          text: "An unexpected error occurred.",
+          text: fallbackMessage,
         });
       }
       logger.error("Profile save error:", err);
@@ -842,7 +1188,7 @@ export default function ProfilePage() {
                 ? "opacity-40 grayscale pointer-events-none"
                 : "opacity-100"
             }`}
-            aria-hidden={!isEditing}
+            aria-hidden={isEditing}
           >
             {/* Responsive grid: main content (2fr) + sidebar (1fr) on large screens */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative">
@@ -864,6 +1210,9 @@ export default function ProfilePage() {
                   <AddEducationForm
                     newEducation={newEducation}
                     onChange={handleNewEducationChange}
+                    onDocumentUpload={handleNewEducationDocumentUpload}
+                    onDocumentRemove={removeNewEducationDocument}
+                    documentInputRef={newEducationDocumentInputRef}
                     onAdd={addEducationRecord}
                     onCancel={() => setShowAddEducation(false)}
                     disabled={!isEditing}
@@ -874,7 +1223,13 @@ export default function ProfilePage() {
                   educationHistory={educationHistory}
                   showAddEducation={showAddEducation}
                   onToggleAdd={() => setShowAddEducation(!showAddEducation)}
+                  onUpdate={updateEducation}
                   onDelete={deleteEducation}
+                  onDocumentUpload={handleEducationDocumentUpload}
+                  onDocumentRemove={removeEducationDocument}
+                  documentInputRef={(educationId, el) => {
+                    educationDocumentInputRefs.current[String(educationId)] = el;
+                  }}
                   disabled={!isEditing}
                 />
 
@@ -887,6 +1242,7 @@ export default function ProfilePage() {
                   }
                   onNewEmploymentChange={handleNewEmploymentChange}
                   onAddEmployment={addEmploymentRecord}
+                  onUpdateEmployment={updateEmployment}
                   onDeleteEmployment={deleteEmployment}
                   onDocumentUpload={handleDocumentUpload}
                   onDocumentRemove={removeDocument}
@@ -894,6 +1250,13 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   onExitRequest={(empId) => setExitRequestEmpId(empId)}
                 />
+
+                {/* My Reviews Section */}
+                <div className="mt-12">
+                  <div className="border-t pt-12">
+                    <MyReviewsCard reviews={myReviews} isLoading={reviewsLoading} />
+                  </div>
+                </div>
               </div>
 
               {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}

@@ -15,6 +15,7 @@ interface WorkExperienceProps {
     value: Partial<EmploymentRecord>[keyof EmploymentRecord],
   ) => void;
   onAddEmployment: () => void;
+  onUpdateEmployment: (employment: EmploymentRecord) => void;
   onDeleteEmployment: (id: string) => void;
   onDocumentUpload: (
     empId: string,
@@ -36,6 +37,7 @@ export default function WorkExperience({
   onToggleAddForm,
   onNewEmploymentChange,
   onAddEmployment,
+  onUpdateEmployment,
   onDeleteEmployment,
   onDocumentUpload,
   onDocumentRemove,
@@ -43,6 +45,19 @@ export default function WorkExperience({
   disabled = false,
   onExitRequest,
 }: WorkExperienceProps) {
+  const toMonthIndex = (value?: string) => {
+    if (!value) return 0;
+    const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+    if (!match) return 0;
+    return Number(match[2]) * 12 + Number(match[1]);
+  };
+
+  const sortedEmploymentHistory = [...employmentHistory].sort((a, b) => {
+    if (a.currentlyWorking && !b.currentlyWorking) return -1;
+    if (!a.currentlyWorking && b.currentlyWorking) return 1;
+    return toMonthIndex(b.startDate) - toMonthIndex(a.startDate);
+  });
+
   return (
     <div className="group relative">
       <div className="absolute -inset-0.5 bg-linear-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
@@ -88,11 +103,12 @@ export default function WorkExperience({
               </p>
             </div>
           ) : (
-            employmentHistory.map((emp) => (
+            sortedEmploymentHistory.map((emp) => (
               <EmploymentCard
                 key={emp.id}
                 employment={emp}
                 onDelete={onDeleteEmployment}
+                onUpdate={onUpdateEmployment}
                 onDocumentUpload={onDocumentUpload}
                 onDocumentRemove={onDocumentRemove}
                 documentInputRef={(el) => {

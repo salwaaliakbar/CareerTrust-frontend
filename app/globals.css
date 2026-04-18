@@ -335,15 +335,15 @@ body {
 
   /* Fade & Fade-In utilities */
   .fade-in-up {
-    animation: fadeInUp 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: fadeInUp 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .fade-in-down {
-    animation: fadeInDown 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: fadeInDown 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .fade-in {
-    animation: fadeIn 600ms ease both;
+    animation: fadeIn 900ms ease-out both;
   }
 
   .animate-fade-in {
@@ -358,6 +358,10 @@ body {
     animation: scaleIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
+  .animate-scale-in {
+    animation: scaleIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
   /* Slide utilities */
   .slide-in-right {
     animation: slideInRight 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -369,15 +373,15 @@ body {
 
   /* Smooth Enter utilities */
   .smooth-enter {
-    animation: smoothEnter 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: smoothEnter 950ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .smooth-enter-left {
-    animation: smoothEnterLeft 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: smoothEnterLeft 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .smooth-enter-right {
-    animation: smoothEnterRight 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: smoothEnterRight 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Hover animations */
@@ -495,6 +499,49 @@ body {
   .transition-smooth {
     transition: opacity 1000ms ease-in-out, transform 1200ms ease-in-out;
   }
+}
+
+/* Scroll reveal animation control */
+.reveal-on-scroll .fade-in,
+.reveal-on-scroll .fade-in-up,
+.reveal-on-scroll .fade-in-down,
+.reveal-on-scroll .scale-in,
+.reveal-on-scroll .slide-in-right,
+.reveal-on-scroll .slide-in-left,
+.reveal-on-scroll .smooth-enter,
+.reveal-on-scroll .smooth-enter-left,
+.reveal-on-scroll .smooth-enter-right,
+.reveal-on-scroll .animate-fade-in,
+.reveal-on-scroll .animate-fade-in-up {
+  animation-play-state: paused;
+}
+
+.reveal-on-scroll:not(.is-visible) .fade-in,
+.reveal-on-scroll:not(.is-visible) .fade-in-up,
+.reveal-on-scroll:not(.is-visible) .fade-in-down,
+.reveal-on-scroll:not(.is-visible) .scale-in,
+.reveal-on-scroll:not(.is-visible) .slide-in-right,
+.reveal-on-scroll:not(.is-visible) .slide-in-left,
+.reveal-on-scroll:not(.is-visible) .smooth-enter,
+.reveal-on-scroll:not(.is-visible) .smooth-enter-left,
+.reveal-on-scroll:not(.is-visible) .smooth-enter-right,
+.reveal-on-scroll:not(.is-visible) .animate-fade-in,
+.reveal-on-scroll:not(.is-visible) .animate-fade-in-up {
+  opacity: 0;
+}
+
+.reveal-on-scroll.is-visible .fade-in,
+.reveal-on-scroll.is-visible .fade-in-up,
+.reveal-on-scroll.is-visible .fade-in-down,
+.reveal-on-scroll.is-visible .scale-in,
+.reveal-on-scroll.is-visible .slide-in-right,
+.reveal-on-scroll.is-visible .slide-in-left,
+.reveal-on-scroll.is-visible .smooth-enter,
+.reveal-on-scroll.is-visible .smooth-enter-left,
+.reveal-on-scroll.is-visible .smooth-enter-right,
+.reveal-on-scroll.is-visible .animate-fade-in,
+.reveal-on-scroll.is-visible .animate-fade-in-up {
+  animation-play-state: running;
 }
 
 /* Reduced motion support */

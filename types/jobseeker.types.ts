@@ -41,9 +41,13 @@ export type EmploymentRecord = {
 };
 
 export type EducationRecord = {
-  id: string;
+  id: string | number;
   institution: string;
   degree: string;
   startDate: string;
   endDate: string;
+  documents: DocumentFile[];
+  verified?: boolean;
+  verificationStatus?: VerificationStatus;
+  rejectionReason?: string;
 };

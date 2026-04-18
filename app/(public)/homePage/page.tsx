@@ -10,6 +10,7 @@ import CTASection from "@/components/home/CTASection";
 import { JOBSEEKER, EMPLOYER } from "@/constants/constant";
 import StatsSection from "@/components/home/StatsSection";
 import TestimonialSection from "@/components/home/TestimonialSection";
+import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -33,13 +34,25 @@ export default async function HomePage() {
 // redirect("/employer")
 //   }
   return (
-    <div className="min-h-screen bg-white">
-      <HeroSection />
-      <FeaturesSection />
-      <StatsSection />
-      <HowItWorksSection />
-      <TestimonialSection />
-      <CTASection />
+    <div className="min-h-screen bg-[#f4f8fc]">
+      <ScrollRevealSection threshold={0.08} rootMargin="0px 0px -8% 0px">
+        <HeroSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection threshold={0.14}>
+        <StatsSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection threshold={0.14}>
+        <HowItWorksSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection threshold={0.14}>
+        <FeaturesSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection threshold={0.14}>
+        <TestimonialSection />
+      </ScrollRevealSection>
+      <ScrollRevealSection threshold={0.14}>
+        <CTASection />
+      </ScrollRevealSection>
     </div>
   );
 }
