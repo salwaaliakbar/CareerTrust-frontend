@@ -206,7 +206,7 @@ export default function EmployerJobCard({
         </div>
       </div>
 
-      <Link href={`/employer/postedJob/${job.id}`} className="block">
+      <Link href={`/employer/jobs/${job.id}/applications`} className="block">
         {/* Job Header */}
         <div className="mb-4 pr-32">
           <h3 className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">

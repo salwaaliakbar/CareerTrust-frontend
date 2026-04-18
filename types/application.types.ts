@@ -53,6 +53,7 @@ export interface Applicant {
   linkedIn?: string;
   portfolio?: string;
   matchScore?: number;
+  isCurrentlyEmployed?: boolean;
 }
 
 export interface JobApplication {
