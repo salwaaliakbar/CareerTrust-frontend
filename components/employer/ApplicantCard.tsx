@@ -180,6 +180,18 @@ export default function ApplicantCard({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                {/* Employment Status Badge */}
+                <div
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    applicant.isCurrentlyEmployed
+                      ? "bg-green-100 text-green-700 border-green-300"
+                      : "bg-orange-100 text-orange-700 border-orange-300"
+                  }`}
+                  title={applicant.isCurrentlyEmployed ? "Currently Employed" : "Not Currently Employed"}
+                >
+                  {applicant.isCurrentlyEmployed ? "🔴 Employed" : "✓ Open to Work"}
+                </div>
+
                 {/* Status Dropdown */}
                 <select
                   value={application.status}
