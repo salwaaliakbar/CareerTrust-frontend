@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { useAuth, useUser } from "@clerk/nextjs";
 import {
   getPublicProfile,
@@ -28,6 +29,7 @@ import {
   XCircle,
   UserX,
   Sparkles,
+  BadgeCheck,
 } from "lucide-react";
 
 // Helper function to calculate duration between two dates
@@ -465,9 +467,9 @@ export default function PublicProfilePage() {
                 </div>
               </div>
 
-              {/* Resume Download - Prominent CTA */}
-              {profile.resumeUrl && (
-                <div className="shrink-0">
+              {/* Resume Download & Employment Passport - Prominent CTAs */}
+              <div className="shrink-0 flex flex-col gap-3">
+                {profile.resumeUrl && (
                   <a
                     href={profile.resumeUrl}
                     target="_blank"
@@ -480,8 +482,20 @@ export default function PublicProfilePage() {
                       <div className="text-base">Full Resume</div>
                     </div>
                   </a>
-                </div>
-              )}
+                )}
+
+                {/* Digital Employment Passport Button */}
+                <Link
+                  href={`/jobseeker/passport?clerkId=${clerkId}`}
+                  className="inline-flex items-center gap-3 rounded-xl bg-linear-to-r from-emerald-600 via-teal-600 to-cyan-600 px-8 py-4 font-bold text-white shadow-[0_14px_30px_-16px_rgba(16,185,129,0.65)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-16px_rgba(16,185,129,0.72)]"
+                >
+                  <BadgeCheck className="h-6 w-6" />
+                  <div className="text-left">
+                    <div className="text-sm opacity-90">View</div>
+                    <div className="text-base">Digital Employment Passport</div>
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
 
