@@ -194,8 +194,8 @@ export default function ApplicantCard({
                   }
                 >
                   {applicant.isCurrentlyEmployed
-                    ? "🔴 Employed"
-                    : "✓ Open to Work"}
+                    ? "🔴 Currently Employed"
+                    : "✓ Not Currently Employed"}
                 </div>
 
                 {/* Status Dropdown */}
