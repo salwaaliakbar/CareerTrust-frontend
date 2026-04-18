@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ScrollRevealSection from "@/components/ui/ScrollRevealSection";
 import { CONTACT_FAQS, CONTACT_INFO } from "@/data/contact/contactData";
+import { submitContactForm } from "@/services/api/contact.service";
 import {
   ArrowRight,
   Linkedin,
@@ -22,8 +23,11 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -34,17 +38,57 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedSubject = formData.subject.trim();
+    const trimmedMessage = formData.message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
+      setErrorMessage("All fields are required.");
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (trimmedMessage.length < 10) {
+      setErrorMessage("Message should be at least 10 characters.");
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    setSubmitted(true);
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setIsLoading(false);
+    try {
+      const result = await submitContactForm({
+        name: trimmedName,
+        email: trimmedEmail,
+        subject: trimmedSubject,
+        message: trimmedMessage,
+      });
 
-    // Reset success message after 5 seconds
-    setTimeout(() => setSubmitted(false), 5000);
+      setSuccessMessage(
+        result.message ||
+          "Your message has been sent successfully. Please check your email for confirmation.",
+      );
+      setFormData({ name: "", email: "", subject: "", message: "" });
+
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while sending your message. Please try again.";
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const faqDelayClasses = [
@@ -180,15 +224,20 @@ export default function ContactPage() {
                       shortly.
                     </p>
 
-                    {submitted && (
+                    {successMessage && (
                       <div className="mt-5 mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 fade-in-up">
                         <p className="flex items-center gap-2 text-emerald-800 text-sm font-medium">
                           <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">
                             ✓
                           </span>
-                          Thank you! We&apos;ve received your message and will
-                          respond soon.
+                          {successMessage}
                         </p>
+                      </div>
+                    )}
+
+                    {errorMessage && (
+                      <div className="mt-5 mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 fade-in-up">
+                        <p className="text-rose-800 text-sm font-medium">{errorMessage}</p>
                       </div>
                     )}
 
