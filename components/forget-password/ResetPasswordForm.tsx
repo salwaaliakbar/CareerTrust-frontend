@@ -74,7 +74,7 @@ export default function ResetPasswordForm() {
         title: "Code Sent",
         text: "A verification code has been sent to your email.",
         timer: 2000,
-        showConfirmButton: false,
+        showConfirmButton: true,
       });
 
       // Move to the reset step
@@ -184,7 +184,7 @@ export default function ResetPasswordForm() {
 
   return (
     <div className="w-full max-w-md bg-white border border-gray-300 rounded-xl shadow-sm p-6">  
-      <div className="text-center mb-6">
+      <div className="text-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
           {step === "email" ? "Reset Password" : "Enter Verification Code"}
         </h1>
@@ -308,7 +308,7 @@ export default function ResetPasswordForm() {
         </Formik>
       ) : (
         <Formik<ResetFormValues>
-          initialValues={{ code: "123", password: "", confirmPassword: "" }}
+          initialValues={{ code: "", password: "", confirmPassword: "" }}
           validationSchema={ResetSchema}
           onSubmit={handleResetSubmit}
         >

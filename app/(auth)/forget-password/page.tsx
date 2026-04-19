@@ -1,10 +1,29 @@
-import React from "react";
-import ResetPasswordForm from "@/components/forget-password/ResetPasswordForm"; // Adjust path based on where you save the form component
+import Image from "next/image";
+import ResetPasswordForm from "@/components/forget-password/ResetPasswordForm";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <ResetPasswordForm />
+    <div className="min-h-screen bg-[#F4F4F4] flex flex-col">
+      <Header />
+      <main className="flex-1 flex items-stretch mt-5 mb-20">
+        <div className="hidden md:flex md:w-1/2 items-start justify-center bg-white p-6 pt-2">
+          <Image
+            src="/assets/images/authImage - Copy.png"
+            alt="Forgot password illustration"
+            width={900}
+            height={900}
+            className="w-full h-auto max-h-180 object-contain"
+            priority
+          />
+        </div>
+
+        <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-10">
+          <ResetPasswordForm />
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
