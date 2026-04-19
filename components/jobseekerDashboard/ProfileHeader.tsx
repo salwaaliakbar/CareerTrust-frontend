@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   Camera,
   User,
@@ -50,6 +50,212 @@ export default function ProfileHeader({
   onToggleOpenForOpportunities,
 }: ProfileHeaderProps) {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const avatarImageRef = useRef<HTMLImageElement | null>(null);
+  const avatarXRef = useRef(50);
+  const avatarYRef = useRef(50);
+  const avatarViewportRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingAvatarRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
+  const dragStartRef = useRef({
+    pointerX: 0,
+    pointerY: 0,
+    startAvatarX: 50,
+    startAvatarY: 50,
+  });
+
+  const avatarPositionStorageKey = React.useMemo(() => {
+    const userKeyRaw = form.email || form.fullName || "default-user";
+    const userKey = userKeyRaw.trim().toLowerCase().replace(/\s+/g, "-");
+    return `ct-avatar-position:${userKey}`;
+  }, [form.email, form.fullName]);
+
+  const clampPercent = useCallback((value: number, min = 0, max = 100) => {
+    if (Number.isNaN(value)) return 50;
+    return Math.min(max, Math.max(min, value));
+  }, []);
+
+  const applyAvatarPosition = useCallback((x: number, y: number) => {
+    const safeX = clampPercent(x);
+    const safeY = clampPercent(y);
+    avatarXRef.current = safeX;
+    avatarYRef.current = safeY;
+
+    if (avatarImageRef.current) {
+      avatarImageRef.current.style.objectPosition = `${safeX}% ${safeY}%`;
+    }
+  }, [clampPercent]);
+
+  const persistAvatarPosition = useCallback((x: number, y: number) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(
+        avatarPositionStorageKey,
+        JSON.stringify({ x: clampPercent(x), y: clampPercent(y) }),
+      );
+    } catch {
+      // Best-effort persistence only.
+    }
+  }, [avatarPositionStorageKey, clampPercent]);
+
+  const handleAvatarDragStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isEditing || !profileImage) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+
+      const viewport = avatarViewportRef.current;
+      if (!viewport) return;
+
+      activePointerIdRef.current = e.pointerId;
+      isDraggingAvatarRef.current = true;
+      viewport.setPointerCapture(e.pointerId);
+      dragStartRef.current = {
+        pointerX: e.clientX,
+        pointerY: e.clientY,
+        startAvatarX: avatarXRef.current,
+        startAvatarY: avatarYRef.current,
+      };
+    },
+    [isEditing, profileImage],
+  );
+
+  const handleAvatarDragMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!isDraggingAvatarRef.current) return;
+      if (activePointerIdRef.current !== e.pointerId) return;
+
+      // If primary button/finger is no longer active, stop dragging.
+      if (e.pointerType === "mouse" && (e.buttons & 1) !== 1) {
+        isDraggingAvatarRef.current = false;
+        activePointerIdRef.current = null;
+        persistAvatarPosition(avatarXRef.current, avatarYRef.current);
+        return;
+      }
+
+      const viewport = avatarViewportRef.current;
+      if (!viewport) return;
+
+      const rect = viewport.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const deltaX = e.clientX - dragStartRef.current.pointerX;
+      const deltaY = e.clientY - dragStartRef.current.pointerY;
+
+      const nextX = dragStartRef.current.startAvatarX - (deltaX / rect.width) * 100;
+      const nextY = dragStartRef.current.startAvatarY - (deltaY / rect.height) * 100;
+      applyAvatarPosition(nextX, nextY);
+    },
+    [applyAvatarPosition, persistAvatarPosition],
+  );
+
+  const handleAvatarDragEnd = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (activePointerIdRef.current !== null && activePointerIdRef.current !== e.pointerId) {
+        return;
+      }
+      if (!isDraggingAvatarRef.current) return;
+      isDraggingAvatarRef.current = false;
+      activePointerIdRef.current = null;
+      persistAvatarPosition(avatarXRef.current, avatarYRef.current);
+    },
+    [persistAvatarPosition],
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function autoCenterFace(imageUrl: string) {
+      try {
+        const detectorCtor = (
+          globalThis as unknown as {
+            FaceDetector?: new (options?: {
+              fastMode?: boolean;
+              maxDetectedFaces?: number;
+            }) => {
+              detect: (
+                input: CanvasImageSource,
+              ) => Promise<Array<{ boundingBox: DOMRectReadOnly }>>;
+            };
+          }
+        ).FaceDetector;
+
+        if (!detectorCtor) {
+          if (!isCancelled) applyAvatarPosition(50, 50);
+          return;
+        }
+
+        const image = new Image();
+        image.crossOrigin = "anonymous";
+        image.src = imageUrl;
+
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error("Image load failed"));
+        });
+
+        const detector = new detectorCtor({ fastMode: true, maxDetectedFaces: 1 });
+        const faces = await detector.detect(image);
+
+        if (!faces || faces.length === 0) {
+          if (!isCancelled) applyAvatarPosition(50, 50);
+          return;
+        }
+
+        const face = faces[0];
+        const faceCenterX = face.boundingBox.x + face.boundingBox.width / 2;
+        const faceCenterY = face.boundingBox.y + face.boundingBox.height / 2;
+
+        const xPercent = Math.min(
+          80,
+          Math.max(20, (faceCenterX / image.naturalWidth) * 100),
+        );
+        const yPercent = Math.min(
+          75,
+          Math.max(25, (faceCenterY / image.naturalHeight) * 100),
+        );
+
+        if (!isCancelled) {
+          applyAvatarPosition(xPercent, yPercent);
+        }
+      } catch {
+        if (!isCancelled) applyAvatarPosition(50, 50);
+      }
+    }
+
+    if (!profileImage) {
+      applyAvatarPosition(50, 50);
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    let hasSavedPosition = false;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(avatarPositionStorageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw) as { x?: number; y?: number };
+          if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+            applyAvatarPosition(parsed.x, parsed.y);
+            hasSavedPosition = true;
+          }
+        }
+      } catch {
+        hasSavedPosition = false;
+      }
+    }
+
+    if (hasSavedPosition) {
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    autoCenterFace(profileImage);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [profileImage, avatarPositionStorageKey, applyAvatarPosition]);
 
   function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
@@ -65,6 +271,8 @@ export default function ProfileHeader({
 
   function removeImage() {
     onImageChange(null);
+    applyAvatarPosition(50, 50);
+    persistAvatarPosition(50, 50);
     if (imageInputRef.current) imageInputRef.current.value = "";
   }
 
@@ -105,7 +313,8 @@ export default function ProfileHeader({
           <div className="relative z-10 px-10 py-12">
             <div className="flex flex-col md:flex-row items-center gap-8">
               {/* ── Avatar ── */}
-              <div className="relative group/avatar shrink-0">
+              <div className="shrink-0 flex flex-col items-center gap-3">
+                <div className="relative group/avatar">
                 {/* Animated ring when editing */}
                 {isEditing ? (
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full blur opacity-75 animate-pulse" />
@@ -116,12 +325,30 @@ export default function ProfileHeader({
                   />
                 )}
 
-                <div className="relative w-40 h-40 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border-4 border-white/30 shadow-2xl overflow-hidden">
+                <div
+                  ref={avatarViewportRef}
+                  onPointerDown={handleAvatarDragStart}
+                  onPointerMove={handleAvatarDragMove}
+                  onPointerUp={handleAvatarDragEnd}
+                  onPointerCancel={handleAvatarDragEnd}
+                  onLostPointerCapture={handleAvatarDragEnd}
+                  className={`relative w-40 h-40 rounded-full bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border-4 border-white/30 shadow-2xl overflow-hidden select-none ${
+                    profileImage && isEditing
+                      ? "cursor-grab active:cursor-grabbing"
+                      : "cursor-default"
+                  }`}
+                  title={
+                    profileImage && isEditing
+                      ? "Click and drag to adjust photo"
+                      : undefined
+                  }
+                >
                   {profileImage ? (
                     <img
+                      ref={avatarImageRef}
                       src={profileImage}
                       alt="Profile"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center transition-all duration-300"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600/80 to-indigo-700/80">
@@ -182,6 +409,13 @@ export default function ProfileHeader({
                   >
                     <Trash className="w-3.5 h-3.5" />
                   </button>
+                )}
+                </div>
+
+                {profileImage && isEditing && (
+                  <p className="text-[11px] text-blue-100/85 font-semibold bg-white/10 rounded-md px-2 py-1">
+                    Drag photo to adjust framing
+                  </p>
                 )}
               </div>
 

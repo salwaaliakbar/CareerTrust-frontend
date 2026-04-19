@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, ChevronDown, ChevronUp } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
 import EmploymentCard from "./EmploymentCard";
 import AddEmploymentForm from "./AddEmploymentForm";
@@ -26,8 +26,6 @@ interface WorkExperienceProps {
     [key: string]: HTMLInputElement | null;
   }>;
   disabled?: boolean;
-  /** Called when jobseeker clicks "Request Exit" on an active employment record */
-  onExitRequest?: (empId: string) => void;
 }
 
 export default function WorkExperience({
@@ -43,8 +41,10 @@ export default function WorkExperience({
   onDocumentRemove,
   documentInputRefs,
   disabled = false,
-  onExitRequest,
 }: WorkExperienceProps) {
+  const DEFAULT_VISIBLE_EXPERIENCE = 2;
+  const [showAllExperience, setShowAllExperience] = React.useState(false);
+
   const toMonthIndex = (value?: string) => {
     if (!value) return 0;
     const match = value.match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
@@ -57,6 +57,13 @@ export default function WorkExperience({
     if (!a.currentlyWorking && b.currentlyWorking) return 1;
     return toMonthIndex(b.startDate) - toMonthIndex(a.startDate);
   });
+
+  const shouldShowToggle =
+    sortedEmploymentHistory.length > DEFAULT_VISIBLE_EXPERIENCE;
+
+  const visibleEmploymentHistory = showAllExperience
+    ? sortedEmploymentHistory
+    : sortedEmploymentHistory.slice(0, DEFAULT_VISIBLE_EXPERIENCE);
 
   return (
     <div className="group relative">
@@ -103,7 +110,7 @@ export default function WorkExperience({
               </p>
             </div>
           ) : (
-            sortedEmploymentHistory.map((emp) => (
+            visibleEmploymentHistory.map((emp) => (
               <EmploymentCard
                 key={emp.id}
                 employment={emp}
@@ -115,11 +122,48 @@ export default function WorkExperience({
                   documentInputRefs.current[emp.id] = el;
                 }}
                 disabled={disabled}
-                onExitRequest={onExitRequest}
               />
             ))
           )}
         </div>
+
+        {shouldShowToggle && (
+          <div className="mt-6 rounded-xl border border-slate-200/80 bg-linear-to-r from-slate-50 to-blue-50/70 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-700">
+                  {showAllExperience
+                    ? `Showing all ${sortedEmploymentHistory.length} experiences`
+                    : `Showing latest ${DEFAULT_VISIBLE_EXPERIENCE} of ${sortedEmploymentHistory.length} experiences`}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {showAllExperience
+                    ? "Use collapse to keep the profile concise."
+                    : "Expand to view your complete work history."}
+                </p>
+              </div>
+              <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowAllExperience((prev) => !prev)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-linear-to-r from-[#0C2B4E] to-[#1D546C] px-4 py-2 text-sm font-bold text-white shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
+            >
+              {showAllExperience ? (
+                <>
+                  <ChevronUp className="w-4 h-4" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4" />
+                  Show all ({sortedEmploymentHistory.length})
+                </>
+              )}
+            </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

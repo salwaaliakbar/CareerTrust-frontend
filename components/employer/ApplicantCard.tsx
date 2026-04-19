@@ -8,14 +8,11 @@ import {
   MapPin,
   Briefcase,
   Calendar,
-  FileText,
   Download,
   Phone,
   Linkedin,
   Globe,
   Award,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { updateApplicationStatus } from "@/services/api/employer.service";
 import Swal from "sweetalert2";
@@ -65,7 +62,6 @@ export default function ApplicantCard({
   getToken,
   style,
 }: ApplicantCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { applicant } = application;
   const router = useRouter();
@@ -328,7 +324,7 @@ export default function ApplicantCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-[#0C2B4E] to-[#1D546C] text-white font-semibold hover:from-[#0A2442] hover:to-[#18495E] transition-all shadow-md hover:shadow-lg"
                 >
                   <Download className="w-4 h-4" />
                   Download Resume
@@ -361,72 +357,10 @@ export default function ApplicantCard({
                 </a>
               )}
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsExpanded(!isExpanded);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition-colors"
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronUp className="w-4 h-4" />
-                    Show Less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4" />
-                    Show More
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Expanded Details */}
-      {isExpanded && (
-        <div className="border-t border-slate-200 p-6 bg-slate-50 animate-fade-in-up">
-          {application.coverLetter && (
-            <div className="mb-6">
-              <h4 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
-                Cover Letter
-              </h4>
-              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {application.coverLetter}
-              </p>
-            </div>
-          )}
-
-          {applicant.skills && applicant.skills.length > 5 && (
-            <div className="mb-6">
-              <h4 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-600" />
-                All Skills
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {applicant.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 bg-white border-2 border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:border-blue-500 hover:text-blue-600 transition-colors"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {application.notes && (
-            <div>
-              <h4 className="text-lg font-bold text-slate-900 mb-2">Notes</h4>
-              <p className="text-slate-600 italic">{application.notes}</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

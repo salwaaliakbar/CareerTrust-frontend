@@ -50,9 +50,9 @@ export default function MyReviewsCard({ reviews, isLoading }: MyReviewsCardProps
       <div className="w-full bg-linear-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-8 border border-blue-100">
         <div className="text-center">
           <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Reviews Yet</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No feedback available</h3>
           <p className="text-gray-600">
-            Share your work experience by writing reviews for companies where you have worked.
+            Nothing to show right now.
           </p>
         </div>
       </div>

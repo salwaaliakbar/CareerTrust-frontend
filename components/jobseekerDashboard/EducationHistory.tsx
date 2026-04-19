@@ -354,22 +354,28 @@ export default function EducationHistory({
                       </>
                     ) : (
                       <>
-                        {edu.verificationStatus !== "verified" && (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(edu)}
-                            disabled={disabled}
-                            className={`p-2.5 text-indigo-700 hover:bg-indigo-50 rounded-lg transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
-                            title="Edit education"
-                          >
-                            <Pencil className="w-5 h-5" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => startEdit(edu)}
+                          disabled={disabled || edu.verificationStatus === "verified"}
+                          className={`p-2.5 rounded-lg transition-all ${
+                            disabled || edu.verificationStatus === "verified"
+                              ? "text-slate-400 bg-slate-100 cursor-not-allowed"
+                              : "text-indigo-700 hover:bg-indigo-50"
+                          }`}
+                          title="Edit education"
+                        >
+                          <Pencil className="w-5 h-5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => onDelete(edu.id)}
                           disabled={disabled || edu.verificationStatus === "verified"}
-                          className={`p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:scale-110 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+                          className={`p-2.5 rounded-lg transition-all ${
+                            disabled || edu.verificationStatus === "verified"
+                              ? "text-slate-400 bg-slate-100 cursor-not-allowed"
+                              : "text-red-600 hover:bg-red-50 hover:scale-110"
+                          }`}
                           title="Delete education"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -385,33 +391,35 @@ export default function EducationHistory({
                       <FileText className="w-4 h-4 text-indigo-600" />
                       Supporting Documents ({edu.documents?.length || 0})
                     </p>
-                    {edu.verificationStatus !== "verified" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document
-                              .getElementById(`education-file-input-${edu.id}`)
-                              ?.click()
-                          }
-                          disabled={disabled}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition-all ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          Upload
-                        </button>
-                        <input
-                          id={`education-file-input-${edu.id}`}
-                          ref={(el) => documentInputRef(edu.id, el)}
-                          type="file"
-                          multiple
-                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                          onChange={(e) => onDocumentUpload(edu.id, e)}
-                          className="hidden"
-                          disabled={disabled}
-                        />
-                      </>
-                    )}
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById(`education-file-input-${edu.id}`)
+                            ?.click()
+                        }
+                        disabled={disabled || edu.verificationStatus === "verified"}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          disabled || edu.verificationStatus === "verified"
+                            ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                            : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        }`}
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload
+                      </button>
+                      <input
+                        id={`education-file-input-${edu.id}`}
+                        ref={(el) => documentInputRef(edu.id, el)}
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => onDocumentUpload(edu.id, e)}
+                        className="hidden"
+                        disabled={disabled || edu.verificationStatus === "verified"}
+                      />
+                    </>
                   </div>
 
                   {!edu.documents || edu.documents.length === 0 ? (
@@ -447,16 +455,19 @@ export default function EducationHistory({
                                 </a>
                               </>
                             )}
-                            {edu.verificationStatus !== "verified" && (
-                              <button
-                                type="button"
-                                onClick={() => onDocumentRemove(edu.id, doc.id)}
-                                disabled={disabled}
-                                className={`p-1.5 text-red-600 hover:bg-red-100 rounded ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => onDocumentRemove(edu.id, doc.id)}
+                              disabled={disabled || edu.verificationStatus === "verified"}
+                              title="Remove document"
+                              className={`p-1.5 rounded ${
+                                disabled || edu.verificationStatus === "verified"
+                                  ? "text-slate-400 bg-slate-100 cursor-not-allowed"
+                                  : "text-red-600 hover:bg-red-100"
+                              }`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
                       ))}

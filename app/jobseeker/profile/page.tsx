@@ -12,16 +12,14 @@ import ProfileHeader from "@/components/jobseekerDashboard/ProfileHeader";
 import PersonalInformation from "@/components/jobseekerDashboard/PersonalInformation";
 import ProfessionalSummary from "@/components/jobseekerDashboard/ProfessionalSummary";
 import WorkExperience from "@/components/jobseekerDashboard/WorkExperience";
-import ExitRequestModal from "@/components/jobseekerDashboard/ExitRequestModal";
 import EducationHistory from "@/components/jobseekerDashboard/EducationHistory";
 import AddEducationForm from "@/components/jobseekerDashboard/AddEducationForm";
 import ResumeUpload from "@/components/jobseekerDashboard/ResumeUpload";
-import MyReviewsCard from "@/components/jobseeker/MyReviewsCard";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import logger from "@/lib/logger";
 import axios from "axios";
-import { useUser, useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { API_ENDPOINTS } from "@/constants/api";
 import Swal from "sweetalert2";
 import { useCallback } from "react";
@@ -38,7 +36,6 @@ import {
   setResumeUrl,
 } from "@/redux/store/slices/jobseeker/profileSlice";
 import type { AppDispatch } from "@/redux/store/store";
-import { fetchMyReviews, type JobseekerReview } from "@/services/api/myReviews.service";
 
 type ProfileApiResponseData = {
   fullName?: string | null;
@@ -261,7 +258,6 @@ function areEqualByJson(a: unknown, b: unknown): boolean {
 
 export default function ProfilePage() {
   const { user } = useUser();
-  const { getToken } = useAuth();
   const dispatch = useDispatch<AppDispatch>();
 
   const [form, setForm] = useState<ProfileData>({
@@ -339,10 +335,6 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [autoFilling, setAutoFilling] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-
-  // Reviews state
-  const [myReviews, setMyReviews] = useState<JobseekerReview[]>([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const updateEmploymentStatus = useCallback(
     (status: "open" | "not_open") => {
@@ -432,25 +424,6 @@ export default function ProfilePage() {
     setEducationHistory,
     setEmploymentHistory,
   ]);
-
-  // Fetch user's own reviews
-  React.useEffect(() => {
-    if (!mounted || !user) return;
-
-    const loadReviews = async () => {
-      try {
-        setReviewsLoading(true);
-        const reviews = await fetchMyReviews(getToken);
-        setMyReviews(reviews);
-      } catch (error) {
-        logger.error("Failed to load my reviews:", error);
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
-
-    loadReviews();
-  }, [mounted, user, getToken]);
 
   // Autofill from Clerk on mount only
   React.useEffect(() => {
@@ -1111,12 +1084,6 @@ export default function ProfilePage() {
     );
   }, [employmentHistory]);
 
-  // Exit Request Modal state
-  const [exitRequestEmpId, setExitRequestEmpId] = useState<string | null>(null);
-  const exitRequestEmployment = employmentHistory.find(
-    (e) => e.id === exitRequestEmpId,
-  );
-
   function handleReset() {
     if (hasReduxProfileData) {
       setForm({
@@ -1248,15 +1215,8 @@ export default function ProfilePage() {
                   onDocumentRemove={removeDocument}
                   documentInputRefs={documentInputRefs}
                   disabled={!isEditing}
-                  onExitRequest={(empId) => setExitRequestEmpId(empId)}
                 />
 
-                {/* My Reviews Section */}
-                <div className="mt-12">
-                  <div className="border-t pt-12">
-                    <MyReviewsCard reviews={myReviews} isLoading={reviewsLoading} />
-                  </div>
-                </div>
               </div>
 
               {/* Right Column - Resume Upload + Open for Opportunities (sidebar) */}
@@ -1367,19 +1327,6 @@ export default function ProfilePage() {
         </div>
       </div>
       <Footer />
-      {/* Exit Request Modal */}
-      {exitRequestEmployment && (
-        <ExitRequestModal
-          isOpen={exitRequestEmpId !== null}
-          onClose={() => setExitRequestEmpId(null)}
-          employment={exitRequestEmployment}
-          getToken={getToken}
-          onSuccess={() => {
-            // Optimistically mark as "not currently working" in local state
-            // Real refresh will happen on next profile load
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -13,20 +13,79 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
 
 interface DigitalEmploymentPassportProps {
   verifiedEmployment: EmploymentRecord[];
   allEmployment: EmploymentRecord[];
+  showRefreshAction?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 export default function DigitalEmploymentPassport({
   verifiedEmployment,
   allEmployment,
+  showRefreshAction = false,
+  refreshing = false,
+  onRefresh,
 }: DigitalEmploymentPassportProps) {
   const passportRef = useRef<HTMLDivElement>(null);
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(new Set());
+
+  const formatEmploymentDate = (rawValue?: string | null) => {
+    const value = (rawValue || "").trim();
+    if (!value) return "";
+
+    // MM/YYYY
+    const mmYyyy = value.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
+    if (mmYyyy) {
+      return `${mmYyyy[1].padStart(2, "0")}/${mmYyyy[2]}`;
+    }
+
+    // YYYY-MM-DD
+    const yyyyMmDd = value.match(/^(\d{4})-(0[1-9]|1[0-2])-\d{1,2}$/);
+    if (yyyyMmDd) {
+      return `${yyyyMmDd[2]}/${yyyyMmDd[1]}`;
+    }
+
+    // YYYY-MM
+    const yyyyMm = value.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (yyyyMm) {
+      return `${yyyyMm[2]}/${yyyyMm[1]}`;
+    }
+
+    return value;
+  };
+
+  const parseEmploymentDateForDuration = (rawValue?: string | null) => {
+    const value = (rawValue || "").trim();
+    if (!value) return null;
+
+    const mmYyyy = value.match(/^(0?[1-9]|1[0-2])\/(\d{4})$/);
+    if (mmYyyy) {
+      return new Date(Number(mmYyyy[2]), Number(mmYyyy[1]) - 1, 1);
+    }
+
+    const yyyyMmDd = value.match(/^(\d{4})-(0[1-9]|1[0-2])-(0?[1-9]|[12]\d|3[01])$/);
+    if (yyyyMmDd) {
+      return new Date(Number(yyyyMmDd[1]), Number(yyyyMmDd[2]) - 1, Number(yyyyMmDd[3]));
+    }
+
+    const yyyyMm = value.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+    if (yyyyMm) {
+      return new Date(Number(yyyyMm[1]), Number(yyyyMm[2]) - 1, 1);
+    }
+
+    const yyyy = value.match(/^(\d{4})$/);
+    if (yyyy) {
+      return new Date(Number(yyyy[1]), 0, 1);
+    }
+
+    return null;
+  };
 
   const toggleDocuments = (empId: string) => {
     setExpandedDocuments((prev) => {
@@ -45,20 +104,10 @@ export default function DigitalEmploymentPassport({
     let totalMonths = 0;
     
     verifiedEmployment.forEach((emp) => {
-      // Parse MM/YYYY format
-      const parseDate = (dateStr: string) => {
-        if (!dateStr) return null;
-        const parts = dateStr.split('/');
-        if (parts.length === 2) {
-          const month = parseInt(parts[0]) - 1; // 0-indexed
-          const year = parseInt(parts[1]);
-          return new Date(year, month, 1);
-        }
-        return new Date(dateStr);
-      };
-      
-      const startDate = parseDate(emp.startDate);
-      const endDate = emp.currentlyWorking ? new Date() : parseDate(emp.endDate);
+      const startDate = parseEmploymentDateForDuration(emp.startDate);
+      const endDate = emp.currentlyWorking
+        ? new Date()
+        : parseEmploymentDateForDuration(emp.endDate);
       
       if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
         const months = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
@@ -414,9 +463,25 @@ export default function DigitalEmploymentPassport({
                   Verified Career Identity
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
-                Employment Passport
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+                  Employment Passport
+                </h1>
+                {showRefreshAction && (
+                  <button
+                    type="button"
+                    onClick={onRefresh}
+                    disabled={refreshing}
+                    aria-label="Refresh verified employment"
+                    title={refreshing ? "Refreshing..." : "Refresh verified employment"}
+                    className="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-full bg-white/15 border border-white/20 text-white hover:bg-white/25 transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                    />
+                  </button>
+                )}
+              </div>
               <p className="mt-4 text-blue-200/80 text-sm sm:text-base max-w-xl leading-relaxed">
                 A trusted timeline of your verified companies, roles, and
                 supporting records.
@@ -539,9 +604,11 @@ export default function DigitalEmploymentPassport({
                               Duration
                             </p>
                             <p className="font-semibold text-slate-800">
-                              {emp.startDate} -{" "}
+                              {formatEmploymentDate(emp.startDate)} -{" "}
                               <span className="text-blue-600">
-                                {emp.currentlyWorking ? "Present" : emp.endDate}
+                                {emp.currentlyWorking
+                                  ? "Present"
+                                  : formatEmploymentDate(emp.endDate)}
                               </span>
                             </p>
                           </div>

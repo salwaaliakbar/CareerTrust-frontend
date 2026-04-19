@@ -5,6 +5,7 @@ import {
   Building2,
   Calendar,
   Trash,
+  Pencil,
   File,
   Upload,
   AlertCircle,
@@ -12,7 +13,6 @@ import {
   Eye,
   Download,
   X,
-  LogOut,
 } from "lucide-react";
 import { EmploymentRecord } from "@/types/jobseeker.types";
 import { getVerificationBadge, formatFileSize, calculateDuration } from "@/lib/utils";
@@ -28,8 +28,6 @@ interface EmploymentCardProps {
   onUpdate: (updatedEmployment: EmploymentRecord) => void;
   documentInputRef: (el: HTMLInputElement | null) => void;
   disabled?: boolean;
-  /** Called when user clicks "Request Exit" for a currently-working record */
-  onExitRequest?: (empId: string) => void;
 }
 
 export default function EmploymentCard({
@@ -40,7 +38,6 @@ export default function EmploymentCard({
   onUpdate,
   documentInputRef,
   disabled = false,
-  onExitRequest,
 }: EmploymentCardProps) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -221,23 +218,29 @@ export default function EmploymentCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {employment.currentlyWorking && onExitRequest && (
+          {!isEditing && (
             <button
               type="button"
-              onClick={() => onExitRequest(employment.id)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-400 rounded-lg transition-all hover:scale-105 duration-200"
-              title="Request exit from this job"
+              onClick={() => setIsEditing(true)}
+              disabled={!canEditCard}
+              className={`p-2.5 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 duration-200 ${
+                canEditCard
+                  ? "text-indigo-700 hover:bg-indigo-50 hover:scale-110"
+                  : "text-slate-400 bg-slate-100 cursor-not-allowed opacity-100"
+              }`}
+              title="Edit experience"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Request Exit
+              <Pencil className="w-5 h-5" />
             </button>
           )}
           <button
             type="button"
             onClick={() => onDelete(employment.id)}
-            disabled={disabled}
+            disabled={disabled || employment.verificationStatus === "verified"}
             className={`p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover/card:opacity-100 hover:scale-110 duration-200 ${
-              disabled ? "opacity-40 pointer-events-none" : ""
+              disabled || employment.verificationStatus === "verified"
+                ? "opacity-40 pointer-events-none"
+                : ""
             }`}
             title="Delete Employment Record"
           >
@@ -266,34 +269,22 @@ export default function EmploymentCard({
         <p className="text-xs text-rose-600 font-semibold mt-2">{editError}</p>
       )}
 
-      {canEditCard && (
+      {isEditing && (
         <div className="mt-4 flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                onClick={saveCardChanges}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
-              >
-                Save Changes
-              </button>
-              <button
-                type="button"
-                onClick={cancelCardEditing}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700"
-            >
-              Edit Experience
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={saveCardChanges}
+            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
+          >
+            Save Changes
+          </button>
+          <button
+            type="button"
+            onClick={cancelCardEditing}
+            className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -304,18 +295,21 @@ export default function EmploymentCard({
             <File className="w-4 h-4 text-indigo-600" />
             Supporting Documents
           </h4>
-          {canManageDocuments && (
-            <button
-              type="button"
-              onClick={() =>
-                document.getElementById(`file-input-${employment.id}`)?.click()
-              }
-              className="inline-flex items-center gap-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 text-xs font-bold"
-            >
-              <Upload className="w-4 h-4" />
-              Upload Documents
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() =>
+              document.getElementById(`file-input-${employment.id}`)?.click()
+            }
+            disabled={!canManageDocuments}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
+              canManageDocuments
+                ? "bg-linear-to-r from-indigo-500 to-purple-500 text-white shadow-md hover:shadow-lg hover:scale-105"
+                : "bg-slate-200 text-slate-500 cursor-not-allowed"
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+            Upload Documents
+          </button>
           <input
             id={`file-input-${employment.id}`}
             ref={documentInputRef}
@@ -390,16 +384,19 @@ export default function EmploymentCard({
                       Not uploaded yet
                     </span>
                   )}
-                  {canManageDocuments && (
-                    <button
-                      type="button"
-                      onClick={() => onDocumentRemove(employment.id, doc.id)}
-                      className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg transition-all"
-                      title="Remove document"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => onDocumentRemove(employment.id, doc.id)}
+                    disabled={!canManageDocuments}
+                    className={`p-2 rounded-lg transition-all ${
+                      canManageDocuments
+                        ? "text-rose-600 hover:bg-rose-100"
+                        : "text-slate-400 bg-slate-100 cursor-not-allowed"
+                    }`}
+                    title="Remove document"
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}

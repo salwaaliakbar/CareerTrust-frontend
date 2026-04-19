@@ -1,29 +1,20 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useUser, useAuth } from "@clerk/nextjs";
+import { useParams } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ApplicantsList from "@/components/employer/ApplicantsList";
 import { fetchJobApplications } from "@/services/api/employer.service";
 import { JobApplication } from "@/types/application.types";
-import {
-  ArrowLeft,
-  Briefcase,
-  Users,
-  Filter,
-  Search,
-  Download,
-} from "lucide-react";
+import { ArrowLeft, Briefcase, Users, Filter, Search } from "lucide-react";
 import Swal from "sweetalert2";
 import Link from "next/link";
 import { ApplicationStatus } from "@/types/application.types";
 
 export default function JobApplicantsPage() {
   const params = useParams();
-  const router = useRouter();
-  const { user } = useUser();
   const { getToken } = useAuth();
   const jobId = params?.id as string;
 
@@ -139,42 +130,43 @@ export default function JobApplicantsPage() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Button */}
-        <Link
-          href="/employer/dashboard"
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-600 font-semibold mb-6 transition-colors group"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          Back to Dashboard
-        </Link>
+        {/* Blue Hero Header */}
+        <div className="relative mb-8 rounded-3xl overflow-hidden shadow-[0_18px_55px_-18px_rgba(15,23,42,0.55)]">
+          <div className="absolute inset-0 bg-[#0B1F45]" />
+          <div className="absolute inset-0 opacity-60 bg-[radial-gradient(ellipse_at_15%_50%,#1e40af44_0%,transparent_60%),radial-gradient(ellipse_at_85%_15%,#7c3aed33_0%,transparent_55%),radial-gradient(ellipse_at_60%_85%,#0ea5e922_0%,transparent_50%)]" />
+          <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] bg-size-[40px_40px]" />
 
-        {/* Page Header */}
-        <div className="mb-8 animate-fade-in-up">
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-2 flex items-center gap-3">
-            <Briefcase className="w-10 h-10 text-blue-600" />
-            Job Applicants
-          </h1>
-          {jobTitle && (
-            <p className="text-xl font-bold text-blue-700 mb-2">{jobTitle}</p>
-          )}
-          <p className="text-lg text-slate-600">
-            Review and manage applications for this position
-          </p>
+          <div className="relative z-10 px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
+            <Link
+              href="/employer/dashboard"
+              className="inline-flex items-center gap-2 text-blue-100 hover:text-white font-semibold mb-6 transition-colors group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              Back to Dashboard
+            </Link>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-2 flex items-center gap-3">
+              <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 text-blue-300" />
+              Job Applicants
+            </h1>
+            {jobTitle && (
+              <p className="text-lg sm:text-xl font-bold text-blue-200 mb-2">{jobTitle}</p>
+            )}
+            <p className="text-blue-100/85 text-sm sm:text-base max-w-2xl">
+              Review and manage applications for this position.
+            </p>
+          </div>
         </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-md border border-slate-200">
+          <div className="bg-white rounded-xl p-4 shadow-md border border-blue-100">
             <p className="text-xs font-semibold text-slate-600 mb-1">Total</p>
             <p className="text-2xl font-black text-slate-900">{stats.total}</p>
           </div>
-          <div className="bg-yellow-50 rounded-xl p-4 shadow-md border border-yellow-200">
-            <p className="text-xs font-semibold text-yellow-700 mb-1">
-              Pending
-            </p>
-            <p className="text-2xl font-black text-yellow-900">
-              {stats.pending}
-            </p>
+          <div className="bg-blue-50/70 rounded-xl p-4 shadow-md border border-blue-200">
+            <p className="text-xs font-semibold text-blue-700 mb-1">Pending</p>
+            <p className="text-2xl font-black text-blue-900">{stats.pending}</p>
           </div>
           <div className="bg-blue-50 rounded-xl p-4 shadow-md border border-blue-200">
             <p className="text-xs font-semibold text-blue-700 mb-1">
@@ -184,11 +176,11 @@ export default function JobApplicantsPage() {
               {stats.reviewing}
             </p>
           </div>
-          <div className="bg-purple-50 rounded-xl p-4 shadow-md border border-purple-200">
-            <p className="text-xs font-semibold text-purple-700 mb-1">
+          <div className="bg-indigo-50 rounded-xl p-4 shadow-md border border-indigo-200">
+            <p className="text-xs font-semibold text-indigo-700 mb-1">
               Shortlisted
             </p>
-            <p className="text-2xl font-black text-purple-900">
+            <p className="text-2xl font-black text-indigo-900">
               {stats.shortlisted}
             </p>
           </div>
@@ -200,35 +192,35 @@ export default function JobApplicantsPage() {
               {stats.interviewed}
             </p>
           </div>
-          <div className="bg-green-50 rounded-xl p-4 shadow-md border border-green-200">
-            <p className="text-xs font-semibold text-green-700 mb-1">Hired</p>
-            <p className="text-2xl font-black text-green-900">{stats.hired}</p>
+          <div className="bg-cyan-50 rounded-xl p-4 shadow-md border border-cyan-200">
+            <p className="text-xs font-semibold text-cyan-700 mb-1">Hired</p>
+            <p className="text-2xl font-black text-cyan-900">{stats.hired}</p>
           </div>
-          <div className="bg-emerald-50 rounded-xl p-4 shadow-md border border-emerald-200">
-            <p className="text-xs font-semibold text-emerald-700 mb-1">
+          <div className="bg-sky-50 rounded-xl p-4 shadow-md border border-sky-200">
+            <p className="text-xs font-semibold text-sky-700 mb-1">
               Offer Accepted
             </p>
-            <p className="text-2xl font-black text-emerald-900">
+            <p className="text-2xl font-black text-sky-900">
               {stats.offer_accepted}
             </p>
           </div>
-          <div className="bg-orange-50 rounded-xl p-4 shadow-md border border-orange-200">
-            <p className="text-xs font-semibold text-orange-700 mb-1">
+          <div className="bg-slate-100 rounded-xl p-4 shadow-md border border-slate-200">
+            <p className="text-xs font-semibold text-slate-700 mb-1">
               Offer Declined
             </p>
-            <p className="text-2xl font-black text-orange-900">
+            <p className="text-2xl font-black text-slate-900">
               {stats.offer_declined}
             </p>
           </div>
-          <div className="bg-red-50 rounded-xl p-4 shadow-md border border-red-200">
-            <p className="text-xs font-semibold text-red-700 mb-1">Rejected</p>
-            <p className="text-2xl font-black text-red-900">{stats.rejected}</p>
+          <div className="bg-rose-50 rounded-xl p-4 shadow-md border border-rose-200">
+            <p className="text-xs font-semibold text-rose-700 mb-1">Rejected</p>
+            <p className="text-2xl font-black text-rose-900">{stats.rejected}</p>
           </div>
         </div>
 
         {/* Search and Filter */}
         <div className="mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+          <div className="bg-white/95 rounded-2xl p-6 shadow-lg border border-blue-100">
             <div className="flex flex-col md:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
@@ -238,19 +230,20 @@ export default function JobApplicantsPage() {
                   placeholder="Search by name, email, skills, or headline..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-blue-100 bg-blue-50/30 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium"
                 />
               </div>
 
               {/* Status Filter */}
-              <div className="relative min-w-[200px]">
+              <div className="relative min-w-50">
                 <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <select
+                  title="Filter applications by status"
                   value={statusFilter}
                   onChange={(e) =>
                     setStatusFilter(e.target.value as ApplicationStatus | "all")
                   }
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium appearance-none bg-white cursor-pointer"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-blue-100 bg-blue-50/30 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium appearance-none cursor-pointer"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>

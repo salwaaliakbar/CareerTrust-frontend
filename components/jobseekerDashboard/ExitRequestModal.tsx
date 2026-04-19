@@ -35,6 +35,14 @@ export default function ExitRequestModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const getLocalTodayISO = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,6 +106,7 @@ export default function ExitRequestModal({
           <button
             type="button"
             onClick={onClose}
+            title="Close"
             className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-xl transition-all"
           >
             <X className="w-5 h-5" />
@@ -152,7 +161,8 @@ export default function ExitRequestModal({
               type="date"
               value={requestedEndDate}
               onChange={(e) => setRequestedEndDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
+              min={getLocalTodayISO()}
+              title="Requested last working day"
               className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 transition-all"
               required
             />

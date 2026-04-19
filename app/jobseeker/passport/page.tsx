@@ -8,7 +8,6 @@ import Footer from "@/components/layout/Footer";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw } from "lucide-react";
 import { API_ENDPOINTS } from "@/constants/api";
 
 const toMonthIndex = (value?: string | null) => {
@@ -167,27 +166,14 @@ const PassportPage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-linear-to-br from-blue-50 via-white to-indigo-50 smooth-enter">
       <Header />
-      <main className="grow">
-        {/* Refresh Button - Only show when viewing own passport */}
-        {isViewingOwnPassport && (
-          <div className="container mx-auto px-4 pt-6 fade-in-up">
-            <button
-              onClick={() => fetchJobseekerProfile(true)}
-              disabled={refreshing}
-              className="mb-4 flex items-center gap-2 px-4 py-2 bg-[#0C2B4E] text-white rounded-lg hover:bg-[#1A3D64] transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-              />
-              {refreshing ? "Refreshing..." : "Refresh Verified Employment"}
-            </button>
-          </div>
-        )}
-
+      <main className="grow relative">
         <div className="smooth-enter animation-delay-100">
           <DigitalEmploymentPassport
             verifiedEmployment={verifiedEmployment}
             allEmployment={allEmployment}
+            showRefreshAction={Boolean(isViewingOwnPassport)}
+            refreshing={refreshing}
+            onRefresh={() => fetchJobseekerProfile(true)}
           />
         </div>
       </main>
