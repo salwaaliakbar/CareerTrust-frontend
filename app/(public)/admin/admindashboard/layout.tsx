@@ -7,6 +7,7 @@ import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import { useAppDispatch } from "@/redux/store/hooks";
 import { cleanupClientLogout } from "@/lib/auth/logoutCleanup";
+import Swal from "sweetalert2";
 
 export default function AdminDashboardLayout({
   children,
@@ -40,6 +41,22 @@ export default function AdminDashboardLayout({
   }, [isLoaded, isSignedIn, user, router]);
 
   const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to log out from admin panel?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     try {
       await signOut();
       cleanupClientLogout(dispatch);
