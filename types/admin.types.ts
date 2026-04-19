@@ -147,3 +147,32 @@ export interface CompanyDetailData extends Company {
     }>;
   }>;
 }
+
+export interface AdminExitRequest {
+  id: number;
+  employmentHistoryId: string;
+  jobseekerClerkId: string;
+  employerClerkId: string | null;
+  company: string;
+  position: string;
+  requestedEndDate: string;
+  reason: string | null;
+  status: "pending" | "approved" | "rejected";
+  employerNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  employment: {
+    id: string;
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string | null;
+    currentlyWorking: boolean;
+    jobseekerProfile: {
+      clerkId: string | null;
+      fullName: string | null;
+      email: string | null;
+      profilePicUrl: string | null;
+    };
+  };
+}

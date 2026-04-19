@@ -256,6 +256,186 @@ function areEqualByJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function normalizeFingerprintPart(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim().toLowerCase();
+}
+
+function buildEducationFingerprint(
+  edu: Pick<EducationRecord, "institution" | "degree" | "startDate">,
+): string {
+  const normalizedStartDate = normalizeMonthYearForPayload(edu.startDate || "");
+  return [
+    normalizeFingerprintPart(edu.institution),
+    normalizeFingerprintPart(edu.degree),
+    normalizeFingerprintPart(normalizedStartDate || edu.startDate || ""),
+  ].join("|");
+}
+
+function buildEmploymentFingerprint(
+  emp: Pick<EmploymentRecord, "company" | "position" | "startDate">,
+): string {
+  const normalizedStartDate = normalizeMonthYearForPayload(emp.startDate || "");
+  return [
+    normalizeFingerprintPart(emp.company),
+    normalizeFingerprintPart(emp.position),
+    normalizeFingerprintPart(normalizedStartDate || emp.startDate || ""),
+  ].join("|");
+}
+
+function createClientSideId(fallbackIndex: number): string {
+  const cryptoWithUuid = crypto as unknown as {
+    randomUUID?: () => string;
+  };
+
+  if (
+    typeof crypto !== "undefined" &&
+    typeof cryptoWithUuid.randomUUID === "function"
+  ) {
+    return cryptoWithUuid.randomUUID();
+  }
+
+  return `${Date.now()}-${fallbackIndex}`;
+}
+
+function mergeParsedEducationRecords(
+  existing: EducationRecord[],
+  parsed: EducationRecord[],
+): EducationRecord[] {
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return existing;
+  }
+
+  const merged = [...existing];
+  const seen = new Set(
+    existing.map((item) => buildEducationFingerprint(item)).filter(Boolean),
+  );
+
+  for (const item of parsed) {
+    const key = buildEducationFingerprint(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+
+  return merged;
+}
+
+function mergeParsedEmploymentRecords(
+  existing: EmploymentRecord[],
+  parsed: EmploymentRecord[],
+): EmploymentRecord[] {
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return existing;
+  }
+
+  const merged = [...existing];
+  const seen = new Set(
+    existing.map((item) => buildEmploymentFingerprint(item)).filter(Boolean),
+  );
+
+  for (const item of parsed) {
+    const key = buildEmploymentFingerprint(item);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+
+  return merged;
+}
+
+function mergeEmploymentRealtimeState(
+  currentEmployment: EmploymentRecord[],
+  reduxEmployment: EmploymentRecord[],
+): EmploymentRecord[] {
+  if (!Array.isArray(currentEmployment) || currentEmployment.length === 0) {
+    return currentEmployment;
+  }
+
+  const reduxById = new Map(
+    reduxEmployment.map((item) => [String(item.id), item]),
+  );
+
+  let hasChanges = false;
+
+  const nextEmployment = currentEmployment.map((item) => {
+    const source = reduxById.get(String(item.id));
+    if (!source) return item;
+
+    const nextStatus = source.verificationStatus ?? item.verificationStatus;
+    const nextVerified = nextStatus === "verified";
+    const nextRejectionReason =
+      nextStatus === "rejected" ? source.rejectionReason || "" : undefined;
+    const nextCurrentlyWorking = Boolean(source.currentlyWorking);
+    const nextEndDate = source.endDate ?? "";
+
+    if (
+      item.verificationStatus === nextStatus &&
+      item.verified === nextVerified &&
+      item.rejectionReason === nextRejectionReason &&
+      Boolean(item.currentlyWorking) === nextCurrentlyWorking &&
+      (item.endDate ?? "") === nextEndDate
+    ) {
+      return item;
+    }
+
+    hasChanges = true;
+
+    return {
+      ...item,
+      verificationStatus: nextStatus,
+      verified: nextVerified,
+      rejectionReason: nextRejectionReason,
+      currentlyWorking: nextCurrentlyWorking,
+      endDate: nextEndDate,
+    };
+  });
+
+  return hasChanges ? nextEmployment : currentEmployment;
+}
+
+function mergeEducationVerificationState(
+  currentEducation: EducationRecord[],
+  reduxEducation: EducationRecord[],
+): EducationRecord[] {
+  if (!Array.isArray(currentEducation) || currentEducation.length === 0) {
+    return currentEducation;
+  }
+
+  const reduxById = new Map(reduxEducation.map((item) => [String(item.id), item]));
+
+  let hasChanges = false;
+
+  const nextEducation = currentEducation.map((item) => {
+    const source = reduxById.get(String(item.id));
+    if (!source) return item;
+
+    const nextStatus = source.verificationStatus ?? item.verificationStatus;
+    const nextVerified = nextStatus === "verified";
+    const nextRejectionReason =
+      nextStatus === "rejected" ? source.rejectionReason || "" : undefined;
+
+    if (
+      item.verificationStatus === nextStatus &&
+      item.verified === nextVerified &&
+      item.rejectionReason === nextRejectionReason
+    ) {
+      return item;
+    }
+
+    hasChanges = true;
+
+    return {
+      ...item,
+      verificationStatus: nextStatus,
+      verified: nextVerified,
+      rejectionReason: nextRejectionReason,
+    };
+  });
+
+  return hasChanges ? nextEducation : currentEducation;
+}
+
 export default function ProfilePage() {
   const { user } = useUser();
   const dispatch = useDispatch<AppDispatch>();
@@ -378,6 +558,38 @@ export default function ProfilePage() {
     reduxProfile.profilePicUrl,
     setEducationHistory,
     setEmploymentHistory,
+  ]);
+
+  // Keep open/not_open badge synced from Redux in view mode without full re-hydration.
+  React.useEffect(() => {
+    if (!mounted || !user || isEditing) return;
+
+    const nextStatus = reduxProfile.profile?.employmentStatus || "open";
+    setForm((prev) =>
+      prev.employmentStatus === nextStatus
+        ? prev
+        : { ...prev, employmentStatus: nextStatus },
+    );
+  }, [mounted, user, isEditing, reduxProfile.profile?.employmentStatus]);
+
+  // Keep verification badges realtime even while user is editing other fields.
+  React.useEffect(() => {
+    if (!mounted || !user || !hasReduxProfileData) return;
+
+    setEmploymentHistory((prev) =>
+      mergeEmploymentRealtimeState(prev, reduxProfile.employment),
+    );
+    setEducationHistory((prev) =>
+      mergeEducationVerificationState(prev, reduxProfile.education),
+    );
+  }, [
+    mounted,
+    user,
+    hasReduxProfileData,
+    reduxProfile.employment,
+    reduxProfile.education,
+    setEmploymentHistory,
+    setEducationHistory,
   ]);
 
   // Always fetch once on page open so persisted backend data refreshes Redux/local state.
@@ -561,22 +773,13 @@ export default function ProfilePage() {
           parsed.total_experience_years ?? prev.total_experience_years,
       }));
 
-      // Map education to EducationRecord[] if present - REPLACE not append
+      // Map education and merge with existing records to avoid destructive overwrites.
       if (Array.isArray(parsed.education) && parsed.education.length > 0) {
         const extractedEducation: EducationRecord[] = (
           parsed.education as Array<Record<string, unknown>>
         ).map((e, i: number) => {
-          const cryptoWithUuid = crypto as unknown as {
-            randomUUID?: () => string;
-          };
-          const id =
-            typeof crypto !== "undefined" &&
-            typeof cryptoWithUuid.randomUUID === "function"
-              ? cryptoWithUuid.randomUUID()
-              : `${Date.now()}-${i}`;
-
           return {
-            id: id.toString(),
+            id: createClientSideId(i),
             institution: (e.institution as string) ?? "",
             degree: (e.degree as string) ?? "",
             startDate:
@@ -586,28 +789,18 @@ export default function ProfilePage() {
           } as EducationRecord;
         });
 
-        setEducationHistory(extractedEducation);
-      } else {
-        setEducationHistory([]);
+        setEducationHistory((prev) =>
+          mergeParsedEducationRecords(prev, extractedEducation),
+        );
       }
 
-      // Map experiences to EmploymentRecord[] if present - REPLACE not append
+      // Map employment and merge with existing records to avoid destructive overwrites.
       if (Array.isArray(parsed.experience) && parsed.experience.length > 0) {
         const extractedEmployment: EmploymentRecord[] = (
           parsed.experience as Array<Record<string, unknown>>
         ).map((e, i: number) => {
-          // generate stable client-side id; prefer crypto.randomUUID when available
-          const cryptoWithUuid = crypto as unknown as {
-            randomUUID?: () => string;
-          };
-          const id =
-            typeof crypto !== "undefined" &&
-            typeof cryptoWithUuid.randomUUID === "function"
-              ? cryptoWithUuid.randomUUID()
-              : `${Date.now()}-${i}`;
-
           return {
-            id: id.toString(),
+            id: createClientSideId(i),
             company: (e.company as string) ?? "",
             position: (e.title as string) ?? (e.position as string) ?? "",
             startDate:
@@ -622,9 +815,9 @@ export default function ProfilePage() {
           } as EmploymentRecord;
         });
 
-        setEmploymentHistory(extractedEmployment);
-      } else {
-        setEmploymentHistory([]);
+        setEmploymentHistory((prev) =>
+          mergeParsedEmploymentRecords(prev, extractedEmployment),
+        );
       }
 
       // Optionally show a success toast
@@ -798,6 +991,9 @@ export default function ProfilePage() {
             });
           }
         });
+      } else if (employmentChanged) {
+        // Persist explicit clear when user removed all employment records.
+        payload.append("employmentHistory", JSON.stringify([]));
       }
       if (Array.isArray(educationHistory) && educationHistory.length > 0) {
         const normalizedEducationPayload = educationHistory.map((edu) => {
@@ -1155,7 +1351,6 @@ export default function ProfilePage() {
                 ? "opacity-40 grayscale pointer-events-none"
                 : "opacity-100"
             }`}
-            aria-hidden={isEditing}
           >
             {/* Responsive grid: main content (2fr) + sidebar (1fr) on large screens */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative">

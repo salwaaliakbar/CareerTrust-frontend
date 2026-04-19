@@ -4,7 +4,8 @@ import {
   EmployerData, 
   EmployerDetailData,
   CompanyData,
-  CompanyDetailData
+  CompanyDetailData,
+  AdminExitRequest
 } from "@/types/admin.types";
 
 type Pagination = {
@@ -251,6 +252,39 @@ export class AdminService {
       `/api/admin/jobs/${jobId}`,
       token,
       { method: "DELETE" }
+    );
+  }
+
+  /**
+   * Non-platform self-exit request review APIs
+   */
+  static async getAdminExitRequests(
+    token: string | null,
+    params?: { status?: "pending" | "approved" | "rejected"; page?: number; limit?: number }
+  ) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+    return this.apiCall<{
+      data: { requests: AdminExitRequest[]; pagination: Pagination };
+    }>(`/api/admin/exit-requests?${queryParams}`, token);
+  }
+
+  static async respondToAdminExitRequest(
+    token: string | null,
+    id: number,
+    status: "approved" | "rejected",
+    adminNote?: string
+  ) {
+    return this.apiCall<{ data: AdminExitRequest }>(
+      `/api/admin/exit-requests/${id}/respond`,
+      token,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status, adminNote }),
+      }
     );
   }
 }

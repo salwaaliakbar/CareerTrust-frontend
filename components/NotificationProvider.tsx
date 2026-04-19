@@ -13,6 +13,15 @@ import Swal from "sweetalert2";
 import { useAppDispatch } from "@/redux/store/hooks";
 import { applyOfferResponseOptimistic } from "@/redux/store/slices/dashboardSlice";
 import { updateJobMatches } from "@/redux/store/slices/jobsSlice";
+import {
+  fetchJobseekerProfile,
+  setEducationVerificationStatus,
+  setEmploymentVerificationStatus,
+} from "@/redux/store/slices/jobseeker/profileSlice";
+import {
+  fetchDashboardStats,
+  fetchRecentApplications,
+} from "@/redux/store/slices/dashboardSlice";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -47,6 +56,39 @@ export function NotificationProvider({
   const audioContextRef = useRef<AudioContext | null>(null);
   const userInteractedRef = useRef(false);
   const recommendationAbortControllerRef = useRef<AbortController | null>(null);
+  const dashboardRefreshTimerRef = useRef<number | null>(null);
+  const employerRefreshTimerRef = useRef<number | null>(null);
+
+  const scheduleDashboardRefresh = useCallback(() => {
+    if (!user?.id) return;
+
+    if (dashboardRefreshTimerRef.current !== null) {
+      return;
+    }
+
+    dashboardRefreshTimerRef.current = window.setTimeout(() => {
+      dispatch(fetchDashboardStats({ clerkId: user.id, forceRefresh: true }));
+      dispatch(
+        fetchRecentApplications({
+          clerkId: user.id,
+          limit: 5,
+          forceRefresh: true,
+        }),
+      );
+      dashboardRefreshTimerRef.current = null;
+    }, 500);
+  }, [dispatch, user?.id]);
+
+  const scheduleEmployerDashboardRefresh = useCallback(() => {
+    if (employerRefreshTimerRef.current !== null) {
+      return;
+    }
+
+    employerRefreshTimerRef.current = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("careertrust:employer-dashboard-updated"));
+      employerRefreshTimerRef.current = null;
+    }, 500);
+  }, []);
 
   useEffect(() => {
     const markInteraction = () => {
@@ -69,6 +111,16 @@ export function NotificationProvider({
         audioContextRef.current.state !== "closed"
       ) {
         void audioContextRef.current.close();
+      }
+
+      if (dashboardRefreshTimerRef.current !== null) {
+        window.clearTimeout(dashboardRefreshTimerRef.current);
+        dashboardRefreshTimerRef.current = null;
+      }
+
+      if (employerRefreshTimerRef.current !== null) {
+        window.clearTimeout(employerRefreshTimerRef.current);
+        employerRefreshTimerRef.current = null;
       }
     };
   }, []);
@@ -325,8 +377,14 @@ export function NotificationProvider({
   useEffect(() => {
     if (!isConnected || !isAuthenticated) return;
 
+    const notifyExitRequestDataChanged = () => {
+      if (typeof window === "undefined") return;
+      window.dispatchEvent(new CustomEvent("careertrust:exit-request-updated"));
+    };
+
     const handleApplicationReviewing = (data: any) => {
       console.log("Application reviewing notification:", data);
+      scheduleDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_reviewing",
@@ -339,6 +397,7 @@ export function NotificationProvider({
 
     const handleApplicationReceived = (data: any) => {
       console.log("Application received notification:", data);
+      scheduleEmployerDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_received",
@@ -351,6 +410,7 @@ export function NotificationProvider({
 
     const handleApplicationShortlisted = (data: any) => {
       console.log("Application shortlisted notification:", data);
+      scheduleDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_shortlisted",
@@ -363,6 +423,7 @@ export function NotificationProvider({
 
     const handleApplicationInterviewed = (data: any) => {
       console.log("Application interviewed notification:", data);
+      scheduleDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_interviewed",
@@ -375,6 +436,7 @@ export function NotificationProvider({
 
     const handleApplicationRejected = (data: any) => {
       console.log("Application rejected notification:", data);
+      scheduleDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_rejected",
@@ -387,6 +449,7 @@ export function NotificationProvider({
 
     const handleApplicationHired = (data: any) => {
       console.log("Application hired notification:", data);
+      scheduleDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "application_hired",
@@ -400,6 +463,18 @@ export function NotificationProvider({
 
     const handleEmploymentApproved = (data: any) => {
       console.log("Employment approved notification:", data);
+      if (data?.employmentId) {
+        dispatch(
+          setEmploymentVerificationStatus({
+            empId: String(data.employmentId),
+            status: "verified",
+          }),
+        );
+      } else if (user?.id) {
+        // Fallback for older payloads without record id
+        dispatch(fetchJobseekerProfile(user.id));
+      }
+
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "employment_verification_approved",
@@ -410,6 +485,18 @@ export function NotificationProvider({
 
     const handleEmploymentRejected = (data: any) => {
       console.log("Employment rejected notification:", data);
+      if (data?.employmentId) {
+        dispatch(
+          setEmploymentVerificationStatus({
+            empId: String(data.employmentId),
+            status: "rejected",
+            rejectionReason: data?.rejectionReason,
+          }),
+        );
+      } else if (user?.id) {
+        dispatch(fetchJobseekerProfile(user.id));
+      }
+
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "employment_verification_rejected",
@@ -420,6 +507,17 @@ export function NotificationProvider({
 
     const handleEducationApproved = (data: any) => {
       console.log("Education approved notification:", data);
+      if (data?.educationId !== undefined && data?.educationId !== null) {
+        dispatch(
+          setEducationVerificationStatus({
+            educationId: data.educationId,
+            status: "verified",
+          }),
+        );
+      } else if (user?.id) {
+        dispatch(fetchJobseekerProfile(user.id));
+      }
+
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "education_verification_approved",
@@ -430,6 +528,18 @@ export function NotificationProvider({
 
     const handleEducationRejected = (data: any) => {
       console.log("Education rejected notification:", data);
+      if (data?.educationId !== undefined && data?.educationId !== null) {
+        dispatch(
+          setEducationVerificationStatus({
+            educationId: data.educationId,
+            status: "rejected",
+            rejectionReason: data?.rejectionReason,
+          }),
+        );
+      } else if (user?.id) {
+        dispatch(fetchJobseekerProfile(user.id));
+      }
+
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "education_verification_rejected",
@@ -441,6 +551,8 @@ export function NotificationProvider({
     // Exit request handlers
     const handleExitRequestReceived = (data: any) => {
       console.log("Exit request received notification:", data);
+      scheduleEmployerDashboardRefresh();
+      notifyExitRequestDataChanged();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "exit_request_received",
@@ -451,6 +563,13 @@ export function NotificationProvider({
 
     const handleExitRequestApproved = (data: any) => {
       console.log("Exit request approved notification:", data);
+      if (user?.id) {
+        // Exit approval updates employment endDate/currentlyWorking on backend.
+        // Refresh profile slice so employed/not-employed badge updates instantly.
+        dispatch(fetchJobseekerProfile(user.id));
+      }
+      notifyExitRequestDataChanged();
+
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "exit_request_approved",
@@ -461,6 +580,7 @@ export function NotificationProvider({
 
     const handleExitRequestRejected = (data: any) => {
       console.log("Exit request rejected notification:", data);
+      notifyExitRequestDataChanged();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "exit_request_rejected",
@@ -472,6 +592,7 @@ export function NotificationProvider({
     // Offer response handler (employer receives jobseeker's accept/decline)
     const handleOfferResponse = (data: any) => {
       console.log("Offer response notification:", data);
+      scheduleEmployerDashboardRefresh();
       addNotification({
         id: data.id ? String(data.id) : undefined,
         type: "offer_response",
@@ -660,7 +781,7 @@ export function NotificationProvider({
     };
     // on/off/addNotification are all stable (useCallback) — only the
     // connection state should gate re-registration of handlers.
-  }, [isConnected, isAuthenticated, dispatch, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isConnected, isAuthenticated, dispatch, user?.id, scheduleDashboardRefresh, scheduleEmployerDashboardRefresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOfferSubmit = async (
     response: "accept" | "decline",

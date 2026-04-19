@@ -23,6 +23,7 @@ import Swal from "sweetalert2";
 
 interface ExitRequestsPanelProps {
   getToken?: () => Promise<string | null>;
+  refreshKey?: number;
 }
 
 const statusConfig = {
@@ -45,6 +46,7 @@ const statusConfig = {
 
 export default function ExitRequestsPanel({
   getToken,
+  refreshKey = 0,
 }: ExitRequestsPanelProps) {
   const [requests, setRequests] = useState<ExitRequestWithEmployment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,7 @@ export default function ExitRequestsPanel({
   const [filter, setFilter] = useState<
     "all" | "pending" | "approved" | "rejected"
   >("all");
+  const [showAll, setShowAll] = useState(false);
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -65,7 +68,7 @@ export default function ExitRequestsPanel({
       await loadRequests();
     };
     run();
-  }, [loadRequests]);
+  }, [loadRequests, refreshKey]);
 
   const handleRespond = async (
     id: number,
@@ -127,6 +130,7 @@ export default function ExitRequestsPanel({
 
   const filtered =
     filter === "all" ? requests : requests.filter((r) => r.status === filter);
+  const visibleRequests = showAll ? filtered : filtered.slice(0, 1);
 
   return (
     <div className="group relative">
@@ -152,7 +156,10 @@ export default function ExitRequestsPanel({
                   <button
                     key={f}
                     type="button"
-                    onClick={() => setFilter(f)}
+                    onClick={() => {
+                      setFilter(f);
+                      setShowAll(false);
+                    }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all ${
                       filter === f
                         ? "bg-white text-slate-800 shadow-sm"
@@ -172,7 +179,10 @@ export default function ExitRequestsPanel({
 
             <button
               type="button"
-              onClick={() => loadRequests()}
+              onClick={() => {
+                setShowAll(false);
+                loadRequests();
+              }}
               disabled={loading}
               className="p-2.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
               title="Refresh"
@@ -202,7 +212,7 @@ export default function ExitRequestsPanel({
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((req) => {
+            {visibleRequests.map((req) => {
               const statusCfg =
                 statusConfig[req.status as keyof typeof statusConfig] ??
                 statusConfig.pending;
@@ -346,6 +356,20 @@ export default function ExitRequestsPanel({
                 </div>
               );
             })}
+
+            {filtered.length > 1 && (
+              <div className="pt-2 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAll((prev) => !prev)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-all"
+                >
+                  {showAll
+                    ? "Show Less"
+                    : `Show More (${filtered.length - 1} more)`}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

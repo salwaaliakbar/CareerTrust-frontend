@@ -34,6 +34,9 @@ export default function ExitRequestModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(
+    "Exit request submitted successfully.",
+  );
 
   const getLocalTodayISO = () => {
     const now = new Date();
@@ -70,6 +73,9 @@ export default function ExitRequestModal({
       return;
     }
 
+    setSuccessMessage(
+      result.message ?? "Exit request submitted successfully.",
+    );
     setSuccess(true);
     setTimeout(() => {
       setSuccess(false);
@@ -138,7 +144,7 @@ export default function ExitRequestModal({
             <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <p className="text-sm font-bold text-emerald-700">
-                Exit request submitted! Your employer will be notified.
+                {successMessage}
               </p>
             </div>
           )}
@@ -192,9 +198,11 @@ export default function ExitRequestModal({
           <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 font-semibold leading-relaxed">
-              When your employer approves this request, your employment end date
-              will be automatically set and your &quot;Currently Employed&quot;
-              status will be updated.
+              If this company is on CareerTrust, your employer will review your
+              request. For non-platform companies, this becomes a self-exit
+              request and admin will review it. Once approved, your employment
+              end date and &quot;Currently Employed&quot; status are updated
+              automatically.
             </p>
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
 import Header from "@/components/layout/Header";
@@ -46,47 +46,64 @@ const ExitRequestPage = () => {
 
   const isReady = isAuthLoaded && isUserLoaded;
 
-  useEffect(() => {
+  const refreshExitRequestData = useCallback(async () => {
     if (!isReady || !user) return;
 
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        const token = await getToken();
-        const res = await fetch(
-          `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            cache: "no-store",
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${API_ENDPOINTS.JOBSEEKER_PROFILE_GET}?clerkId=${encodeURIComponent(user.id)}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-        );
+          cache: "no-store",
+        },
+      );
 
-        if (!res.ok) {
-          setEmployments([]);
-          return;
-        }
-
-        const json = await res.json();
-        const allEmployments: EmploymentRecord[] =
-          json?.data?.employmentHistory ?? [];
-        setEmployments(allEmployments);
-
-        // Also fetch submitted exit requests
-        const requests = await getMyExitRequests(getToken);
-        setExitRequests(requests);
-      } catch (err) {
-        console.error("[ExitRequestPage] Error fetching profile:", err);
+      if (!res.ok) {
         setEmployments([]);
-      } finally {
-        setLoading(false);
+        return;
       }
+
+      const json = await res.json();
+      const allEmployments: EmploymentRecord[] = json?.data?.employmentHistory ?? [];
+      setEmployments(allEmployments);
+
+      const requests = await getMyExitRequests(getToken);
+      setExitRequests(requests);
+    } catch (err) {
+      console.error("[ExitRequestPage] Error fetching profile:", err);
+      setEmployments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isReady, user, getToken]);
+
+  useEffect(() => {
+    if (!isReady || !user) return;
+    refreshExitRequestData();
+  }, [isReady, user, refreshExitRequestData]);
+
+  useEffect(() => {
+    const handleExitRequestUpdated = () => {
+      refreshExitRequestData();
     };
 
-    fetchProfile();
-  }, [isReady, user, getToken]);
+    window.addEventListener(
+      "careertrust:exit-request-updated",
+      handleExitRequestUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "careertrust:exit-request-updated",
+        handleExitRequestUpdated,
+      );
+    };
+  }, [refreshExitRequestData]);
 
   return (
     <>
@@ -145,7 +162,7 @@ const ExitRequestPage = () => {
 
               <div className="mt-6 inline-flex items-start gap-2 rounded-xl border border-blue-300/30 bg-blue-500/20 px-4 py-2.5 text-sm text-blue-100">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                Requests can only be submitted for currently active employment records.
+                Requests can only be submitted for currently active employment records. Non-platform companies are routed to admin review as self-exit requests.
               </div>
             </div>
           </section>
@@ -159,11 +176,13 @@ const ExitRequestPage = () => {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">My Submitted Requests</h2>
-                  <p className="text-sm text-slate-500">Track approval status and employer notes</p>
+                  <p className="text-sm text-slate-500">Track employer/admin approval status and notes</p>
                 </div>
               </div>
               <div className="space-y-3">
                 {exitRequests.map((req, idx) => {
+                  const isAdminFlow =
+                    req.approvalFlow === "admin" || !req.employerClerkId;
                   const statusConfig = {
                     pending: {
                       icon: <Clock className="w-4 h-4 text-amber-500" />,
@@ -198,6 +217,11 @@ const ExitRequestPage = () => {
                             <p className="text-slate-500 text-xs">
                               {req.position}
                             </p>
+                            <p className="mt-1 text-[11px] font-semibold text-indigo-600">
+                              {isAdminFlow
+                                ? "Self Exit • Admin Review"
+                                : "Employer Review"}
+                            </p>
                             <p className="text-slate-400 text-xs mt-1">
                               Requested end:{" "}
                               {new Date(
@@ -211,7 +235,7 @@ const ExitRequestPage = () => {
                             {req.employerNote && (
                               <p className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
                                 <span className="font-medium">
-                                  Employer note:
+                                  {isAdminFlow ? "Admin note:" : "Employer note:"}
                                 </span>{" "}
                                 {req.employerNote}
                               </p>
@@ -263,7 +287,7 @@ const ExitRequestPage = () => {
             <section className="rounded-3xl border border-slate-200 bg-white shadow-sm p-5 sm:p-6 fade-in-up animation-delay-200">
               <p className="text-sm text-slate-500 mb-5 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-500" />
-                Select a current (active) employment below to submit an exit request.
+                Select a current (active) employment below to submit a self-exit request. Non-platform company requests go to admin approval.
               </p>
 
               <div className="space-y-4">
@@ -319,7 +343,7 @@ const ExitRequestPage = () => {
                           className="shrink-0 flex items-center gap-2 px-4 py-2 bg-linear-to-r from-red-500 to-orange-500 text-white text-sm font-semibold rounded-xl shadow-[0_10px_24px_-12px_rgba(239,68,68,0.55)] hover:from-red-600 hover:to-orange-600 transition-all duration-200"
                         >
                           <LogOut className="w-4 h-4" />
-                          Request Exit
+                          Self Exit Request
                         </button>
                       ) : (
                         <span className="shrink-0 px-4 py-2 text-xs text-slate-400 border border-slate-200 rounded-xl bg-slate-50">

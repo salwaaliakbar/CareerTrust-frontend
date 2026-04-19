@@ -11,6 +11,7 @@ export interface ExitRequest {
   reason: string | null;
   status: "pending" | "approved" | "rejected";
   employerNote: string | null;
+  approvalFlow?: "employer" | "admin";
   createdAt: string;
   updatedAt: string;
 }
@@ -68,7 +69,11 @@ export async function submitExitRequest(
         message: json.message || "Failed to submit exit request",
       };
     }
-    return { success: true, data: json.data };
+    return {
+      success: true,
+      data: json.data,
+      message: json.message || "Exit request submitted successfully",
+    };
   } catch (err) {
     console.error("submitExitRequest error:", err);
     return { success: false, message: "Network error" };

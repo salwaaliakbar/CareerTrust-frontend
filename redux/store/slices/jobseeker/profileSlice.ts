@@ -125,6 +125,40 @@ const profileSlice = createSlice({
       const idx = state.education.findIndex((e) => e.id === action.payload.id);
       if (idx !== -1) state.education[idx] = action.payload;
     },
+    setEducationVerificationStatus(
+      state,
+      action: PayloadAction<{
+        educationId: string | number;
+        status: VerificationStatus;
+        rejectionReason?: string;
+      }>
+    ) {
+      const { educationId, status, rejectionReason } = action.payload;
+      const edu = state.education.find(
+        (e) => String(e.id) === String(educationId)
+      );
+      if (!edu) return;
+
+      const nextVerified = status === "verified";
+      const nextRejectionReason = status === "rejected" ? rejectionReason ?? "" : undefined;
+
+      if (
+        edu.verificationStatus === status &&
+        edu.verified === nextVerified &&
+        edu.rejectionReason === nextRejectionReason
+      ) {
+        return;
+      }
+
+      edu.verificationStatus = status;
+      edu.verified = nextVerified;
+
+      if (status === "rejected") {
+        edu.rejectionReason = nextRejectionReason;
+      } else {
+        delete edu.rejectionReason;
+      }
+    },
     deleteEducation(state, action: PayloadAction<string>) {
       state.education = state.education.filter((e) => e.id !== action.payload);
     },
@@ -183,11 +217,24 @@ const profileSlice = createSlice({
       action: PayloadAction<{ empId: string; status: VerificationStatus; rejectionReason?: string }>
     ) {
       const { empId, status, rejectionReason } = action.payload;
-      const emp = state.employment.find((e) => e.id === empId);
+      const emp = state.employment.find((e) => String(e.id) === String(empId));
       if (!emp) return;
+
+      const nextVerified = status === "verified";
+      const nextRejectionReason = status === "rejected" ? rejectionReason ?? "" : undefined;
+
+      if (
+        emp.verificationStatus === status &&
+        emp.verified === nextVerified &&
+        emp.rejectionReason === nextRejectionReason
+      ) {
+        return;
+      }
+
       emp.verificationStatus = status;
+      emp.verified = nextVerified;
       if (status === "rejected") {
-        emp.rejectionReason = rejectionReason ?? "";
+        emp.rejectionReason = nextRejectionReason;
       } else {
         delete emp.rejectionReason;
       }
@@ -216,7 +263,16 @@ const profileSlice = createSlice({
           normalizedSkills = fetchedData.skills;
         } else if (Array.isArray(fetchedData.skills)) {
           normalizedSkills = fetchedData.skills
-            .map((skill: any) => skill?.skillName || skill)
+            .map((skill) => {
+              if (typeof skill === "string") return skill;
+              if (skill && typeof skill === "object") {
+                const maybeSkill = skill as { skillName?: unknown };
+                return typeof maybeSkill.skillName === "string"
+                  ? maybeSkill.skillName
+                  : "";
+              }
+              return "";
+            })
             .filter(Boolean)
             .join(", ");
         }
@@ -254,6 +310,7 @@ export const {
   setEducation,
   addEducation,
   updateEducation,
+  setEducationVerificationStatus,
   deleteEducation,
   setEmployment,
   addEmployment,

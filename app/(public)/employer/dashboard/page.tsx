@@ -130,7 +130,25 @@ const EmployerDashboard = () => {
     if (employerId) {
       loadJobs();
     }
-  }, [employerId, getToken, isReputationOnly]);
+  }, [employerId, getToken, isReputationOnly, refreshKey]);
+
+  useEffect(() => {
+    const handleEmployerDashboardUpdated = () => {
+      setRefreshKey((prev) => prev + 1);
+    };
+
+    window.addEventListener(
+      "careertrust:employer-dashboard-updated",
+      handleEmployerDashboardUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "careertrust:employer-dashboard-updated",
+        handleEmployerDashboardUpdated,
+      );
+    };
+  }, []);
 
   const visibleJobs = jobs.slice(0, 4);
   const hasMoreJobs = jobs.length > 4;
@@ -403,7 +421,7 @@ const EmployerDashboard = () => {
           </section>
 
           <div className="mt-10">
-            <ExitRequestsPanel getToken={getToken} />
+            <ExitRequestsPanel getToken={getToken} refreshKey={refreshKey} />
           </div>
         </main>
       )}
