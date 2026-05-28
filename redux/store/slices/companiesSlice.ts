@@ -114,8 +114,66 @@ type BulkReputationResult = {
   requestKey: string;
 };
 
+type ReputationRequestArg = {
+  id: string | number;
+  forceRefresh?: boolean;
+};
+
+const getReputationRequestMeta = (arg: string | number | ReputationRequestArg) => {
+  if (typeof arg === 'object' && arg !== null && 'id' in arg) {
+    return {
+      companyId: String(arg.id),
+      forceRefresh: Boolean(arg.forceRefresh),
+    };
+  }
+
+  return {
+    companyId: String(arg),
+    forceRefresh: false,
+  };
+};
+
 const buildReputationListKey = (ids: Array<string | number>) =>
   Array.from(new Set(ids.map((id) => String(id)).filter(Boolean))).sort().join(',');
+
+const applyReputationToCompanyEntities = (
+  state: CompaniesState,
+  companyId: string,
+  reputation: CompanyReputation,
+) => {
+  const numericCompanyId = Number.parseInt(companyId, 10);
+  const reviewCount = reputation.status.totalAnonymousReviews;
+  const rating = reputation.reputationScore;
+
+  state.items = state.items.map((company) =>
+    Number(company.id) === numericCompanyId
+      ? { ...company, reviews: reviewCount, rating }
+      : company,
+  );
+
+  state.featuredItems = state.featuredItems.map((company) =>
+    Number(company.id) === numericCompanyId
+      ? { ...company, reviews: reviewCount, rating }
+      : company,
+  );
+
+  const cachedCompany = state.companiesById[companyId];
+  if (cachedCompany) {
+    state.companiesById[companyId] = {
+      ...cachedCompany,
+      reviews: reviewCount,
+      rating,
+    };
+  }
+
+  if (state.selectedCompany && Number(state.selectedCompany.id) === numericCompanyId) {
+    state.selectedCompany = {
+      ...state.selectedCompany,
+      reviews: reviewCount,
+      rating,
+    };
+  }
+};
 
 const buildCompaniesQueryKey = (args?: CompaniesQueryArgs) =>
   JSON.stringify({
@@ -289,13 +347,13 @@ export const getFeaturedCompanies = createAsyncThunk<
 
 export const getCompanyReputationById = createAsyncThunk<
   { companyId: string; reputation: CompanyReputation | null },
-  string | number
+  string | number | ReputationRequestArg
 >(
   'companies/getCompanyReputationById',
   async (id, { getState, rejectWithValue }) => {
     try {
       const state = (getState() as CompaniesSliceState).companies;
-      const companyId = String(id);
+      const { companyId, forceRefresh } = getReputationRequestMeta(id);
       const numericCompanyId = Number.parseInt(companyId, 10);
 
       if (!Number.isInteger(numericCompanyId) || numericCompanyId <= 0) {
@@ -305,6 +363,7 @@ export const getCompanyReputationById = createAsyncThunk<
       const cached = state.reputationById[companyId];
       const lastFetchTime = state.lastFetchTimeReputationById[companyId];
       if (
+        !forceRefresh &&
         cached &&
         lastFetchTime &&
         Date.now() - lastFetchTime < REPUTATION_CACHE_DURATION
@@ -321,7 +380,7 @@ export const getCompanyReputationById = createAsyncThunk<
   {
     condition: (id, { getState }) => {
       const state = (getState() as CompaniesSliceState).companies;
-      const companyId = String(id);
+      const { companyId, forceRefresh } = getReputationRequestMeta(id);
       const cached = state.reputationById[companyId];
       const lastFetchTime = state.lastFetchTimeReputationById[companyId];
 
@@ -330,6 +389,7 @@ export const getCompanyReputationById = createAsyncThunk<
       }
 
       if (
+        !forceRefresh &&
         cached &&
         lastFetchTime &&
         Date.now() - lastFetchTime < REPUTATION_CACHE_DURATION
@@ -504,7 +564,7 @@ const companiesSlice = createSlice({
 
     builder
       .addCase(getCompanyReputationById.pending, (state, action) => {
-        const companyId = String(action.meta.arg);
+        const { companyId } = getReputationRequestMeta(action.meta.arg);
         state.pendingReputationById[companyId] = true;
       })
       .addCase(getCompanyReputationById.fulfilled, (state, action) => {
@@ -512,11 +572,12 @@ const companiesSlice = createSlice({
         if (reputation) {
           state.reputationById[companyId] = reputation;
           state.lastFetchTimeReputationById[companyId] = Date.now();
+          applyReputationToCompanyEntities(state, companyId, reputation);
         }
         delete state.pendingReputationById[companyId];
       })
       .addCase(getCompanyReputationById.rejected, (state, action) => {
-        const companyId = String(action.meta.arg);
+        const { companyId } = getReputationRequestMeta(action.meta.arg);
         delete state.pendingReputationById[companyId];
       });
 
@@ -529,6 +590,7 @@ const companiesSlice = createSlice({
         for (const [companyId, reputation] of entries) {
           state.reputationById[companyId] = reputation;
           state.lastFetchTimeReputationById[companyId] = Date.now();
+          applyReputationToCompanyEntities(state, companyId, reputation);
         }
         state.pendingReputationListKey = null;
       })
