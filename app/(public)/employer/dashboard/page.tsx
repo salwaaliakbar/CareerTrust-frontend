@@ -104,6 +104,37 @@ const EmployerDashboard = () => {
   }, [dispatch, companyId, isReputationOnly]);
 
   useEffect(() => {
+    const handleCompanyReputationUpdated = (event: Event) => {
+      if (!companyId) return;
+
+      const customEvent = event as CustomEvent<{ companyId?: number | string }>;
+      const targetCompanyId = customEvent.detail?.companyId;
+      if (targetCompanyId && String(targetCompanyId) !== companyId) {
+        return;
+      }
+
+      dispatch(
+        getCompanyReputationById({
+          id: companyId,
+          forceRefresh: true,
+        }),
+      );
+    };
+
+    window.addEventListener(
+      "careertrust:company-reputation-updated",
+      handleCompanyReputationUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "careertrust:company-reputation-updated",
+        handleCompanyReputationUpdated,
+      );
+    };
+  }, [dispatch, companyId]);
+
+  useEffect(() => {
     const loadJobs = async () => {
       if (!employerId) return;
       if (isReputationOnly) {

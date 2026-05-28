@@ -1,3 +1,32 @@
+# CareerTrust Frontend
+
+This folder contains the complete frontend codebase for the CareerTrust project. All documentation and guides have been consolidated into this single README file.
+
+## Structure
+- `app/` - Main Next.js application code
+- `components/` - Reusable React components
+- `constants/` - Project-wide constants
+- `data/` - Static and mock data
+- `hooks/` - Custom React hooks
+- `lib/` - Utility libraries
+- `public/` - Static assets
+- `redux/` - Redux state management
+- `services/` - API and business logic
+- `types/` - TypeScript type definitions
+
+## Setup & Usage
+1. Install dependencies:
+	```sh
+	npm install
+	```
+2. Run the frontend server:
+	```sh
+	npm run dev
+	```
+
+## Notes
+- For any previous documentation, refer to project commit history if needed.
+- Contact the project maintainer for further frontend details.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

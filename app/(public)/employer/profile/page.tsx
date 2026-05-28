@@ -97,6 +97,37 @@ export default function EmployerProfilePage() {
     dispatch(getCompanyReputationById(String(company.id)));
   }, [dispatch, company?.id]);
 
+  useEffect(() => {
+    const handleCompanyReputationUpdated = (event: Event) => {
+      if (!company?.id) return;
+
+      const customEvent = event as CustomEvent<{ companyId?: number | string }>;
+      const targetCompanyId = customEvent.detail?.companyId;
+      if (targetCompanyId && String(targetCompanyId) !== String(company.id)) {
+        return;
+      }
+
+      dispatch(
+        getCompanyReputationById({
+          id: String(company.id),
+          forceRefresh: true,
+        }),
+      );
+    };
+
+    window.addEventListener(
+      "careertrust:company-reputation-updated",
+      handleCompanyReputationUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "careertrust:company-reputation-updated",
+        handleCompanyReputationUpdated,
+      );
+    };
+  }, [dispatch, company?.id]);
+
   const activeJobs = jobs.filter((j) => j.status === "active");
   const pastJobs = jobs.filter((j) => j.status !== "active");
 
@@ -154,13 +185,21 @@ export default function EmployerProfilePage() {
                   <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                     <div className="flex flex-col gap-6 md:flex-row md:items-center">
                     <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/25 bg-white/10 shadow-lg shadow-black/20 backdrop-blur-sm sm:h-28 sm:w-28">
-                      {company.logo ? (
+                      {company.logo && !company.logoError ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={company.logo}
                           alt={company.name}
                           className="h-full w-full object-cover"
+                          onError={e => {
+                            e.currentTarget.style.display = 'none';
+                            if (company) company.logoError = true;
+                          }}
                         />
+                      ) : company.name ? (
+                        <span className="text-4xl font-bold text-blue-700 select-none">
+                          {company.name.slice(0, 2).toUpperCase()}
+                        </span>
                       ) : (
                         <Building2 className="h-11 w-11 text-blue-100/80" />
                       )}

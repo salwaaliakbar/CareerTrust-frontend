@@ -603,6 +603,20 @@ export function NotificationProvider({
       });
     };
 
+    const handleCompanyReputationUpdated = (data: any) => {
+      console.log("Company reputation updated event:", data);
+      scheduleEmployerDashboardRefresh();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("careertrust:company-reputation-updated", {
+            detail: {
+              companyId: data?.companyId,
+            },
+          }),
+        );
+      }
+    };
+
     const handleJobRecommendationReady = async (data: any) => {
       console.log("Job recommendation ready event:", data);
       if (!user?.id) return;
@@ -759,6 +773,7 @@ export function NotificationProvider({
     on("exit_request_approved", handleExitRequestApproved);
     on("exit_request_rejected", handleExitRequestRejected);
     on("offer_response", handleOfferResponse);
+    on("company_reputation_updated", handleCompanyReputationUpdated);
     on("job_recommendation_ready", handleJobRecommendationReady);
 
     // Cleanup
@@ -777,6 +792,7 @@ export function NotificationProvider({
       off("exit_request_approved", handleExitRequestApproved);
       off("exit_request_rejected", handleExitRequestRejected);
       off("offer_response", handleOfferResponse);
+      off("company_reputation_updated", handleCompanyReputationUpdated);
       off("job_recommendation_ready", handleJobRecommendationReady);
     };
     // on/off/addNotification are all stable (useCallback) — only the

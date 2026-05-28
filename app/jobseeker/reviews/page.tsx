@@ -22,6 +22,8 @@ import {
   submitCompanyReview,
   type EligibleCompanyForReview,
 } from "@/services/api/companyReview.service";
+import { useAppDispatch } from "@/redux/store/hooks";
+import { getCompanyReputationById } from "@/redux/store/slices/companiesSlice";
 
 const formatDate = (value: string) =>
   new Date(value).toLocaleDateString("en-US", {
@@ -37,6 +39,7 @@ const normalizeReviewForComparison = (value: string) =>
     .trim();
 
 export default function JobseekerReviewsPage() {
+  const dispatch = useAppDispatch();
   const { isLoaded, user } = useUser();
   const { getToken } = useAuth();
   const [companies, setCompanies] = useState<EligibleCompanyForReview[]>([]);
@@ -127,6 +130,13 @@ export default function JobseekerReviewsPage() {
           reviewText,
         },
         getToken,
+      );
+
+      await dispatch(
+        getCompanyReputationById({
+          id: selectedCompany.company.id,
+          forceRefresh: true,
+        }),
       );
 
       const refreshed = await getEligibleCompaniesForReview(getToken);
