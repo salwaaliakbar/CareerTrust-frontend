@@ -1,10 +1,11 @@
+import { getNodeApiUrl } from "@/lib/env";
+
 /**
  * Profile Service
  * Handles API calls for viewing jobseeker profiles
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE_URL = getNodeApiUrl();
 
 export interface JobseekerPublicProfile {
   jobseekerId: number;

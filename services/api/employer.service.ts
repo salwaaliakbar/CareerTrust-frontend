@@ -7,9 +7,9 @@ import {
   UpdateApplicationStatusRequest,
   ApplicationStatus,
 } from "@/types/application.types";
+import { getBackendBaseUrl } from "@/lib/env";
 
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
+const BACKEND_BASE_URL = getBackendBaseUrl();
 const EMPLOYER_API_URL = `${BACKEND_BASE_URL}/api/employer`;
 
 /**

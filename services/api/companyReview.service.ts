@@ -1,7 +1,8 @@
 "use client";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+import { getNodeApiUrl } from "@/lib/env";
+
+const API_BASE_URL = getNodeApiUrl();
 
 export interface EligibleCompanyForReview {
   company: {

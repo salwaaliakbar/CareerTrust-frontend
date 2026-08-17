@@ -1,12 +1,13 @@
 "use client";
 
+import { getBackendBaseUrl } from "@/lib/env";
+
 /**
  * Client-Side API Client
  * Use this ONLY in Client Components (with "use client")
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
+const API_BASE_URL = getBackendBaseUrl();
 
 export interface ApiResponse<T = any> {
   data: T;

@@ -22,8 +22,9 @@ import {
   fetchDashboardStats,
   fetchRecentApplications,
 } from "@/redux/store/slices/dashboardSlice";
+import { getNodeApiUrl } from "@/lib/env";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const API_BASE = getNodeApiUrl();
 
 type JobRecommendationItem = {
   jobId: number;

@@ -1,12 +1,13 @@
-import { 
-  DashboardStats, 
-  AdminUser, 
-  EmployerData, 
+import {
+  DashboardStats,
+  AdminUser,
+  EmployerData,
   EmployerDetailData,
   CompanyData,
   CompanyDetailData,
   AdminExitRequest
 } from "@/types/admin.types";
+import { getBackendBaseUrl } from "@/lib/env";
 
 type Pagination = {
   page: number;
@@ -23,7 +24,7 @@ type EmploymentVerificationResult = Record<string, unknown>;
 type EducationVerificationResult = Record<string, unknown>;
 type JobItem = Record<string, unknown>;
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = getBackendBaseUrl();
 
 /**
  * Admin API Service

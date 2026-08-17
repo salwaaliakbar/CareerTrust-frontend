@@ -7,6 +7,7 @@ import {
   UpdateCompanyRequest,
   CompanyFormData,
 } from "@/types/company.types";
+import { getBackendBaseUrl } from "@/lib/env";
 
 interface CompanyDetailResponse {
   success: boolean;
@@ -266,9 +267,7 @@ export async function updateCompany(
   updateData: Partial<CompanyFormData>,
 ): Promise<Company | null> {
   try {
-    const BACKEND_BASE_URL =
-      process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
-    const url = `${BACKEND_BASE_URL}/api/companies/${companyId}`;
+    const url = `${getBackendBaseUrl()}/api/companies/${companyId}`;
 
     console.log("[Company Service] Updating company:", companyId);
     console.log("[Company Service] Update data:", updateData);

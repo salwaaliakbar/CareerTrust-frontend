@@ -1,12 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
+import { getBackendBaseUrl } from "@/lib/env";
 
 /**
  * Centralized API Client for Backend Communication
  * Automatically injects Clerk JWT tokens for authenticated requests
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
+const API_BASE_URL = getBackendBaseUrl();
 
 export interface ApiResponse<T = any> {
   data: T;

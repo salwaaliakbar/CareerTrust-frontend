@@ -1,9 +1,10 @@
+import { getBackendBaseUrl } from "@/lib/env";
+
 // API base URL configuration
 // For Blogs and Jobs, use the backend API URL (Node.js backend on port 4000)
 // For other endpoints, use the Next.js API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:4000";
+const BACKEND_BASE_URL = getBackendBaseUrl();
 const BACKEND_API_URL = `${BACKEND_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {

@@ -2,24 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { getSocketUrl } from "@/lib/env";
 
-const resolveSocketUrl = () => {
-  const explicit = process.env.NEXT_PUBLIC_SOCKET_URL;
-  if (explicit) return explicit.replace(/\/+$/, "");
-
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-  if (backendBase) return backendBase.replace(/\/+$/, "");
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl) {
-    // If NEXT_PUBLIC_API_URL points to /api, strip it for socket root connection.
-    return apiUrl.replace(/\/+$/, "").replace(/\/api$/, "");
-  }
-
-  return "http://localhost:4000";
-};
-
-const SOCKET_URL = resolveSocketUrl();
+const SOCKET_URL = getSocketUrl();
 
 interface UseSocketOptions {
   clerkId?: string | null;

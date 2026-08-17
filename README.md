@@ -66,10 +66,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## AI microservice (face recognition)
 
-The server-side face-check route forwards the uploaded image to an AI microservice. Set the `AI_SERVICE_URL` environment variable to the microservice endpoint (server-side URL), for example:
-
-```
-AI_SERVICE_URL="http://localhost:8000/face-recognition"
-```
+This app doesn't call the AI microservice directly — face-check requests go through the Node backend (`NEXT_PUBLIC_BACKEND_API_URL`), which forwards them to the FastAPI AI service. There's no frontend env var for the AI service's URL; that's configured on the Node backend side (`AI_SERVICE_BASE_URL`).
 
 Make sure this value is available to the Next.js server runtime (e.g., in `.env.local` for local dev or environment variables in your hosting platform).

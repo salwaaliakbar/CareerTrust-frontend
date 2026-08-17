@@ -23,14 +23,8 @@ export default clerkMiddleware(async (auth, request) => {
   const { userId } = await auth();
   const isPrivate = isPrivateRoute(request);
 
-  console.log("=== MIDDLEWARE DEBUG ===");
-  console.log("Path:", request.nextUrl.pathname);
-  console.log("User ID:", userId);
-  console.log("Is Private Route:", isPrivate);
-
   // If user is not authenticated and trying to access a private route
   if (!userId && isPrivate) {
-    console.log("Redirecting to login - no user");
     const loginUrl = new URL("/login", request.url);
     const destination = `${request.nextUrl.pathname}${request.nextUrl.search}`;
     loginUrl.searchParams.set("redirect", destination);
@@ -45,50 +39,37 @@ export default clerkMiddleware(async (auth, request) => {
       const user = await client.users.getUser(userId);
       const userRole = user.unsafeMetadata?.role as string | undefined;
 
-      console.log("User Role from unsafeMetadata:", userRole);
-      console.log("Full unsafeMetadata:", user.unsafeMetadata);
-
       // If no role is set, redirect to home or role selection page
       if (!userRole) {
-        console.log("No role found - redirecting to home");
         const homeUrl = new URL("/", request.url);
         return NextResponse.redirect(homeUrl);
       }
 
       // Check admin route access
-      if (isAdminRoute(request)) {
-        if (userRole !== "admin") {
-          console.log("BLOCKING: Non-admin trying to access admin route");
-          const homeUrl = new URL("/", request.url);
-          return NextResponse.redirect(homeUrl);
-        }
-        console.log("Admin access granted");
+      if (isAdminRoute(request) && userRole !== "admin") {
+        const homeUrl = new URL("/", request.url);
+        return NextResponse.redirect(homeUrl);
       }
 
       // Check if jobseeker is trying to access employer routes
       if (userRole === "jobseeker" && isEmployerRoute(request)) {
-        console.log("BLOCKING: Jobseeker trying to access employer route");
         const jobseekerUrl = new URL("/jobseeker", request.url);
         return NextResponse.redirect(jobseekerUrl);
       }
 
       // Check if employer is trying to access jobseeker routes
       if (userRole === "employer" && isJobseekerRoute(request)) {
-        console.log("BLOCKING: Employer trying to access jobseeker route");
         const employerUrl = new URL("/employer", request.url);
         return NextResponse.redirect(employerUrl);
       }
-
-      console.log("Access granted");
     } catch (error) {
-      console.error("Error fetching user:", error);
+      console.error("Middleware error fetching user:", error);
     }
 
     // Protect the route
     await auth.protect();
   }
 
-  console.log("=== END MIDDLEWARE ===");
   return NextResponse.next();
 });
 
