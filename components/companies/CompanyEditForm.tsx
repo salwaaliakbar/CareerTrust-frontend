@@ -60,7 +60,7 @@ export default function CompanyEditForm({
 
     try {
       // Convert benefits string to array
-      const updateData: Partial<CompanyFormData> = {
+      const updateData = {
         ...formData,
         benefits: formData.benefits
           ? formData.benefits.split(",").map((b) => b.trim())

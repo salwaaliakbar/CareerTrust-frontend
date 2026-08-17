@@ -24,7 +24,14 @@ export type DocumentFile = {
   file?: File; // Actual File object for new uploads
 };
 
-export type VerificationStatus = "draft" | "pending" | "verified" | "rejected";
+// "approved" is a legacy value from an older verification flow; some existing
+// rows still have it stored even though new writes only use "verified".
+export type VerificationStatus =
+  | "draft"
+  | "pending"
+  | "verified"
+  | "rejected"
+  | "approved";
 
 export type EmploymentRecord = {
   id: string;

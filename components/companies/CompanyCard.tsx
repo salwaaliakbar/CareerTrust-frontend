@@ -9,7 +9,6 @@ type Company = {
   industry: string;
   location: string;
   rating?: number;
-  reviews: number;
   employees: number;
   openJobs: number;
   description: string;

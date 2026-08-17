@@ -24,6 +24,17 @@ type EmploymentVerificationResult = Record<string, unknown>;
 type EducationVerificationResult = Record<string, unknown>;
 type JobItem = Record<string, unknown>;
 
+interface AdminJobListItem {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  jobType: string;
+  salary: string | null;
+  postedDate: string;
+  featured: boolean;
+}
+
 const API_URL = getBackendBaseUrl();
 
 /**
@@ -242,7 +253,7 @@ export class AdminService {
     if (params?.limit) queryParams.append("limit", params.limit.toString());
     if (params?.search) queryParams.append("search", params.search);
 
-    return this.apiCall<{ data: { jobs: JobItem[]; pagination: Pagination } }>(
+    return this.apiCall<{ data: { jobs: AdminJobListItem[]; pagination: Pagination } }>(
       `/api/admin/jobs?${queryParams}`,
       token
     );

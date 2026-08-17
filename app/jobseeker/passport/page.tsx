@@ -5,7 +5,7 @@ import { EmploymentRecord } from "@/types/jobseeker.types";
 import DigitalEmploymentPassport from "@/components/jobseekerDashboard/DigitalEmploymentPassport";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { API_ENDPOINTS } from "@/constants/api";
@@ -31,7 +31,7 @@ const toMonthIndex = (value?: string | null) => {
   return 0;
 };
 
-const PassportPage = () => {
+function PassportPage() {
   const { getToken } = useAuth();
   const { user } = useUser();
   const searchParams = useSearchParams();
@@ -180,6 +180,12 @@ const PassportPage = () => {
       <Footer />
     </div>
   );
-};
+}
 
-export default PassportPage;
+export default function PassportPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <PassportPage />
+    </Suspense>
+  );
+}

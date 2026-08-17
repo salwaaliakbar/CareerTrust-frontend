@@ -3,7 +3,6 @@ import {
   EmployerJob,
   EmployerJobsResponse,
   JobApplication,
-  ApplicationsResponse,
   UpdateApplicationStatusRequest,
   ApplicationStatus,
 } from "@/types/application.types";
@@ -11,6 +10,15 @@ import { getBackendBaseUrl } from "@/lib/env";
 
 const BACKEND_BASE_URL = getBackendBaseUrl();
 const EMPLOYER_API_URL = `${BACKEND_BASE_URL}/api/employer`;
+
+// GET /api/employer/jobs/:jobId/applications nests applications+jobTitle
+// under `data` (see employer.controller.ts's getJobApplications) — distinct
+// from the flatter `ApplicationsResponse` shape used elsewhere.
+interface JobApplicationsResponse {
+  success: boolean;
+  data?: { applications: JobApplication[]; jobTitle: string | null };
+  error?: string;
+}
 
 /**
  * Fetch all jobs posted by the employer
@@ -110,10 +118,10 @@ export async function fetchJobApplications(
       console.error(
         `[Employer Service] Failed to fetch applications. Status: ${response.status}`,
       );
-      return [];
+      return { applications: [], jobTitle: null };
     }
 
-    const data: ApplicationsResponse = await response.json();
+    const data: JobApplicationsResponse = await response.json();
 
     if (!data.success) {
       console.warn(
@@ -123,7 +131,7 @@ export async function fetchJobApplications(
       return { applications: [], jobTitle: null };
     }
 
-    const applications = data.data?.applications ?? data.data ?? [];
+    const applications = data.data?.applications ?? [];
     const jobTitle = data.data?.jobTitle ?? null;
 
     console.log(

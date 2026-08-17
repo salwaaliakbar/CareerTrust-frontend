@@ -48,6 +48,7 @@ export default function EmployerProfilePage() {
   const [jobs, setJobs] = useState<EmployerJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
   const reputationById = useAppSelector((state) => state.companies.reputationById);
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export default function EmployerProfilePage() {
         setProfile(details);
         setJobs(employerJobs);
         setError(null);
+        setLogoError(false);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load company profile",
@@ -185,16 +187,13 @@ export default function EmployerProfilePage() {
                   <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                     <div className="flex flex-col gap-6 md:flex-row md:items-center">
                     <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/25 bg-white/10 shadow-lg shadow-black/20 backdrop-blur-sm sm:h-28 sm:w-28">
-                      {company.logo && !company.logoError ? (
+                      {company.logo && !logoError ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={company.logo}
                           alt={company.name}
                           className="h-full w-full object-cover"
-                          onError={e => {
-                            e.currentTarget.style.display = 'none';
-                            if (company) company.logoError = true;
-                          }}
+                          onError={() => setLogoError(true)}
                         />
                       ) : company.name ? (
                         <span className="text-4xl font-bold text-blue-700 select-none">

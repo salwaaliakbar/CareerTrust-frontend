@@ -60,7 +60,6 @@ if (isServer) {
       if (m === "child") {
         obj.child = () => obj;
       } else {
-        // @ts-expect-error dynamic assignment
         obj[m] = () => {
           // no-op on client; keep silent to avoid leaking PII to console
         };

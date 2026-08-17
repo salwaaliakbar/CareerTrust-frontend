@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Call backend API with server-to-server communication
     const backendResponse = await fetch(
-      `${API_ENDPOINTS.APPLICATION_SUBMIT}`,
+      `${API_ENDPOINTS.APPLICATIONS_SUBMIT}`,
       {
         method: "POST",
         headers: {

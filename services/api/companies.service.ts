@@ -260,11 +260,13 @@ export async function createCompany(
 /**
  * Update company details
  * @param companyId - Company ID
- * @param updateData - Updated company data
+ * @param updateData - Updated company data. `benefits` is sent as an array
+ * (matching the `Company` shape) even though the edit form holds it as a
+ * comma-separated string while the user is typing.
  */
 export async function updateCompany(
   companyId: string | number,
-  updateData: Partial<CompanyFormData>,
+  updateData: Partial<Omit<CompanyFormData, "benefits">> & { benefits?: string[] },
 ): Promise<Company | null> {
   try {
     const url = `${getBackendBaseUrl()}/api/companies/${companyId}`;

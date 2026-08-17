@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import LoginForm from "@/components/forms/LoginForm";
 import Footer from "@/components/layout/Footer";
@@ -24,7 +25,9 @@ export default function Login() {
 
         {/* Form column */}
         <div className="w-full md:w-1/2 flex items-center justify-center px-4 py-12">
-          <LoginForm />
+          <Suspense fallback={null}>
+            <LoginForm />
+          </Suspense>
         </div>
       </main>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Search, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
@@ -13,7 +13,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 const PAGE_SIZE = 12;
 
-export default function CompaniesPage() {
+function CompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -238,5 +238,13 @@ export default function CompaniesPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function CompaniesPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <CompaniesPage />
+    </Suspense>
   );
 }

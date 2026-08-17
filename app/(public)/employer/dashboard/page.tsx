@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,7 +35,7 @@ import Swal from "sweetalert2";
 import { useAppDispatch, useAppSelector } from "@/redux/store/hooks";
 import { getCompanyReputationById } from "@/redux/store/slices/companiesSlice";
 
-const EmployerDashboard = () => {
+function EmployerDashboard() {
   const dispatch = useAppDispatch();
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
@@ -460,6 +460,12 @@ const EmployerDashboard = () => {
       <Footer />
     </div>
   );
-};
+}
 
-export default EmployerDashboard;
+export default function EmployerDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <EmployerDashboard />
+    </Suspense>
+  );
+}
