@@ -1,13 +1,20 @@
 /**
- * Shared env-var accessors for the URLs that point at the Node backend.
+ * Shared env-var accessor for the URL that points at the Node backend.
  *
- * In production these must be explicitly set — falling back to
+ * There is exactly ONE required var: NEXT_PUBLIC_BACKEND_API_URL, the
+ * backend's origin with no path suffix (e.g. https://api.example.com).
+ * Everything else (the backend's /api root, the socket URL) is derived
+ * from it by string concatenation — never a second env var — so there is
+ * only one value to configure per deployment and no risk of the two
+ * drifting out of sync.
+ *
+ * In production this must be explicitly set — falling back to
  * `localhost:4000` in a deployed environment means the app silently talks to
  * nothing instead of failing loudly, which is worse than a crash.
  */
 
 function requiredUrl(value: string | undefined, name: string, devFallback: string): string {
-  if (value) return value;
+  if (value) return value.replace(/\/+$/, "");
   if (process.env.NODE_ENV === "production") {
     throw new Error(
       `${name} is not set. Configure it in this deployment's environment variables.`,
@@ -25,37 +32,12 @@ export function getBackendBaseUrl(): string {
   );
 }
 
-/**
- * Node backend's `/api` root. Note: NEXT_PUBLIC_API_URL is also used
- * separately in constants/api.ts for this app's own internal Next.js API
- * routes (falls back to relative "/api" there, which is safe same-origin) —
- * the two usages are historically distinct despite sharing a var name.
- */
+/** Node backend's `/api` root, derived from the same single base URL. */
 export function getNodeApiUrl(): string {
-  return requiredUrl(
-    process.env.NEXT_PUBLIC_API_URL,
-    "NEXT_PUBLIC_API_URL",
-    "http://localhost:4000/api",
-  );
+  return `${getBackendBaseUrl()}/api`;
 }
 
+/** Socket.IO backend base URL (no /api suffix) — same origin as the backend. */
 export function getSocketUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_SOCKET_URL;
-  if (explicit) return explicit.replace(/\/+$/, "");
-
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-  if (backendBase) return backendBase.replace(/\/+$/, "");
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl) {
-    // If NEXT_PUBLIC_API_URL points to /api, strip it for socket root connection.
-    return apiUrl.replace(/\/+$/, "").replace(/\/api$/, "");
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "NEXT_PUBLIC_SOCKET_URL (or NEXT_PUBLIC_BACKEND_API_URL/NEXT_PUBLIC_API_URL) is not set.",
-    );
-  }
-  return "http://localhost:4000";
+  return getBackendBaseUrl();
 }
