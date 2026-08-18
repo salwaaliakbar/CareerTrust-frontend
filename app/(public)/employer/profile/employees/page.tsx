@@ -29,7 +29,7 @@ const formatDate = (value?: string | null) => {
 
 export default function EmployerEmployeesPage() {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [employees, setEmployees] = useState<CurrentEmployee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ export default function EmployerEmployeesPage() {
 
   useEffect(() => {
     const loadEmployees = async () => {
-      if (!isLoaded || !user) return;
+      if (!isLoaded || !user || !authLoaded || !isSignedIn) return;
 
       try {
         setLoading(true);
@@ -53,7 +53,7 @@ export default function EmployerEmployeesPage() {
     };
 
     loadEmployees();
-  }, [getToken, isLoaded, user]);
+  }, [getToken, isLoaded, user, authLoaded, isSignedIn]);
 
   return (
     <>

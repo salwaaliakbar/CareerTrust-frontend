@@ -24,7 +24,7 @@ import Swal from "sweetalert2";
 
 export default function EmployerPostedJobsPage() {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [jobs, setJobs] = useState<EmployerJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export default function EmployerPostedJobsPage() {
 
   useEffect(() => {
     const loadJobs = async () => {
-      if (!isLoaded || !user) return;
+      if (!isLoaded || !user || !authLoaded || !isSignedIn) return;
 
       try {
         setLoading(true);
@@ -67,7 +67,7 @@ export default function EmployerPostedJobsPage() {
     };
 
     loadJobs();
-  }, [getToken, isLoaded, user]);
+  }, [getToken, isLoaded, user, authLoaded, isSignedIn]);
 
   const filteredJobs = useMemo(() => {
     let filtered = jobs;

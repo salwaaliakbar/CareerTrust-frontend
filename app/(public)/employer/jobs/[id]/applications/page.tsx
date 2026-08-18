@@ -15,7 +15,7 @@ import { ApplicationStatus } from "@/types/application.types";
 
 export default function JobApplicantsPage() {
   const params = useParams();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const jobId = params?.id as string;
 
   const [applications, setApplications] = useState<JobApplication[]>([]);
@@ -31,7 +31,7 @@ export default function JobApplicantsPage() {
 
   useEffect(() => {
     const loadApplications = async () => {
-      if (!jobId) return;
+      if (!jobId || !isLoaded || !isSignedIn) return;
 
       setLoading(true);
       try {
@@ -53,7 +53,7 @@ export default function JobApplicantsPage() {
     };
 
     loadApplications();
-  }, [jobId]);
+  }, [jobId, getToken, isLoaded, isSignedIn]);
 
   // Filter applications
   useEffect(() => {

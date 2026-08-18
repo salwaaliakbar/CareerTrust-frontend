@@ -54,7 +54,7 @@ const getPendingEducationCount = (jobseeker: JobSeekerData) => {
 };
 
 export default function JobSeekersPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
   const router = useRouter();
   const [jobseekers, setJobseekers] = useState<JobSeekerData[]>([]);
@@ -69,6 +69,7 @@ export default function JobSeekersPage() {
   });
 
   const fetchJobseekers = useCallback(async () => {
+    if (!authLoaded || !isSignedIn) return;
     try {
       const token = await getToken();
       const response = await AdminService.getAllJobseekers(token);
@@ -82,7 +83,7 @@ export default function JobSeekersPage() {
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, authLoaded, isSignedIn]);
 
   useEffect(() => {
     fetchJobseekers();

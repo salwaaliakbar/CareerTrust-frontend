@@ -370,7 +370,19 @@ export async function fetchFeaturedCandidates(
 
     if (getToken) {
       const token = await getToken();
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      } else {
+        // This endpoint always requires auth (authenticateUser + requireRole
+        // middleware) — a null token means Clerk isn't ready yet or the
+        // session isn't actually valid, so firing the request would only
+        // ever produce a 401. Bail out instead of sending an unauthenticated
+        // request that the backend will reject.
+        console.warn(
+          "[Employer Service] Skipping featured candidates fetch - no Clerk token available",
+        );
+        return null;
+      }
     }
 
     const response = await fetch(url, {

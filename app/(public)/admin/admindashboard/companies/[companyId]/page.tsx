@@ -25,7 +25,7 @@ import { AdminService } from "@/services/api/admin.service";
 import Swal from "sweetalert2";
 
 export default function CompanyDetailPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const params = useParams();
   const companyId = params?.companyId as string;
@@ -35,8 +35,8 @@ export default function CompanyDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (companyId) fetchCompanyDetails();
-  }, [companyId]);
+    if (companyId && isLoaded && isSignedIn) fetchCompanyDetails();
+  }, [companyId, isLoaded, isSignedIn]);
 
   const fetchCompanyDetails = async () => {
     try {

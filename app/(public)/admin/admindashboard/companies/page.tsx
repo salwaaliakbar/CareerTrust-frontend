@@ -18,7 +18,7 @@ import { CompanyData } from "@/types/admin.types";
 import { AdminService } from "@/services/api/admin.service";
 
 export default function CompaniesPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<CompanyData[]>([]);
@@ -27,8 +27,9 @@ export default function CompaniesPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     fetchCompanies();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     filterData();

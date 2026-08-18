@@ -6,7 +6,7 @@ import { AdminUser } from "@/types/admin.types";
 import { AdminService } from "@/services/api/admin.service";
 
 export default function UsersPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -14,8 +14,9 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     fetchUsers();
-  }, [page, search]);
+  }, [page, search, isLoaded, isSignedIn]);
 
   const fetchUsers = async () => {
     try {

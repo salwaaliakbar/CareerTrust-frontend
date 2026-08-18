@@ -41,7 +41,7 @@ const formatDate = (value?: string | null) => {
 export default function EmployerProfilePage() {
   const dispatch = useAppDispatch();
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [profile, setProfile] = useState<EmployerCompanyProfileDetails | null>(
     null,
   );
@@ -53,7 +53,7 @@ export default function EmployerProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!isLoaded || !user) return;
+      if (!isLoaded || !user || !authLoaded || !isSignedIn) return;
 
       try {
         setLoading(true);
@@ -88,7 +88,7 @@ export default function EmployerProfilePage() {
     };
 
     loadProfile();
-  }, [getToken, isLoaded, user]);
+  }, [getToken, isLoaded, user, authLoaded, isSignedIn]);
 
   const company = profile?.company;
   const employerMeta = profile?.employerProfile;

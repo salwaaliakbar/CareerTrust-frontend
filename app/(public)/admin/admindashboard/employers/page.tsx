@@ -8,7 +8,7 @@ import { EmployerData } from "@/types/admin.types";
 import { AdminService } from "@/services/api/admin.service";
 
 export default function EmployersPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const [employers, setEmployers] = useState<EmployerData[]>([]);
   const [filteredEmployers, setFilteredEmployers] = useState<EmployerData[]>([]);
@@ -17,8 +17,9 @@ export default function EmployersPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     fetchEmployers();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     filterData();

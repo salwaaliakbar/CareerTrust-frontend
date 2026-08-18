@@ -7,13 +7,14 @@ import { AdminService } from "@/services/api/admin.service";
 import { Users, Briefcase, Building2, FileText, TrendingUp, Activity, CheckCircle, XCircle } from "lucide-react";
 
 export default function AdminDashboardPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     fetchDashboardStats();
-  }, []);
+  }, [isLoaded, isSignedIn]);
 
   const fetchDashboardStats = async () => {
     try {

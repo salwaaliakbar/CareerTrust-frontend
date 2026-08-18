@@ -22,7 +22,7 @@ import { AdminService } from "@/services/api/admin.service";
 import Swal from "sweetalert2";
 
 export default function EmployerDetailPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const params = useParams();
   const employerId = params?.employerId as string;
@@ -32,10 +32,10 @@ export default function EmployerDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    if (employerId) {
+    if (employerId && isLoaded && isSignedIn) {
       fetchEmployerDetails();
     }
-  }, [employerId]);
+  }, [employerId, isLoaded, isSignedIn]);
 
   const fetchEmployerDetails = async () => {
     try {

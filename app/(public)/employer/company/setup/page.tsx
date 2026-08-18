@@ -47,7 +47,7 @@ const industries = [
 export default function CompanySetupPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [customIndustry, setCustomIndustry] = useState("");
@@ -138,7 +138,7 @@ export default function CompanySetupPage() {
   // Check access and load existing company if any
   useEffect(() => {
     async function checkAccess() {
-      if (isLoaded && user) {
+      if (isLoaded && user && authLoaded && isSignedIn) {
         const userRole = user.unsafeMetadata?.role as string;
 
         if (userRole !== EMPLOYER) {
@@ -188,7 +188,7 @@ export default function CompanySetupPage() {
     }
 
     checkAccess();
-  }, [isLoaded, user, router, setValue, getToken]);
+  }, [isLoaded, user, router, setValue, getToken, authLoaded, isSignedIn]);
 
   const onSubmit = async (data: Omit<CreateCompanyRequest, "employerId">) => {
     // Resolve "Other" industry to the custom typed value

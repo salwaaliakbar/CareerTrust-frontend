@@ -9,13 +9,14 @@ import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
 type StatusFilter = "pending" | "approved" | "rejected";
 
 export default function AdminExitRequestsPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [status, setStatus] = useState<StatusFilter>("pending");
   const [requests, setRequests] = useState<AdminExitRequest[]>([]);
 
   const fetchRequests = useCallback(async () => {
+    if (!isLoaded || !isSignedIn) return;
     setLoading(true);
     try {
       const token = await getToken();
@@ -31,7 +32,7 @@ export default function AdminExitRequestsPage() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, status]);
+  }, [getToken, status, isLoaded, isSignedIn]);
 
   useEffect(() => {
     fetchRequests();

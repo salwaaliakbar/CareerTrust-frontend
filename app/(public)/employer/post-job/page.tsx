@@ -21,7 +21,7 @@ import {
 export default function PostJobPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingCompany, setIsCheckingCompany] = useState(true);
   const [employerId, setEmployerId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function PostJobPage() {
   // Check if user is an employer and has company profile
   useEffect(() => {
     async function checkAccess() {
-      if (isLoaded && user) {
+      if (isLoaded && user && authLoaded && isSignedIn) {
         const userRole = user.unsafeMetadata?.role as string;
 
         if (userRole !== EMPLOYER) {
@@ -76,7 +76,7 @@ export default function PostJobPage() {
     }
 
     checkAccess();
-  }, [isLoaded, user, router, getToken]);
+  }, [isLoaded, user, router, getToken, authLoaded, isSignedIn]);
 
   const handleSubmit = async (data: JobFormData) => {
     if (!employerId) {

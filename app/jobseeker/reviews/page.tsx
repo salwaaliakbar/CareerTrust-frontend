@@ -41,7 +41,7 @@ const normalizeReviewForComparison = (value: string) =>
 export default function JobseekerReviewsPage() {
   const dispatch = useAppDispatch();
   const { isLoaded, user } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const [companies, setCompanies] = useState<EligibleCompanyForReview[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(
     null,
@@ -65,7 +65,7 @@ export default function JobseekerReviewsPage() {
 
   useEffect(() => {
     const load = async () => {
-      if (!isLoaded || !user) return;
+      if (!isLoaded || !user || !authLoaded || !isSignedIn) return;
       try {
         setLoading(true);
         const result = await getEligibleCompaniesForReview(getToken);
@@ -87,7 +87,7 @@ export default function JobseekerReviewsPage() {
     };
 
     load();
-  }, [getToken, isLoaded, user]);
+  }, [getToken, isLoaded, user, authLoaded, isSignedIn]);
 
   const selectedCompany =
     companies.find((item) => item.company.id === selectedCompanyId) ?? null;

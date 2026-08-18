@@ -32,8 +32,8 @@ const toMonthIndex = (value?: string | null) => {
 };
 
 function PassportPage() {
-  const { getToken } = useAuth();
-  const { user } = useUser();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
   const searchParams = useSearchParams();
   const queryClerkId = searchParams.get("clerkId");
 
@@ -54,6 +54,11 @@ function PassportPage() {
 
       if (!targetClerkId) {
         console.log("❌ Passport - No user ID available yet");
+        setLoading(false);
+        return;
+      }
+
+      if (!authLoaded || !isSignedIn || !userLoaded) {
         setLoading(false);
         return;
       }
@@ -134,7 +139,7 @@ function PassportPage() {
         if (isManualRefresh) setRefreshing(false);
       }
     },
-    [getToken, user?.id],
+    [getToken, user?.id, authLoaded, isSignedIn, userLoaded],
   );
 
   useEffect(() => {

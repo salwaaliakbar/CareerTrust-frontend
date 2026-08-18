@@ -16,7 +16,7 @@ interface Job {
 }
 
 export default function JobsPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -24,8 +24,9 @@ export default function JobsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     fetchJobs();
-  }, [page, search]);
+  }, [page, search, isLoaded, isSignedIn]);
 
   const fetchJobs = async () => {
     try {

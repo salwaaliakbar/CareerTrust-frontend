@@ -38,7 +38,7 @@ import { getCompanyReputationById } from "@/redux/store/slices/companiesSlice";
 function EmployerDashboard() {
   const dispatch = useAppDispatch();
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isReputationOnly = searchParams.get("showReputation") === "true";
@@ -73,7 +73,7 @@ function EmployerDashboard() {
 
   useEffect(() => {
     const checkCompany = async () => {
-      if (!user?.id) return;
+      if (!user?.id || !authLoaded || !isSignedIn) return;
 
       try {
         setIsRefreshing(true);
@@ -95,7 +95,7 @@ function EmployerDashboard() {
     if (user?.id) {
       checkCompany();
     }
-  }, [user?.id, getToken, refreshKey]);
+  }, [user?.id, getToken, refreshKey, authLoaded, isSignedIn]);
 
   useEffect(() => {
     if (!isReputationOnly || !companyId) return;
@@ -136,7 +136,7 @@ function EmployerDashboard() {
 
   useEffect(() => {
     const loadJobs = async () => {
-      if (!employerId) return;
+      if (!employerId || !authLoaded || !isSignedIn) return;
       if (isReputationOnly) {
         setLoading(false);
         return;
@@ -161,7 +161,7 @@ function EmployerDashboard() {
     if (employerId) {
       loadJobs();
     }
-  }, [employerId, getToken, isReputationOnly, refreshKey]);
+  }, [employerId, getToken, isReputationOnly, refreshKey, authLoaded, isSignedIn]);
 
   useEffect(() => {
     const handleEmployerDashboardUpdated = () => {

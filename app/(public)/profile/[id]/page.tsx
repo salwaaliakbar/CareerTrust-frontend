@@ -93,7 +93,7 @@ const formatDate = (date: string | null): string => {
 export default function PublicProfilePage() {
   const params = useParams();
   const clerkId = params.id as string;
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
 
   const [profile, setProfile] = useState<JobseekerPublicProfile | null>(null);
@@ -202,16 +202,16 @@ export default function PublicProfilePage() {
       }
     };
 
-    if (clerkId) {
+    if (clerkId && authLoaded) {
       fetchProfile();
     }
-  }, [clerkId, getToken]);
+  }, [clerkId, getToken, authLoaded]);
 
   // Fetch current user's employer company (if they're an employer)
   useEffect(() => {
     const fetchEmployerCompany = async () => {
       try {
-        if (!user) return;
+        if (!user || !authLoaded || !isSignedIn) return;
 
         const companyProfile = await getCompanyProfile(user.id, getToken);
         if (companyProfile) {
@@ -224,7 +224,7 @@ export default function PublicProfilePage() {
     };
 
     fetchEmployerCompany();
-  }, [user, getToken]);
+  }, [user, getToken, authLoaded, isSignedIn]);
 
   if (loading) {
     return (

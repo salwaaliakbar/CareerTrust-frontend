@@ -149,7 +149,7 @@ function sortByVerificationPriorityAndDate<T extends {
 }
 
 export default function JobseekerDetailPage() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded: authLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
   const router = useRouter();
   const params = useParams();
@@ -167,6 +167,11 @@ export default function JobseekerDetailPage() {
 
   const fetchJobseekerDetails = useCallback(async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
+
+    if (!authLoaded || !isSignedIn) {
+      if (isManualRefresh) setRefreshing(false);
+      return;
+    }
 
     try {
       const token = await getToken();
@@ -191,7 +196,7 @@ export default function JobseekerDetailPage() {
       setLoading(false);
       if (isManualRefresh) setRefreshing(false);
     }
-  }, [getToken, jobseekerId]);
+  }, [getToken, jobseekerId, authLoaded, isSignedIn]);
 
   useEffect(() => {
     if (jobseekerId) {
