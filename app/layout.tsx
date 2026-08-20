@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ReduxProvider } from "@/redux/store/provider";
 import { NotificationProvider } from "@/components/NotificationProvider";
+import CookieConsentBanner from "@/components/shared/CookieConsentBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
               suppressHydrationWarning
             >
               {children}
+              <CookieConsentBanner />
             </body>
           </html>
         </NotificationProvider>
