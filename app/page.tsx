@@ -3,11 +3,13 @@ export const SIGNUP = "/signup";
 
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
+import DemoAnnouncementBar from "@/components/shared/DemoAnnouncementBar";
 import HomePage from "./(public)/homePage/page";
 
 export default function Home() {
   return (
     <>
+      <DemoAnnouncementBar />
       <Header />
       <main className="min-h-screen bg-[#f4f8fc]">
         <HomePage />

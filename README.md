@@ -1,71 +1,109 @@
-# CareerTrust Frontend
+# CareerTrust — Frontend
 
-This folder contains the complete frontend codebase for the CareerTrust project. All documentation and guides have been consolidated into this single README file.
+CareerTrust is an AI-Powered full-stack recruitment platform connecting job seekers and employers through verified profiles, employment-history-backed reputation signals, and AI-assisted matching. This repository is the **Next.js frontend** — the customer-facing web app for job seekers, employers, and platform admins.
 
-## Structure
-- `app/` - Main Next.js application code
-- `components/` - Reusable React components
-- `constants/` - Project-wide constants
-- `data/` - Static and mock data
-- `hooks/` - Custom React hooks
-- `lib/` - Utility libraries
-- `public/` - Static assets
-- `redux/` - Redux state management
-- `services/` - API and business logic
-- `types/` - TypeScript type definitions
+**Live app:** https://career-trust-frontend.vercel.app
+**Backend API:** https://careertrust-backend.onrender.com
+**Demo video:** [Watch on Google Drive](https://drive.google.com/file/d/1OHbpxpA-Cr3Ty2lUqKvng1T5XsgXxJTV/view?usp=sharing)
 
-## Setup & Usage
-1. Install dependencies:
-	```sh
-	npm install
-	```
-2. Run the frontend server:
-	```sh
-	npm run dev
-	```
+> **Note on AI features:** Resume parsing, face verification, sentiment analysis, and AI job matching are implemented and demonstrated in the video above, but are **not live** in the current deployment — the underlying ML models are too large to run on free-tier hosting. See the [AI Services repo](https://github.com/salwaaliakbar/careerTrust-AIServices) for that service's implementation.
 
-## Notes
-- For any previous documentation, refer to project commit history if needed.
-- Contact the project maintainer for further frontend details.
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Overview
+
+CareerTrust serves three user roles from one codebase:
+
+- **Job seekers** — build a verified profile, browse and apply to jobs, track applications, request employment exit confirmation from past employers, and get AI-ranked job recommendations.
+- **Employers** — post jobs, manage a company profile, review applicants, browse a verified candidate pool, and respond to employment exit requests.
+- **Admins** — moderate users, companies, jobs, and exit requests from a dedicated dashboard.
+
+## Key Features
+
+- Role-based authentication and route protection via Clerk (job seeker / employer / admin)
+- Job posting, browsing, filtering, and application tracking
+- Employer company profile and candidate management
+- Employment exit request workflow (jobseeker-initiated, employer-confirmed)
+- Real-time notifications (Socket.IO)
+- Company reputation scoring, backed by AI sentiment analysis of reviews
+- AI-assisted resume parsing and job-match recommendations
+- Face-verification identity check during onboarding
+- Responsive, animated UI with light/dark-safe theming considerations
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router), React 19, TypeScript
+- **Styling:** Tailwind CSS 4
+- **Auth:** Clerk
+- **State:** Redux Toolkit
+- **Forms/validation:** React Hook Form, Formik, Zod, Yup
+- **Realtime:** Socket.IO client
+- **Other:** Axios, face-api (client-side face capture), jsPDF / html2canvas (document export), Pino (logging)
+
+## Project Structure
+
+```
+app/          Next.js App Router pages (route groups: (auth), (public), jobseeker/*)
+components/   Reusable UI components, grouped by feature/domain
+constants/    Project-wide constants and API endpoint definitions
+data/         Static/mock data used for previews and fallbacks
+hooks/        Custom React hooks
+lib/          Utility libraries (env access, API clients, auth helpers)
+redux/        Redux store, slices, and hooks
+services/     API service layer (one file per backend domain)
+types/        Shared TypeScript types
+public/       Static assets
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A running instance of the [backend API](https://github.com/salwaaliakbar/careerTrust-backend)
+- A Clerk application (publishable + secret key)
+
+### Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy the environment template and fill in real values:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Required variables:
+   | Variable | Purpose |
+   |---|---|
+   | `NEXT_PUBLIC_BACKEND_API_URL` | Base URL of the Node backend (no trailing slash) |
+   | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+   | `CLERK_SECRET_KEY` | Clerk secret key (server-side) |
+   | `BACKEND_API_KEY` | Shared key sent to backend-only endpoints, if applicable |
+   | `AI_SERVICE_BASE_URL` | Only needed if calling the AI service directly from a Next.js API route |
+   | `NODE_ENV`, `LOG_LEVEL` | Runtime/logging config |
+
+3. Run the dev server:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000).
+
+### Other scripts
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build   # production build
+npm run start   # run a production build
+npm run lint    # lint the codebase
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Related Repositories
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Backend API** — https://github.com/salwaaliakbar/careerTrust-backend
+- **AI Services** — https://github.com/salwaaliakbar/careerTrust-AIServices
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+Deployed on [Vercel](https://vercel.com). Production environment variables are configured in the Vercel dashboard, mirroring `.env.example` above.
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## AI microservice (face recognition)
-
-This app doesn't call the AI microservice directly — face-check requests go through the Node backend (`NEXT_PUBLIC_BACKEND_API_URL`), which forwards them to the FastAPI AI service. There's no frontend env var for the AI service's URL; that's configured on the Node backend side (`AI_SERVICE_BASE_URL`).
-
-Make sure this value is available to the Next.js server runtime (e.g., in `.env.local` for local dev or environment variables in your hosting platform).
+Private/internal project for CareerTrust.

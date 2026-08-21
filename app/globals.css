@@ -153,6 +153,18 @@ body {
   }
 }
 
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.85);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgba(255, 255, 255, 0);
+    transform: scale(1.04);
+  }
+}
+
 /* Blob Animation */
 @keyframes blob {
   0% {
@@ -425,6 +437,10 @@ body {
 
   .pulse-slow {
     animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .glow-pulse {
+    animation: glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   /* Blob animation */
