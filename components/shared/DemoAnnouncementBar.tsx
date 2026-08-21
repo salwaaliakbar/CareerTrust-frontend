@@ -28,7 +28,7 @@ export default function DemoAnnouncementBar() {
             </span>
             <span className="text-xs font-medium text-white/95 sm:text-sm">
               <span className="font-semibold text-[#8ad2ff]">AI/ML features are disabled in this deployment</span>
-              <span className="hidden sm:inline"> — free-tier hosting doesn&apos;t support the model size. Full demonstration below.</span>
+              <span className="hidden sm:inline"> — free-tier hosting doesn&apos;t support the model size. Full demonstration here.</span>
             </span>
             <span className="glow-pulse ml-1 shrink-0 rounded-full border border-white/25 bg-white/10 px-2.5 py-0.5 text-[11px] font-semibold text-white transition-colors group-hover:bg-white/20">
               View Demo
